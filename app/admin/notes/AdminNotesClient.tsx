@@ -139,7 +139,7 @@ function Sidebar() {
   const pathname = usePathname();
   const navItems = [
     { label: "總覽", href: "/admin/notes" },
-    { label: "單字卡", href: "/admin/notes" },
+    { label: "單字卡", href: "/admin/words" },
     { label: "模擬測驗", href: "/admin/notes" },
     { label: "學習筆記", href: "/admin/notes" },
     { label: "通路管理", href: "/admin/settings" },
@@ -157,7 +157,7 @@ function Sidebar() {
       </div>
       <nav className={styles.sideNav} aria-label="後台功能">
         {navItems.map((item) => (
-          <Link key={item.label} href={item.href} className={pathname === item.href && (item.label === "學習筆記" || item.label === "設定") ? styles.active : undefined}>
+          <Link key={item.label} href={item.href} className={pathname === item.href && (item.label === "單字卡" || item.label === "學習筆記" || item.label === "設定") ? styles.active : undefined}>
             {item.label}
           </Link>
         ))}

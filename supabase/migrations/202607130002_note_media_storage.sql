@@ -3,7 +3,7 @@ values (
   'note-media',
   'note-media',
   true,
-  104857600,
+  52428800,
   array[
     'image/jpeg',
     'image/png',

@@ -1,0 +1,280 @@
+.wordStats {
+  box-shadow: 0 8px 0 #9bc0a8;
+
+  strong {
+    color: #9bc0a8;
+  }
+}
+
+.flashSection {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  gap: 32px;
+  width: min(860px, calc(100% - 48px));
+  margin: 0 auto 58px;
+}
+
+.filterPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+
+  button {
+    min-width: 118px;
+    height: 34px;
+    border: 1px solid #9bc0a8;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #9bc0a8;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 800;
+  }
+}
+
+.activePill {
+  background: #9bc0a8 !important;
+  color: #ffffff !important;
+}
+
+.practiceRow {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 58px;
+  align-items: center;
+  gap: 28px;
+}
+
+.arrowButton {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #8bcdb8;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.flipCard {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 280px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  perspective: 1200px;
+}
+
+.cardFace {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  min-height: 280px;
+  place-items: center;
+  padding: 46px 28px 30px;
+  border: 1px solid rgba(155, 192, 168, 0.68);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 0 #9bc0a8;
+  color: #7d7d7d;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: transform 360ms ease;
+}
+
+.cardBack {
+  transform: rotateY(180deg);
+}
+
+.flipped {
+  .cardFace:first-child {
+    transform: rotateY(180deg);
+  }
+
+  .cardBack {
+    transform: rotateY(360deg);
+  }
+}
+
+.speakerButton {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #9bc0a8;
+  cursor: pointer;
+
+  img {
+    width: 25px;
+    height: 25px;
+    object-fit: contain;
+  }
+}
+
+.wordMain {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+  gap: 14px;
+
+  span {
+    color: #8f8f8f;
+    font-size: 17px;
+    line-height: 1;
+  }
+
+  strong {
+    color: #7d7d7d;
+    font-size: 46px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  ruby {
+    ruby-align: center;
+    ruby-position: over;
+  }
+
+  rt {
+    color: #8f8f8f;
+    font-size: 52%;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  hr {
+    width: 100%;
+    margin: 18px 0 6px;
+    border: 0;
+    border-top: 1px solid rgba(155, 192, 168, 0.72);
+  }
+
+  p,
+  small {
+    margin: 0;
+    color: #8c8c8c;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.7;
+    text-align: center;
+  }
+}
+
+.exampleMain {
+  p {
+    color: #7d7d7d;
+    font-size: 26px;
+    font-weight: 800;
+  }
+
+  small {
+    font-size: 18px;
+  }
+}
+
+.wordListSection {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  gap: 32px;
+  width: min(980px, calc(100% - 48px));
+  margin: 0 auto 96px;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 0;
+    color: #7d7d7d;
+    font-size: 34px;
+    letter-spacing: 0;
+
+    &::before {
+      content: "";
+      display: block;
+      width: 8px;
+      height: 58px;
+      background: #9bc0a8;
+    }
+  }
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 42px 48px;
+}
+
+.wordCard {
+  position: relative;
+  min-height: 280px;
+
+  .cardFace {
+    min-height: 280px;
+  }
+}
+
+.compactCard {
+  min-height: 188px;
+
+  .cardFace {
+    min-height: 188px;
+    padding-block: 36px 24px;
+    box-shadow: 0 14px 0 rgba(155, 192, 168, 0.72);
+  }
+
+  .wordMain {
+    gap: 9px;
+
+    strong {
+      font-size: 38px;
+    }
+
+    hr {
+      margin: 10px 0 2px;
+    }
+  }
+}
+
+.emptyText {
+  margin: 0;
+  color: #9bc0a8;
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (max-width: 820px) {
+  .flashSection,
+  .wordListSection {
+    width: min(100% - 28px, 860px);
+  }
+
+  .practiceRow {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 10px;
+  }
+
+  .arrowButton {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .wordMain strong {
+    font-size: 40px;
+  }
+}

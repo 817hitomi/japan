@@ -197,6 +197,35 @@
   margin: 0 auto;
 }
 
+.wordSearchBar {
+  width: min(1228px, 100%);
+  margin: 0 auto 24px;
+
+  label {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+  }
+
+  span {
+    color: var(--admin-text);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  input {
+    height: 46px;
+    padding: 0 18px;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--button-radius);
+    background: #ffffff;
+    color: var(--admin-text);
+    font-size: 18px;
+    outline: none;
+  }
+}
+
 .noteTable {
   width: 100%;
   border-collapse: collapse;
@@ -302,6 +331,98 @@
     min-height: 92px;
     padding-top: 14px;
     resize: vertical;
+  }
+}
+
+.wordEditorForm {
+  margin-bottom: 38px;
+  padding: 32px 44px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--button-radius);
+}
+
+.wordCategoryRow {
+  label {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 280px);
+    align-items: center;
+    gap: 14px;
+  }
+
+  span {
+    font-weight: 700;
+  }
+}
+
+.wordFrontRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+
+  label {
+    display: grid;
+    gap: 8px;
+  }
+
+  span {
+    font-weight: 700;
+  }
+}
+
+.wordSidePanel {
+  display: grid;
+  gap: 18px;
+  padding: 18px 0 8px;
+
+  h2 {
+    justify-self: center;
+    min-width: 118px;
+    margin: 0;
+    padding: 8px 22px;
+    border-radius: var(--button-radius);
+    background: var(--admin-primary);
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1;
+    text-align: center;
+  }
+
+  label {
+    display: grid;
+    gap: 8px;
+  }
+
+  span {
+    font-weight: 700;
+  }
+}
+
+.wordFullField {
+  display: grid;
+  gap: 8px;
+
+  span {
+    font-weight: 700;
+  }
+}
+
+.wordAudioRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  align-items: end;
+  gap: 12px;
+
+  > label:first-child {
+    display: grid;
+    gap: 8px;
+  }
+
+  span {
+    font-weight: 700;
+  }
+
+  .uploadButton {
+    height: 38px;
   }
 }
 
@@ -941,6 +1062,13 @@
   .settingsHero {
     align-items: start;
     flex-direction: column;
+  }
+
+  .wordFrontRow,
+  .wordAudioRow,
+  .wordCategoryRow label,
+  .wordSearchBar label {
+    grid-template-columns: 1fr;
   }
 
   .listTools {

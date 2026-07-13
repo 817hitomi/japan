@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
-    const type = formData.get("type") === "video" ? "video" : "image";
+    const rawType = formData.get("type");
+    const type = rawType === "video" || rawType === "audio" ? rawType : "image";
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "Missing upload file" }, { status: 400 });
@@ -28,12 +29,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Only video files are allowed" }, { status: 400 });
     }
 
+    if (type === "audio" && !file.type.startsWith("audio/")) {
+      return NextResponse.json({ error: "Only audio files are allowed" }, { status: 400 });
+    }
+
     if (type === "image" && !file.type.startsWith("image/")) {
       return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
     }
 
     const supabase = createSupabaseAdminClient();
-    const extension = getSafeName(file.name).split(".").pop() || (type === "video" ? "mp4" : "jpg");
+    const extension = getSafeName(file.name).split(".").pop() || (type === "video" ? "mp4" : type === "audio" ? "mp3" : "jpg");
     const path = `${type}s/${Date.now()}-${crypto.randomUUID()}.${extension}`;
     const { error } = await supabase.storage.from(bucketName).upload(path, file, {
       cacheControl: "31536000",

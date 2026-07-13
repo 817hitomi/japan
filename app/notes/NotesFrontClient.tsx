@@ -13,12 +13,17 @@ const statItems = [
   ["N5", "目前等級"]
 ];
 
-const navItems = ["單字卡", "模擬測驗", "學習筆記", "登入"];
+const navItems = [
+  { label: "單字卡", href: "/words" },
+  { label: "模擬測驗", href: "#" },
+  { label: "學習筆記", href: "/notes" },
+  { label: "登入", href: "#" }
+];
 
 const socialLinks = [
-  { label: "YouTube", color: "#ff0000" },
-  { label: "Instagram", color: "#e4405f" },
-  { label: "Facebook", color: "#1877f2" }
+  { label: "YouTube", color: "#ff0000", href: "https://www.youtube.com/@japanNote" },
+  { label: "Instagram", color: "#e4405f", href: "#" },
+  { label: "Facebook", color: "#1877f2", href: "https://facebook.com/17japanNote" }
 ];
 
 const parallaxBalls = [
@@ -155,8 +160,8 @@ export default function NotesFrontClient() {
           </a>
           <nav className={homeStyles.nav} aria-label="主要選單">
             {navItems.map((item) => (
-              <a key={item} href={item === "學習筆記" ? "/notes" : "#"} className={item === "學習筆記" ? homeStyles.activeNav : undefined}>
-                {item}
+              <a key={item.label} href={item.href} className={item.label === "學習筆記" ? homeStyles.activeNav : undefined}>
+                {item.label}
               </a>
             ))}
           </nav>
@@ -240,7 +245,14 @@ export default function NotesFrontClient() {
         <Image src="/brand/logo.png" alt="" width={72} height={72} />
         <div className={homeStyles.footerLinks}>
           {socialLinks.map((link) => (
-            <a key={link.label} href="#" style={{ backgroundColor: link.color }} aria-label={link.label}>
+            <a
+              key={link.label}
+              href={link.href}
+              style={{ backgroundColor: link.color }}
+              aria-label={link.label}
+              target={link.href === "#" ? undefined : "_blank"}
+              rel={link.href === "#" ? undefined : "noreferrer"}
+            >
               {link.label}
             </a>
           ))}

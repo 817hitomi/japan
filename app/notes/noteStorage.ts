@@ -80,7 +80,7 @@ export async function saveNote(note: PublicNoteRecord, mode: "create" | "update"
   return normalizeNote(payload.note);
 }
 
-export async function uploadMediaFile(file: File, type: "image" | "video") {
+export async function uploadMediaFile(file: File, type: "image" | "video" | "audio") {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("type", type);
