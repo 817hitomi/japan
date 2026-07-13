@@ -4,6 +4,12 @@ import { normalizeWordCards, seedWordCards, WordCardRecord } from "./wordTypes";
 
 const wordStorageKey = "japannote-word-cards";
 
+export type WordCardsReadResult = {
+  source: "database" | "local";
+  words: WordCardRecord[];
+  error?: string;
+};
+
 function isOldDefaultCards(words: WordCardRecord[]) {
   return (
     words.length === 3 &&
@@ -49,15 +55,30 @@ export function writeStoredWordCards(words: WordCardRecord[]) {
 }
 
 async function parseWordsResponse(response: Response) {
-  const payload = (await response.json().catch(() => ({}))) as { words?: WordCardRecord[]; word?: WordCardRecord; error?: string };
+  const responseText = await response.text();
+  const payload = (
+    responseText
+      ? (() => {
+          try {
+            return JSON.parse(responseText);
+          } catch {
+            return {};
+          }
+        })()
+      : {}
+  ) as { words?: WordCardRecord[]; word?: WordCardRecord; error?: string };
 
   if (!response.ok) {
-    const error = new Error(payload.error || `Words API failed: ${response.status}`);
+    const error = new Error(payload.error || responseText || `Words API failed: ${response.status}`);
     error.name = response.status === 409 ? "DuplicatedWordError" : "WordsApiError";
     throw error;
   }
 
   return payload;
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unknown words API error";
 }
 
 export async function fetchWordCards() {
@@ -67,12 +88,17 @@ export async function fetchWordCards() {
 }
 
 export async function readWordCardsWithFallback() {
+  const result = await readWordCardsWithSource();
+  return result.words;
+}
+
+export async function readWordCardsWithSource(): Promise<WordCardsReadResult> {
   try {
     const remoteWords = await fetchWordCards();
     writeStoredWordCards(remoteWords);
-    return remoteWords;
-  } catch {
-    return readStoredWordCards();
+    return { source: "database", words: remoteWords };
+  } catch (error) {
+    return { source: "local", words: readStoredWordCards(), error: getErrorMessage(error) };
   }
 }
 

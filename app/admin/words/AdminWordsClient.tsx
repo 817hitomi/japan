@@ -3,7 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminShell } from "../notes/AdminNotesClient";
 import { uploadMediaFile } from "../../notes/noteStorage";
-import { deleteWordCards, readWordCardsWithFallback, saveWordCard, writeStoredWordCards } from "../../words/wordStorage";
+import { deleteWordCards, readWordCardsWithSource, saveWordCard, writeStoredWordCards } from "../../words/wordStorage";
 import { WordCardRecord } from "../../words/wordTypes";
 import styles from "../notes/AdminNotes.module.scss";
 
@@ -44,10 +44,14 @@ export default function AdminWordsClient() {
   }, [searchText, words]);
 
   useEffect(() => {
-    readWordCardsWithFallback()
-      .then((loadedWords) => {
-        setWords(loadedWords);
-        setMessage("已載入資料庫單字。");
+    readWordCardsWithSource()
+      .then((result) => {
+        setWords(result.words);
+        setMessage(
+          result.source === "database"
+            ? "已載入資料庫單字。"
+            : `資料庫讀取失敗，暫時顯示本機資料：${result.error ?? "請確認 Supabase 設定與 word_cards 資料表。"}`
+        );
       })
       .catch(() => {
         setMessage("資料庫讀取失敗，暫時顯示本機資料。");
@@ -130,7 +134,7 @@ export default function AdminWordsClient() {
         return;
       }
 
-      setMessage("資料庫儲存失敗，請稍後再試。");
+      setMessage(`資料庫儲存失敗：${error instanceof Error ? error.message : "請確認 Supabase 設定與 word_cards 資料表。"}`);
     }
   }
 
@@ -149,8 +153,8 @@ export default function AdminWordsClient() {
       setSelectedId(null);
       setDraft(emptyWord);
       setShowEditor(false);
-    } catch {
-      setMessage("資料庫刪除失敗，請稍後再試。");
+    } catch (error) {
+      setMessage(`資料庫刪除失敗：${error instanceof Error ? error.message : "請確認 Supabase 設定與 word_cards 資料表。"}`);
     }
   }
 

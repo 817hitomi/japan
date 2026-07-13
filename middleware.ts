@@ -71,6 +71,10 @@ export function middleware(request: NextRequest) {
   const adminPassword = process.env.ADMIN_PASSWORD;
 
   if (!adminPassword) {
+    if (process.env.NODE_ENV !== "production") {
+      return NextResponse.next();
+    }
+
     return new NextResponse("部署時沒有帶到 ADMIN_PASSWORD，後台已暫時鎖住。", { status: 503 });
   }
 

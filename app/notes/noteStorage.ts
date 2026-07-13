@@ -1,12 +1,19 @@
 "use client";
 
 import { normalizeNote, PublicNoteRecord, seedNotes } from "./noteTypes";
+import { readApiError } from "../../lib/apiErrors";
 
 export type { NoteBlockType, NoteContentBlock, PublicNoteRecord } from "./noteTypes";
 export { normalizeNote, seedNotes } from "./noteTypes";
 
 export const noteStorageKey = "japannote-admin-notes";
 const noteImportCompletedKey = "japannote-admin-notes-imported";
+
+export type NotesReadResult = {
+  source: "database" | "local";
+  notes: PublicNoteRecord[];
+  error?: string;
+};
 
 export function readStoredNotes() {
   if (typeof window === "undefined") {
@@ -33,7 +40,7 @@ export function writeStoredNotes(notes: PublicNoteRecord[]) {
 
 async function parseNotesResponse(response: Response) {
   if (!response.ok) {
-    throw new Error(`Notes API failed: ${response.status}`);
+    throw new Error(await readApiError(response, `Notes API failed: ${response.status}`));
   }
 
   const payload = (await response.json()) as { notes?: PublicNoteRecord[] };
@@ -46,18 +53,31 @@ export async function fetchNotes(status: "published" | "all" = "all") {
 }
 
 export async function readNotesWithFallback(status: "published" | "all" = "all") {
+  const result = await readNotesWithSource(status);
+  return result.notes;
+}
+
+export async function readNotesWithSource(status: "published" | "all" = "all"): Promise<NotesReadResult> {
   try {
     const remoteNotes = await fetchNotes(status);
     const localNotes = readStoredNotes();
 
     if (remoteNotes.length === 0 && localNotes.length > 0) {
-      return status === "published" ? localNotes.filter((note) => note.status === "已發布") : localNotes;
+      return {
+        source: "local",
+        notes: status === "published" ? localNotes.filter((note) => note.status === "已發布") : localNotes,
+        error: "資料庫沒有文章，暫時顯示本機資料。"
+      };
     }
 
-    return remoteNotes;
-  } catch {
+    return { source: "database", notes: remoteNotes };
+  } catch (error) {
     const localNotes = readStoredNotes();
-    return status === "published" ? localNotes.filter((note) => note.status === "已發布") : localNotes;
+    return {
+      source: "local",
+      notes: status === "published" ? localNotes.filter((note) => note.status === "已發布") : localNotes,
+      error: error instanceof Error ? error.message : "Notes API failed"
+    };
   }
 }
 
@@ -69,7 +89,7 @@ export async function saveNote(note: PublicNoteRecord, mode: "create" | "update"
   });
 
   if (!response.ok) {
-    throw new Error(`Save note failed: ${response.status}`);
+    throw new Error(await readApiError(response, `Save note failed: ${response.status}`));
   }
 
   const payload = (await response.json()) as { note?: PublicNoteRecord };
@@ -91,7 +111,7 @@ export async function uploadMediaFile(file: File, type: "image" | "video" | "aud
   });
 
   if (!response.ok) {
-    throw new Error(`Upload failed: ${response.status}`);
+    throw new Error(await readApiError(response, `Upload failed: ${response.status}`));
   }
 
   const payload = (await response.json()) as { url?: string };
@@ -131,7 +151,7 @@ export async function deleteNotes(ids: number[]) {
   });
 
   if (!response.ok) {
-    throw new Error(`Delete notes failed: ${response.status}`);
+    throw new Error(await readApiError(response, `Delete notes failed: ${response.status}`));
   }
 }
 
@@ -143,6 +163,6 @@ export async function moveNotesCategory(fromCategory: string, toCategory: string
   });
 
   if (!response.ok) {
-    throw new Error(`Move notes category failed: ${response.status}`);
+    throw new Error(await readApiError(response, `Move notes category failed: ${response.status}`));
   }
 }

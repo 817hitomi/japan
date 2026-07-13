@@ -1,8 +1,15 @@
 "use client";
 
 import { AdSetting, defaultAdSettings, normalizeAdSettings } from "./adTypes";
+import { readApiError } from "../../lib/apiErrors";
 
 const adStorageKey = "japannote-ad-settings";
+
+export type AdsReadResult = {
+  source: "database" | "local";
+  ads: AdSetting[];
+  error?: string;
+};
 
 export function readStoredAds() {
   if (typeof window === "undefined") {
@@ -32,7 +39,7 @@ export async function fetchAdSettings() {
   const response = await fetch("/api/ads", { cache: "no-store" });
 
   if (!response.ok) {
-    throw new Error(`Ads API failed: ${response.status}`);
+    throw new Error(await readApiError(response, `Ads API failed: ${response.status}`));
   }
 
   const payload = (await response.json()) as { ads?: AdSetting[] };
@@ -40,12 +47,17 @@ export async function fetchAdSettings() {
 }
 
 export async function readAdsWithFallback() {
+  const result = await readAdsWithSource();
+  return result.ads;
+}
+
+export async function readAdsWithSource(): Promise<AdsReadResult> {
   try {
     const remoteAds = await fetchAdSettings();
     writeStoredAds(remoteAds);
-    return remoteAds;
-  } catch {
-    return readStoredAds();
+    return { source: "database", ads: remoteAds };
+  } catch (error) {
+    return { source: "local", ads: readStoredAds(), error: error instanceof Error ? error.message : "Ads API failed" };
   }
 }
 
@@ -58,7 +70,7 @@ export async function saveAdSettings(settings: AdSetting[]) {
   });
 
   if (!response.ok) {
-    throw new Error(`Save ads failed: ${response.status}`);
+    throw new Error(await readApiError(response, `Save ads failed: ${response.status}`));
   }
 
   const payload = (await response.json()) as { ads?: AdSetting[] };

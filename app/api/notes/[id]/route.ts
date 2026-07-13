@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getApiErrorMessage } from "../../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/server";
 import { PublicNoteRecord } from "../../../notes/noteTypes";
 import { noteToPayload, rowToNote } from "../noteMapper";
@@ -29,7 +30,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ note: rowToNote(data) });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to load note" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load note") }, { status: 500 });
   }
 }
 
@@ -51,6 +52,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ note: rowToNote(data) });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to update note" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to update note") }, { status: 500 });
   }
 }

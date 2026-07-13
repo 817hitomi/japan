@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
 import { AdSetting, defaultAdSettings, normalizeAdSettings } from "../../ads/adTypes";
 
@@ -49,8 +50,8 @@ export async function GET() {
     }
 
     return NextResponse.json({ ads: normalizeAdSettings((data ?? []).map(rowToAd)) });
-  } catch {
-    return NextResponse.json({ ads: defaultAdSettings });
+  } catch (error) {
+    return NextResponse.json({ ads: defaultAdSettings, error: getApiErrorMessage(error, "Unable to load ads") }, { status: 500 });
   }
 }
 
@@ -67,6 +68,6 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ ads: normalizeAdSettings((data ?? []).map(rowToAd)) });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to save ads" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to save ads") }, { status: 500 });
   }
 }

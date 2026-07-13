@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
 import { WordCardRecord } from "../../words/wordTypes";
 import { rowToWord, wordToPayload } from "./wordMapper";
@@ -24,7 +25,7 @@ export async function GET() {
 
     return NextResponse.json({ words: (data ?? []).map(rowToWord) });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to load words" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load words") }, { status: 500 });
   }
 }
 
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ word: rowToWord(data) }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to create word" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to create word") }, { status: 500 });
   }
 }
 
@@ -76,6 +77,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to delete words" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to delete words") }, { status: 500 });
   }
 }

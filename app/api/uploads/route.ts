@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +54,6 @@ export async function POST(request: NextRequest) {
     const { data } = supabase.storage.from(bucketName).getPublicUrl(path);
     return NextResponse.json({ url: data.publicUrl });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to upload file" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to upload file") }, { status: 500 });
   }
 }

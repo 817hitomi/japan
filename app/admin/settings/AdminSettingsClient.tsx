@@ -2,7 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { AdSetting, AdSlotId, defaultAdSettings } from "../../ads/adTypes";
-import { readAdsWithFallback, saveAdSettings, writeStoredAds } from "../../ads/adStorage";
+import { readAdsWithSource, saveAdSettings, writeStoredAds } from "../../ads/adStorage";
 import { AdminShell } from "../notes/AdminNotesClient";
 import styles from "../notes/AdminNotes.module.scss";
 
@@ -27,9 +27,14 @@ export default function AdminSettingsClient() {
   useEffect(() => {
     let active = true;
 
-    readAdsWithFallback().then((nextAds) => {
+    readAdsWithSource().then((result) => {
       if (active) {
-        setAds(nextAds);
+        setAds(result.ads);
+        setMessage(
+          result.source === "database"
+            ? "已載入資料庫廣告設定。"
+            : `資料庫讀取失敗，暫時顯示本機廣告設定：${result.error ?? "請確認 Supabase site_ads 資料表與環境變數。"}`
+        );
       }
     });
 
@@ -50,9 +55,9 @@ export default function AdminSettingsClient() {
       const saved = await saveAdSettings(ads);
       setAds(saved);
       setMessage("已儲存廣告設定，前台重新整理後會套用。");
-    } catch {
+    } catch (error) {
       writeStoredAds(ads);
-      setMessage("資料庫儲存失敗，已先保存在本機瀏覽器。請確認 Supabase site_ads 資料表與環境變數。");
+      setMessage(`資料庫儲存失敗，已先保存在本機瀏覽器：${error instanceof Error ? error.message : "請確認 Supabase site_ads 資料表與環境變數。"}`);
     }
   }
 

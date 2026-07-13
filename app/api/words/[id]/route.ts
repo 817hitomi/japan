@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getApiErrorMessage } from "../../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/server";
 import { WordCardRecord } from "../../../words/wordTypes";
 import { rowToWord, wordToPayload } from "../wordMapper";
@@ -41,6 +42,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ word: rowToWord(data) });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to update word" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to update word") }, { status: 500 });
   }
 }

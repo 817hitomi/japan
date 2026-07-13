@@ -11,6 +11,7 @@ import {
   importStoredNotesToDatabase,
   markStoredNotesImported,
   moveNotesCategory,
+  readNotesWithSource,
   readNotesWithFallback,
   saveNote as saveNoteToDatabase,
   uploadMediaFile
@@ -201,20 +202,23 @@ function NotesList() {
     let active = true;
 
     async function loadNotes() {
-      let nextNotes = await readNotesWithFallback("all");
+      const result = await readNotesWithSource("all");
+      let nextNotes = result.notes;
 
-      if (nextNotes.length === 0 && !hasImportedStoredNotes()) {
+      if (result.source === "local") {
+        setMessage(`資料庫讀取失敗，暫時顯示本機文章：${result.error ?? "請確認 Supabase learning_notes 資料表與環境變數。"}`);
+      } else if (nextNotes.length === 0 && !hasImportedStoredNotes()) {
         try {
           nextNotes = await importStoredNotesToDatabase();
           markStoredNotesImported();
-        } catch {
-          setMessage("資料庫目前是空的，本機資料匯入失敗，請確認 Supabase API 權限。");
+        } catch (error) {
+          setMessage(`資料庫目前是空的，本機資料匯入失敗：${error instanceof Error ? error.message : "請確認 Supabase API 權限。"}`);
         }
       }
 
       if (active) {
         setNotes(nextNotes);
-        if (nextNotes.length > 0) {
+        if (result.source === "database" && nextNotes.length > 0) {
           setMessage(`已載入 ${nextNotes.length} 篇學習筆記。`);
         }
       }
@@ -314,9 +318,9 @@ function NotesList() {
       setCategory("全部分類");
       setPage(1);
       setCategoryModal(null);
-    } catch {
+    } catch (error) {
       setNotes(await readNotesWithFallback("all"));
-      setMessage("分類已保存在本機，但同步資料庫失敗，請確認 Supabase 設定與資料表。");
+      setMessage(`分類已保存在本機，但同步資料庫失敗：${error instanceof Error ? error.message : "請確認 Supabase 設定與資料表。"}`);
     }
   }
 
@@ -343,9 +347,9 @@ function NotesList() {
       setMessage(`已刪除 ${selectedIds.length} 篇文章。`);
       setSelectedIds([]);
       setPage(1);
-    } catch {
+    } catch (error) {
       setNotes(await readNotesWithFallback("all"));
-      setMessage("刪除失敗，請確認 Supabase 設定與資料表。");
+      setMessage(`刪除失敗：${error instanceof Error ? error.message : "請確認 Supabase 設定與資料表。"}`);
     }
   }
 
@@ -614,13 +618,17 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
     let active = true;
 
     async function loadNote() {
-      const allNotes = await readNotesWithFallback("all");
+      const result = await readNotesWithSource("all");
+      const allNotes = result.notes;
 
       if (!active) {
         return;
       }
 
       setCategories(Array.from(new Set([...readCategories(), ...allNotes.map((item) => item.category).filter(Boolean)])));
+      if (result.source === "local") {
+        setMessage(`資料庫讀取失敗，暫時顯示本機文章：${result.error ?? "請確認 Supabase learning_notes 資料表與環境變數。"}`);
+      }
 
       if (mode === "new") {
         setDate(new Date().toISOString().slice(0, 10));
@@ -806,8 +814,8 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
       await saveNoteToDatabase(nextNote, mode === "edit" ? "update" : "create");
       setMessage(`${mode === "edit" ? "已更新文章" : "已新增文章"}，目前有 ${syncedBlocks.length} 個區塊，其中 ${blockCount} 個展開。`);
       router.push("/admin/notes");
-    } catch {
-      setMessage("儲存失敗，請確認 Supabase 設定與 learning_notes 資料表。");
+    } catch (error) {
+      setMessage(`儲存失敗：${error instanceof Error ? error.message : "請確認 Supabase 設定與 learning_notes 資料表。"}`);
     }
   }
 

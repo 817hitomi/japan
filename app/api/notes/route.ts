@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
 import { PublicNoteRecord } from "../../notes/noteTypes";
 import { noteToPayload, rowToNote } from "./noteMapper";
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ notes: (data ?? []).map(rowToNote) });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to load notes" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load notes") }, { status: 500 });
   }
 }
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ note: rowToNote(data) }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to create note" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to create note") }, { status: 500 });
   }
 }
 
@@ -71,7 +72,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to update notes" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to update notes") }, { status: 500 });
   }
 }
 
@@ -93,6 +94,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to delete notes" }, { status: 500 });
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to delete notes") }, { status: 500 });
   }
 }
