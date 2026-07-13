@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getRuntimeEnv } from "./lib/runtimeEnv";
 
 const protectedApiPrefixes = ["/api/uploads"];
 const adminWriteApiPrefixes = ["/api/ads", "/api/words"];
@@ -67,11 +68,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const adminUsername = process.env.ADMIN_USERNAME || "admin";
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminUsername = getRuntimeEnv("ADMIN_USERNAME") || "admin";
+  const adminPassword = getRuntimeEnv("ADMIN_PASSWORD");
 
   if (!adminPassword) {
-    if (process.env.NODE_ENV !== "production") {
+    if (getRuntimeEnv("NODE_ENV") !== "production") {
       return NextResponse.next();
     }
 

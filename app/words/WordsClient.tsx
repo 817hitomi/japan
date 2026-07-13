@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import AdSlot from "../ads/AdSlot";
+import { renderInlineRuby, renderWordRuby, shouldShowStandaloneKana, stripInlineReadings } from "../../lib/japaneseText";
 import homeStyles from "../page.module.scss";
 import { readWordCardsWithFallback } from "./wordStorage";
 import { WordCardRecord } from "./wordTypes";
@@ -86,29 +87,8 @@ function getRandomIndex(length: number, currentIndex: number) {
   return nextIndex;
 }
 
-function renderTextRuby(text: string) {
-  if (!text || text.includes("<ruby")) {
-    return text;
-  }
-
-  return text
-    .split(/(<[^>]+>)/g)
-    .map((part) => {
-      if (part.startsWith("<") && part.endsWith(">")) {
-        return part;
-      }
-
-      return part.replace(/([一-龯々〆ヵヶ]+)\(([ぁ-ゖァ-ヺー]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>");
-    })
-    .join("");
-}
-
-function hasInlineReading(text: string) {
-  return /[一-龯々〆ヵヶ]+\([ぁ-ゖァ-ヺー]+\)/.test(text);
-}
-
 function getSpeechText(text: string) {
-  return text.replace(/([一-龯々〆ヵヶ]+)\(([ぁ-ゖァ-ヺー]+)\)/g, "$1");
+  return stripInlineReadings(text);
 }
 
 function speakWord(word: WordCardRecord, mode: "word" | "example" = "word") {
@@ -145,7 +125,7 @@ function SpeakerButton({ mode = "word", word }: { mode?: "word" | "example"; wor
 }
 
 function WordFace({ side, word }: { side: "front" | "back"; word: WordCardRecord }) {
-  const shouldShowKana = side === "front" && word.kana && !hasInlineReading(word.japanese);
+  const shouldShowKana = side === "front" && shouldShowStandaloneKana(word.japanese, word.kana);
 
   return (
     <div className={`${styles.cardFace} ${side === "back" ? styles.cardBack : ""}`}>
@@ -153,13 +133,13 @@ function WordFace({ side, word }: { side: "front" | "back"; word: WordCardRecord
       {side === "front" ? (
         <div className={styles.wordMain}>
           {shouldShowKana ? <span>{word.kana}</span> : null}
-          <strong dangerouslySetInnerHTML={{ __html: renderTextRuby(word.japanese) }} />
+          <strong dangerouslySetInnerHTML={{ __html: renderWordRuby(word.japanese, word.kana) }} />
           <hr />
           <small>{word.chinese}</small>
         </div>
       ) : (
         <div className={`${styles.wordMain} ${styles.exampleMain}`}>
-          <p dangerouslySetInnerHTML={{ __html: renderTextRuby(word.exampleJapanese || word.japanese) }} />
+          <p dangerouslySetInnerHTML={{ __html: renderInlineRuby(word.exampleJapanese || word.japanese) }} />
           <hr />
           <small>{word.exampleChinese || word.chinese}</small>
         </div>

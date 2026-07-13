@@ -16,7 +16,7 @@ export const seedWordCards: WordCardRecord[] = [
     id: 1,
     category: "N5",
     kana: "みず",
-    japanese: "水(みず)",
+    japanese: "水",
     chinese: "水",
     exampleJapanese: "水(みず)を飲(の)みます。",
     exampleChinese: "我喝水。",

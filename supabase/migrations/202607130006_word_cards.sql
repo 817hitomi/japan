@@ -73,7 +73,7 @@ insert into public.word_cards (
 values (
   'N5',
   'みず',
-  '水(みず)',
+  '水',
   '水',
   '水(みず)を飲(の)みます。',
   '我喝水。',

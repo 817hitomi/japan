@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { splitStandaloneReading } from "../../../lib/japaneseText";
 import { AdminShell } from "../notes/AdminNotesClient";
 import { uploadMediaFile } from "../../notes/noteStorage";
 import { deleteWordCards, readWordCardsWithSource, saveWordCard, writeStoredWordCards } from "../../words/wordStorage";
@@ -90,12 +91,13 @@ export default function AdminWordsClient() {
   async function saveWord(event: FormEvent) {
     event.preventDefault();
 
+    const standaloneReading = splitStandaloneReading(draft.japanese);
     const nextWord = {
       ...draft,
       id: selectedId ?? (draft.id || Date.now()),
       category: draft.category.trim() || "N5",
-      japanese: draft.japanese.trim(),
-      kana: draft.kana.trim(),
+      japanese: standaloneReading?.japanese ?? draft.japanese.trim(),
+      kana: draft.kana.trim() || standaloneReading?.kana || "",
       chinese: draft.chinese.trim(),
       exampleJapanese: draft.exampleJapanese.trim(),
       exampleChinese: draft.exampleChinese.trim(),
@@ -225,13 +227,13 @@ export default function AdminWordsClient() {
                 <span>日文</span>
                 <input
                   value={draft.japanese}
-                  placeholder="例：水(みず)"
+                  placeholder="例：水"
                   onChange={(event) => setDraft((current) => ({ ...current, japanese: event.target.value }))}
                 />
               </label>
               <label>
                 <span>假名</span>
-                <input value={draft.kana} onChange={(event) => setDraft((current) => ({ ...current, kana: event.target.value }))} />
+                <input value={draft.kana} placeholder="例：みず" onChange={(event) => setDraft((current) => ({ ...current, kana: event.target.value }))} />
               </label>
               <label>
                 <span>中譯</span>

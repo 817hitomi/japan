@@ -4,6 +4,7 @@ import Image from "next/image";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import AdSlot from "./ads/AdSlot";
 import { getAdSlotFromLabel } from "./ads/adTypes";
+import { renderInlineRuby } from "../lib/japaneseText";
 import NotesFrontClient from "./notes/NotesFrontClient";
 import { PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
 import styles from "./page.module.scss";
@@ -48,23 +49,6 @@ function stripHtml(html: string) {
   return html.replace(/<[^>]*>/g, "").trim();
 }
 
-function renderTextRuby(html: string) {
-  if (!html || html.includes("<ruby")) {
-    return html;
-  }
-
-  return html
-    .split(/(<[^>]+>)/g)
-    .map((part) => {
-      if (part.startsWith("<") && part.endsWith(">")) {
-        return part;
-      }
-
-      return part.replace(/([一-龯々〆ヵヶ]+)\(([ぁ-ゖァ-ヺー]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>");
-    })
-    .join("");
-}
-
 function getPlainLines(html: string) {
   return html
     .replace(/<\/(div|p|li)>/gi, "\n")
@@ -103,7 +87,7 @@ function NoteContent({ html }: { html: string }) {
             return (
               <p
                 className={isJapaneseLine ? styles.noteJapaneseLine : styles.noteChineseLine}
-                dangerouslySetInnerHTML={{ __html: renderTextRuby(line) }}
+                dangerouslySetInnerHTML={{ __html: renderInlineRuby(line) }}
                 key={line}
               />
             );
@@ -568,7 +552,7 @@ export default function Home() {
                   {block.type === "note" ? (
                     <NoteContent html={block.html} />
                   ) : (
-                    <div className={styles.poemCard} dangerouslySetInnerHTML={{ __html: block.type === "text" ? renderTextRuby(block.html) : block.html }} />
+                    <div className={styles.poemCard} dangerouslySetInnerHTML={{ __html: block.type === "text" ? renderInlineRuby(block.html) : block.html }} />
                   )}
                 </section>
               );

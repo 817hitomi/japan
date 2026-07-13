@@ -1,3 +1,4 @@
+import { splitStandaloneReading } from "../../../lib/japaneseText";
 import { normalizeWordCards, WordCardRecord } from "../../words/wordTypes";
 
 type WordCardRow = {
@@ -32,11 +33,14 @@ export function rowToWord(row: WordCardRow): WordCardRecord {
 
 export function wordToPayload(word: WordCardRecord) {
   const normalized = normalizeWordCards([word])[0];
+  const standaloneReading = splitStandaloneReading(normalized.japanese);
+  const japanese = standaloneReading?.japanese ?? normalized.japanese;
+  const kana = normalized.kana.trim() || standaloneReading?.kana || "";
 
   return {
     category: normalized.category || "N5",
-    kana: normalized.kana ?? "",
-    japanese: normalized.japanese.trim(),
+    kana,
+    japanese: japanese.trim(),
     chinese: normalized.chinese.trim(),
     example_japanese: normalized.exampleJapanese.trim(),
     example_chinese: normalized.exampleChinese.trim(),
