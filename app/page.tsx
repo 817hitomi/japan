@@ -4,6 +4,7 @@ import Image from "next/image";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import AdSlot from "./ads/AdSlot";
 import { getAdSlotFromLabel } from "./ads/adTypes";
+import NotesFrontClient from "./notes/NotesFrontClient";
 import { PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
 import styles from "./page.module.scss";
 
@@ -231,6 +232,7 @@ function ArticleToc({
 export default function Home() {
   const [notes, setNotes] = useState<PublicNoteRecord[]>([]);
   const [currentNote, setCurrentNote] = useState<PublicNoteRecord | null>(null);
+  const [hasSelectedNote, setHasSelectedNote] = useState<boolean | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [siteCount, setSiteCount] = useState(0);
   const sidebarRef = useRef<HTMLElement | null>(null);
@@ -249,10 +251,11 @@ export default function Home() {
       }
 
       setNotes(storedNotes);
-      const noteId = Number(new URLSearchParams(window.location.search).get("note"));
-
-      const selectedNote = Number.isFinite(noteId) ? storedNotes.find((note) => note.id === noteId) : undefined;
-      setCurrentNote(selectedNote ?? storedNotes[0] ?? null);
+      const rawNoteId = new URLSearchParams(window.location.search).get("note");
+      const noteId = Number(rawNoteId);
+      const selectedNote = rawNoteId && Number.isFinite(noteId) ? storedNotes.find((note) => note.id === noteId) : undefined;
+      setCurrentNote(selectedNote ?? null);
+      setHasSelectedNote(Boolean(selectedNote));
     }
 
     loadNotes();
@@ -429,6 +432,10 @@ export default function Home() {
       window.removeEventListener("resize", scheduleUpdate);
     };
   }, [categories.length, popularNotes.length, searchResults.length, tags.length, tocItems.length]);
+
+  if (hasSelectedNote !== true) {
+    return <NotesFrontClient />;
+  }
 
   return (
     <main className={styles.page}>
