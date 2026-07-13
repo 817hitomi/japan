@@ -69,7 +69,7 @@ export function normalizeAdSettings(settings: Partial<AdSetting>[] | unknown): A
       ...defaultSetting,
       ...matched,
       slot: defaultSetting.slot,
-      label: matched?.label || defaultSetting.label,
+      label: defaultSetting.label,
       enabled: Boolean(matched?.enabled),
       channel: matched?.channel === "html" ? "html" : "affiliate",
       linkUrl: matched?.linkUrl ?? "",
