@@ -134,7 +134,7 @@
   }
 
   strong {
-    color: #7d7d7d;
+    color: #638f74;
     font-size: 46px;
     font-weight: 800;
     line-height: 1;
@@ -146,9 +146,8 @@
   }
 
   rt {
-    color: #8f8f8f;
-    font-size: 52%;
-    font-weight: 700;
+    color: #4d4d4d;
+    font-size: 40%;
     line-height: 1;
   }
 
@@ -163,7 +162,7 @@
   small {
     margin: 0;
     color: #8c8c8c;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     line-height: 1.7;
     text-align: center;
@@ -187,8 +186,8 @@
   z-index: 3;
   display: grid;
   gap: 32px;
-  width: min(980px, calc(100% - 48px));
-  margin: 0 auto 96px;
+  width: min(1260px, calc(100% - 48px));
+  margin: 0 auto 180px;
 
   h2 {
     display: flex;
@@ -212,7 +211,7 @@
 .cardGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 42px 48px;
+  gap: 120px 70px;
 }
 
 .wordCard {
@@ -228,7 +227,7 @@
   min-height: 188px;
 
   .cardFace {
-    min-height: 188px;
+    min-height: 250px;
     padding-block: 36px 24px;
     box-shadow: 0 14px 0 rgba(155, 192, 168, 0.72);
   }

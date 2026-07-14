@@ -949,6 +949,121 @@
   }
 }
 
+.settingsSection {
+  display: grid;
+  gap: 18px;
+
+  h2 {
+    margin: 0;
+    color: var(--admin-text);
+    font-size: 20px;
+  }
+}
+
+.quoteAdminForm {
+  display: grid;
+  gap: 24px;
+  width: min(820px, 100%);
+  margin: 0 auto;
+
+  button,
+  input,
+  textarea {
+    border: 1px solid var(--admin-border);
+    border-radius: var(--button-radius);
+    background: #ffffff;
+    color: var(--admin-text);
+    outline: none;
+  }
+
+  button {
+    min-width: 118px;
+    height: 42px;
+    padding: 0 20px;
+    background: var(--admin-primary);
+    color: #ffffff;
+    cursor: pointer;
+  }
+
+  input {
+    height: 42px;
+    padding: 0 14px;
+  }
+
+  textarea {
+    min-height: 68px;
+    padding: 12px 14px;
+    resize: vertical;
+  }
+}
+
+.quoteActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.quoteEditorPanel {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--button-radius);
+  background: #ffffff;
+
+  label {
+    display: grid;
+    gap: 10px;
+  }
+
+  span {
+    color: var(--admin-primary);
+    font-weight: 900;
+  }
+
+  textarea {
+    min-height: 150px;
+    font-size: 18px;
+    line-height: 1.8;
+  }
+}
+
+.quoteList {
+  display: grid;
+  gap: 12px;
+
+  button,
+  p {
+    margin: 0;
+  }
+
+  button {
+    min-height: 58px;
+    height: auto;
+    padding: 14px 18px;
+    background: #ffffff;
+    color: var(--admin-text);
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.6;
+    text-align: left;
+  }
+
+  p {
+    padding: 18px;
+    border: 1px dashed var(--admin-border);
+    border-radius: var(--button-radius);
+    color: #b9aaaa;
+  }
+}
+
+.currentQuoteItem {
+  border-color: var(--admin-primary) !important;
+  background: #fff6f6 !important;
+  color: var(--admin-primary) !important;
+}
+
 .adTabs {
   display: flex;
   flex-wrap: wrap;

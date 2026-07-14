@@ -13,7 +13,7 @@ const navItems = [
   { label: "單字卡", href: "/words" },
   { label: "模擬測驗", href: "#" },
   { label: "學習筆記", href: "/notes" },
-  { label: "登入", href: "#" }
+  { label: "登入", href: "/admin" }
 ];
 
 const socialLinks = [
@@ -432,10 +432,10 @@ export default function Home() {
 
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <a className={styles.logoMark} href="#" aria-label="JapanNote">
+          <a className={styles.logoMark} href="/" aria-label="JapanNote">
             <Image src="/brand/logo.png" alt="" width={52} height={52} priority />
           </a>
-          <a className={styles.badge} href="#" aria-label="JapanNote YouTube">
+          <a className={styles.badge} href="https://www.youtube.com/@japanNote" aria-label="JapanNote YouTube" target="_blank" rel="noreferrer">
             <Image src="/brand/japannote-badge.png" alt="JapanNote" width={204} height={47} priority />
           </a>
           <nav className={styles.nav} aria-label="主要選單">

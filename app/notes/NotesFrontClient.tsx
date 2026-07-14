@@ -1,23 +1,25 @@
 "use client";
 
 import Image from "next/image";
+import type { KeyboardEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import AdSlot from "../ads/AdSlot";
 import { PublicNoteRecord, readNotesWithFallback } from "./noteStorage";
+import { readWordCardsWithFallback } from "../words/wordStorage";
+import { WordCardRecord } from "../words/wordTypes";
+import { defaultQuotes, QuoteRecord } from "../quotes/quoteTypes";
+import { readQuotesWithFallback } from "../quotes/quoteStorage";
+import { renderWordRuby, shouldShowStandaloneKana, stripInlineReadings } from "../../lib/japaneseText";
 import homeStyles from "../page.module.scss";
 import styles from "./NotesFront.module.scss";
 
-const statItems = [
-  ["1,000", "學習例句"],
-  ["0", "已收錄文章"],
-  ["N5", "目前等級"]
-];
+const publishedStatus = "已發布";
 
 const navItems = [
   { label: "單字卡", href: "/words" },
   { label: "模擬測驗", href: "#" },
   { label: "學習筆記", href: "/notes" },
-  { label: "登入", href: "#" }
+  { label: "登入", href: "/admin" }
 ];
 
 const socialLinks = [
@@ -41,18 +43,152 @@ const parallaxBalls = [
 ];
 
 function stripHtml(html: string) {
-  return html.replace(/<[^>]*>/g, "").trim();
+  return html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
 }
 
 function getNoteExcerpt(note: PublicNoteRecord) {
   const firstText = note.blocks.find((block) => block.type === "text" || block.type === "note");
   const text = firstText ? stripHtml(firstText.html) : "";
-  return note.summary || text || "日文學習筆記。";
+  return note.summary || text || "日文學習筆記";
 }
 
 function getNoteImage(note: PublicNoteRecord) {
   const imageBlock = note.blocks.find((block) => block.type === "image" && block.imageUrl);
   return note.coverUrl || imageBlock?.imageUrl || "";
+}
+
+function shuffleBySession<T>(items: T[]) {
+  const nextItems = [...items];
+
+  for (let index = nextItems.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [nextItems[index], nextItems[swapIndex]] = [nextItems[swapIndex], nextItems[index]];
+  }
+
+  return nextItems;
+}
+
+function SectionTitle({ title }: { title: string }) {
+  return (
+    <div className={styles.sectionTitle}>
+      <span />
+      <h2>{title}</h2>
+    </div>
+  );
+}
+
+function NoteCard({ note }: { note: PublicNoteRecord }) {
+  const image = getNoteImage(note);
+  const tags = note.tags
+    .split(/[,，、\s]+/)
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  return (
+    <a className={styles.card} href={`/?note=${note.id}`}>
+      <div className={styles.cover}>
+        {image ? <img className={styles.coverImage} src={image} alt="" /> : <div className={styles.coverFallback}>{note.category || "N5"}</div>}
+        {note.category ? <span className={styles.categoryPill}>{note.category}</span> : null}
+      </div>
+      <div className={styles.cardBody}>
+        <h3>{note.title || "未命名筆記"}</h3>
+        <p>{getNoteExcerpt(note)}</p>
+        <div className={styles.cardMeta}>
+          <span>{note.date}</span>
+          {tags.map((tag) => (
+            <strong key={tag}>#{tag}</strong>
+          ))}
+        </div>
+      </div>
+    </a>
+  );
+}
+
+function speakWord(word: WordCardRecord) {
+  const audioUrl = word.frontAudioUrl || word.audioUrl;
+
+  if (audioUrl) {
+    new Audio(audioUrl).play().catch(() => undefined);
+    return;
+  }
+
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(stripInlineReadings(word.japanese));
+    utterance.lang = "ja-JP";
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+function WordCard({ word }: { word: WordCardRecord }) {
+  const shouldShowKana = shouldShowStandaloneKana(word.japanese, word.kana);
+
+  return (
+    <article className={styles.wordCard}>
+      <button
+        className={styles.audioMark}
+        type="button"
+        onClick={() => speakWord(word)}
+        aria-label={`播放 ${stripInlineReadings(word.japanese)}`}
+      >
+        <img src="/brand/muc.png" alt="" />
+      </button>
+      <div className={styles.wordCardTop}>
+        {shouldShowKana ? <small>{word.kana}</small> : <small>{word.category}</small>}
+        <strong dangerouslySetInnerHTML={{ __html: renderWordRuby(word.japanese, word.kana) }} />
+      </div>
+      <div className={styles.wordCardBottom}>{word.chinese}</div>
+    </article>
+  );
+}
+
+function speakBoardItem(item: QuoteRecord) {
+  if (item.frontAudioUrl) {
+    new Audio(item.frontAudioUrl).play().catch(() => undefined);
+    return;
+  }
+
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(stripInlineReadings(item.japanese));
+    utterance.lang = "ja-JP";
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+function HeroBoardCard({ item }: { item: QuoteRecord }) {
+  const shouldShowKana = shouldShowStandaloneKana(item.japanese, item.kana);
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      speakBoardItem(item);
+    }
+  };
+
+  return (
+    <article
+      className={styles.heroBoardCard}
+      role="button"
+      tabIndex={0}
+      onClick={() => speakBoardItem(item)}
+      onKeyDown={handleKeyDown}
+      aria-label={`播放 ${stripInlineReadings(item.japanese)}`}
+    >
+      <div className={styles.heroBoardContent}>
+        {shouldShowKana ? <small>{item.kana}</small> : null}
+        <strong dangerouslySetInnerHTML={{ __html: renderWordRuby(item.japanese, item.kana) }} />
+        <span>{item.chinese}</span>
+      </div>
+    </article>
+  );
 }
 
 function ParallaxBackground() {
@@ -95,56 +231,47 @@ function ParallaxBackground() {
 
 export default function NotesFrontClient() {
   const [notes, setNotes] = useState<PublicNoteRecord[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [words, setWords] = useState<WordCardRecord[]>([]);
+  const [boardItems, setBoardItems] = useState<QuoteRecord[]>(defaultQuotes);
 
   useEffect(() => {
     let active = true;
 
-    async function loadNotes() {
-      const nextNotes = await readNotesWithFallback("published");
+    async function loadHomeData() {
+      const [nextNotes, nextWords, nextQuotes] = await Promise.all([
+        readNotesWithFallback("published"),
+        readWordCardsWithFallback(),
+        readQuotesWithFallback()
+      ]);
 
-      if (active) {
-        setNotes(nextNotes);
+      if (!active) {
+        return;
       }
+
+      setNotes(nextNotes);
+      setWords(nextWords);
+      setBoardItems(nextQuotes.length > 0 ? nextQuotes : defaultQuotes);
     }
 
-    loadNotes();
-    setSelectedCategory(new URLSearchParams(window.location.search).get("category") ?? "");
+    loadHomeData();
 
     return () => {
       active = false;
     };
   }, []);
 
-  const categories = useMemo(() => {
-    const names = notes
-      .filter((note) => note.status === "已發布")
-      .map((note) => note.category.trim())
-      .filter(Boolean);
-
-    return Array.from(new Set(names)).sort((first, second) => first.localeCompare(second, "zh-Hant"));
-  }, [notes]);
-
   const publishedNotes = useMemo(
-    () => {
-      const keyword = searchQuery.trim().toLowerCase();
-
-      return notes
-        .filter((note) => note.status === "已發布")
-        .filter((note) => !selectedCategory || note.category === selectedCategory)
-        .filter((note) => {
-          if (!keyword) {
-            return true;
-          }
-
-          return [note.title, note.summary, note.category, note.tags]
-            .some((value) => value.toLowerCase().includes(keyword));
-        })
-        .sort((a, b) => b.date.localeCompare(a.date));
-    },
-    [notes, searchQuery, selectedCategory]
+    () =>
+      notes
+        .filter((note) => note.status === publishedStatus)
+        .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id),
+    [notes]
   );
+
+  const latestNotes = useMemo(() => shuffleBySession(publishedNotes.slice(0, 8)).slice(0, 2), [publishedNotes]);
+  const recommendedNotes = useMemo(() => shuffleBySession(publishedNotes).slice(0, 4), [publishedNotes]);
+  const randomWords = useMemo(() => shuffleBySession(words).slice(0, 4), [words]);
+  const randomBoardItem = useMemo(() => shuffleBySession(boardItems)[0] ?? defaultQuotes[0], [boardItems]);
 
   return (
     <main className={homeStyles.page}>
@@ -155,12 +282,12 @@ export default function NotesFrontClient() {
           <a className={homeStyles.logoMark} href="/" aria-label="JapanNote">
             <Image src="/brand/logo.png" alt="" width={52} height={52} priority />
           </a>
-          <a className={homeStyles.badge} href="/" aria-label="JapanNote YouTube">
+          <a className={homeStyles.badge} href="https://www.youtube.com/@japanNote" aria-label="JapanNote YouTube" target="_blank" rel="noreferrer">
             <Image src="/brand/japannote-badge.png" alt="JapanNote" width={204} height={47} priority />
           </a>
-          <nav className={homeStyles.nav} aria-label="主要選單">
+          <nav className={homeStyles.nav} aria-label="主選單">
             {navItems.map((item) => (
-              <a key={item.label} href={item.href} className={item.label === "學習筆記" ? homeStyles.activeNav : undefined}>
+              <a key={item.label} href={item.href}>
                 {item.label}
               </a>
             ))}
@@ -171,21 +298,14 @@ export default function NotesFrontClient() {
       <section className={homeStyles.hero}>
         <div className={homeStyles.heroInner}>
           <div className={homeStyles.heroCopy}>
-            <h1>{selectedCategory || "學習筆記"}</h1>
-            <p className={homeStyles.heroLead}>整理日文學習文章、例句筆記與主題分類</p>
-            <div className={homeStyles.stats} aria-label="學習筆記統計">
-              {statItems.map(([value, label], index) => (
-                <div key={label}>
-                  <strong>{index === 1 ? publishedNotes.length : value}</strong>
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
+            <h1>日文筆記</h1>
+            <p className={homeStyles.heroLead}>每天學習一點點</p>
+            <HeroBoardCard item={randomBoardItem} />
           </div>
           <div className={homeStyles.heroArt}>
             <div className={homeStyles.dotGrid} aria-hidden="true" />
-            <Image src="/brand/01.png" alt="學習筆記插圖" width={420} height={420} priority />
-            <div className={homeStyles.speech}>每日 10 分鐘學日文</div>
+            <Image src="/brand/01.png" alt="JapanNote 角色" width={420} height={420} priority />
+            <div className={homeStyles.speech}>有 1 位一起學了喔</div>
           </div>
         </div>
       </section>
@@ -193,52 +313,48 @@ export default function NotesFrontClient() {
       <AdSlot slot="top-banner" className={homeStyles.adWide} />
 
       <div className={styles.notesLayout}>
-        <section className={styles.filterBar} aria-label="文章篩選">
-          <label>
-            <span>搜尋文章</span>
-            <input
-              type="search"
-              value={searchQuery}
-              placeholder="輸入標題、摘要或 tag"
-              onChange={(event) => setSearchQuery(event.target.value)}
-            />
-          </label>
-          <label>
-            <span>分類</span>
-            <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
-              <option value="">全部分類</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
+        <section className={styles.homeSection}>
+          <SectionTitle title="最新筆記" />
+          {latestNotes.length > 0 ? (
+            <div className={styles.grid}>
+              {latestNotes.map((note) => (
+                <NoteCard note={note} key={note.id} />
               ))}
-            </select>
-          </label>
+            </div>
+          ) : (
+            <p className={styles.empty}>還沒有已發布的筆記。</p>
+          )}
         </section>
 
-        <section className={styles.grid} aria-label="已發布文章">
-          {publishedNotes.map((note) => {
-            const image = getNoteImage(note);
-
-            return (
-              <a className={styles.card} href={`/?note=${note.id}`} key={note.id}>
-                <div className={styles.cover}>
-                  {image ? <img className={styles.coverImage} src={image} alt="" /> : <div className={styles.coverFallback}>{note.category}</div>}
-                  <div className={styles.coverMeta}>
-                    <span>{note.category}</span>
-                    <time dateTime={note.date}>{note.date}</time>
-                  </div>
-                </div>
-                <div className={styles.cardBody}>
-                  <h2>{note.title}</h2>
-                  <p>{getNoteExcerpt(note)}</p>
-                </div>
-              </a>
-            );
-          })}
+        <section className={styles.homeSection}>
+          <SectionTitle title="單字卡" />
+          {randomWords.length > 0 ? (
+            <div className={styles.wordGrid}>
+              {randomWords.map((word) => (
+                <WordCard word={word} key={word.id} />
+              ))}
+            </div>
+          ) : (
+            <p className={styles.empty}>還沒有單字卡。</p>
+          )}
         </section>
 
-        {publishedNotes.length === 0 && <p className={styles.empty}>目前沒有已發布文章。</p>}
+        <AdSlot slot="article-mid" className={homeStyles.adWide} />
+
+        <section className={styles.homeSection}>
+          <SectionTitle title="推薦筆記" />
+          {recommendedNotes.length > 0 ? (
+            <div className={styles.grid}>
+              {recommendedNotes.map((note) => (
+                <NoteCard note={note} key={note.id} />
+              ))}
+            </div>
+          ) : (
+            <p className={styles.empty}>還沒有推薦筆記。</p>
+          )}
+        </section>
+
+        <AdSlot slot="article-bottom" className={homeStyles.adWide} />
       </div>
 
       <footer className={homeStyles.footer}>

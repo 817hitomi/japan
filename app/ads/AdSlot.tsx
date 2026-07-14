@@ -10,8 +10,8 @@ type AdSlotProps = {
   fallbackLabel?: string;
 };
 
-function renderPlaceholder(label: string) {
-  return <span>{label}</span>;
+function renderPlaceholder() {
+  return null;
 }
 
 export default function AdSlot({ slot, className, fallbackLabel = "AD 廣告" }: AdSlotProps) {
@@ -54,7 +54,7 @@ export default function AdSlot({ slot, className, fallbackLabel = "AD 廣告" }:
   }, [setting]);
 
   if (!setting?.enabled) {
-    return <section className={className}>{renderPlaceholder(fallbackLabel)}</section>;
+    return <section className={className}>{renderPlaceholder()}</section>;
   }
 
   if (setting.channel === "html" && setting.htmlCode.trim()) {
@@ -65,15 +65,21 @@ export default function AdSlot({ slot, className, fallbackLabel = "AD 廣告" }:
     );
   }
 
-  if (setting.linkUrl.trim() && setting.imageUrl.trim()) {
+  if (setting.imageUrl.trim()) {
+    const image = <img src={setting.imageUrl} alt={setting.altText || setting.label} />;
+
     return (
       <section className={className}>
-        <a href={setting.linkUrl} target="_blank" rel="sponsored noopener noreferrer">
-          <img src={setting.imageUrl} alt={setting.altText || setting.label} />
-        </a>
+        {setting.linkUrl.trim() ? (
+          <a href={setting.linkUrl} target="_blank" rel="sponsored noopener noreferrer">
+            {image}
+          </a>
+        ) : (
+          image
+        )}
       </section>
     );
   }
 
-  return <section className={className}>{renderPlaceholder(fallbackLabel)}</section>;
+  return <section className={className}>{renderPlaceholder()}</section>;
 }
