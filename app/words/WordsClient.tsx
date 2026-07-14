@@ -231,7 +231,7 @@ export default function WordsClient() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedKanaRow, setSelectedKanaRow] = useState("a");
+  const [selectedKanaRow, setSelectedKanaRow] = useState("");
   const [wordListPage, setWordListPage] = useState(1);
 
   useEffect(() => {
@@ -258,7 +258,7 @@ export default function WordsClient() {
   );
 
   const selectedRowWords = useMemo(
-    () => filteredWords.filter((word) => getKanaRowKey(word) === selectedKanaRow),
+    () => (selectedKanaRow ? filteredWords.filter((word) => getKanaRowKey(word) === selectedKanaRow) : filteredWords),
     [filteredWords, selectedKanaRow]
   );
 
@@ -282,7 +282,7 @@ export default function WordsClient() {
   useEffect(() => {
     setActiveIndex(0);
     setFlipped(false);
-    setSelectedKanaRow("a");
+    setSelectedKanaRow("");
   }, [selectedCategory]);
 
   useEffect(() => {
@@ -390,6 +390,14 @@ export default function WordsClient() {
       <section className={styles.wordListSection}>
         <h2>單字卡</h2>
         <div className={styles.kanaRowTabs} aria-label="單字行分類">
+          <button
+            className={!selectedKanaRow ? styles.activeKanaRow : ""}
+            type="button"
+            onClick={() => setSelectedKanaRow("")}
+          >
+            <strong>全部</strong>
+            <span>{filteredWords.length}</span>
+          </button>
           {wordListCounts.map((row) => (
             <button
               key={row.key}
