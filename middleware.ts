@@ -23,6 +23,10 @@ function isProtectedPath(request: NextRequest) {
     return request.method !== "GET" || searchParams.get("status") !== "published";
   }
 
+  if (request.method === "GET" && /^\/api\/notes\/[^/]+\/og-image$/.test(pathname)) {
+    return false;
+  }
+
   if (pathname.startsWith("/api/notes/")) {
     return true;
   }

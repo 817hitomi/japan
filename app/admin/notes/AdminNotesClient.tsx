@@ -139,14 +139,15 @@ async function uploadVideoFile(event: ChangeEvent<HTMLInputElement>, callback: (
 function Sidebar() {
   const pathname = usePathname();
   const navItems = [
-    { label: "總覽", href: "/admin/notes" },
+    { label: "總覽", href: "/admin" },
     { label: "單字卡", href: "/admin/words" },
-    { label: "模擬測驗", href: "/admin/notes" },
+    { label: "模擬測驗", href: "/admin/quizzes" },
     { label: "學習筆記", href: "/admin/notes" },
-    { label: "通路管理", href: "/admin/settings" },
+    { label: "通路管理", href: "/admin/channels" },
     { label: "首頁白版", href: "/admin/quotes" },
     { label: "設定", href: "/admin/settings" }
   ];
+  const activeIndex = navItems.findIndex((item) => pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`)));
 
   return (
     <aside className={styles.sidebar}>
@@ -158,8 +159,8 @@ function Sidebar() {
         <span>JapanNote</span>
       </div>
       <nav className={styles.sideNav} aria-label="後台功能">
-        {navItems.map((item) => (
-          <Link key={item.label} href={item.href} className={pathname === item.href ? styles.active : undefined}>
+        {navItems.map((item, index) => (
+          <Link key={item.label} href={item.href} className={index === activeIndex ? styles.active : undefined}>
             {item.label}
           </Link>
         ))}

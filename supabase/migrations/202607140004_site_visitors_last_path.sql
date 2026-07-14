@@ -1,3 +1,6 @@
+alter table public.site_visitors
+  add column if not exists last_path text not null default '/';
+
 create or replace function public.record_site_visit(p_visitor_id text, p_path text default '/')
 returns table(visitor_count bigint, visit_count bigint)
 language plpgsql

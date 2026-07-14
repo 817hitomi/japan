@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import AdminOverviewClient from "./AdminOverviewClient";
 
 export default function AdminPage() {
-  redirect("/admin/notes");
+  return <AdminOverviewClient />;
 }

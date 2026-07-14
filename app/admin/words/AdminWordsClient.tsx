@@ -21,8 +21,23 @@ const emptyWord: WordCardRecord = {
   backAudioUrl: ""
 };
 
+const wordsPerPage = 10;
+const maxVisiblePageButtons = 10;
+
 function getWordDuplicateKey(word: Pick<WordCardRecord, "japanese" | "kana">) {
   return `${word.japanese.trim()}\n${word.kana.trim()}`;
+}
+
+function getVisiblePageNumbers(currentPage: number, totalPages: number) {
+  if (totalPages <= maxVisiblePageButtons) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const halfWindow = Math.floor(maxVisiblePageButtons / 2);
+  const lastStartPage = totalPages - maxVisiblePageButtons + 1;
+  const startPage = Math.max(1, Math.min(currentPage - halfWindow + 1, lastStartPage));
+
+  return Array.from({ length: maxVisiblePageButtons }, (_, index) => startPage + index);
 }
 
 export default function AdminWordsClient() {
@@ -31,6 +46,7 @@ export default function AdminWordsClient() {
   const [draft, setDraft] = useState<WordCardRecord>(emptyWord);
   const [showEditor, setShowEditor] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [page, setPage] = useState(1);
   const [message, setMessage] = useState("單字卡會儲存在資料庫。");
 
   const filteredWords = useMemo(() => {
@@ -47,6 +63,18 @@ export default function AdminWordsClient() {
         .includes(keyword)
     );
   }, [searchText, words]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredWords.length / wordsPerPage));
+  const visiblePages = getVisiblePageNumbers(page, pageCount);
+  const visibleWords = filteredWords.slice((page - 1) * wordsPerPage, page * wordsPerPage);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchText]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, pageCount));
+  }, [pageCount]);
 
   useEffect(() => {
     readWordCardsWithSource()
@@ -317,7 +345,7 @@ export default function AdminWordsClient() {
                 </tr>
               </thead>
               <tbody>
-                {filteredWords.map((word) => (
+                {visibleWords.map((word) => (
                   <tr key={word.id} className={selectedId === word.id ? styles.selectedRow : undefined} onClick={() => selectWord(word)}>
                     <td>
                       <input checked={selectedId === word.id} readOnly type="checkbox" aria-label={`選取 ${word.japanese}`} />
@@ -335,6 +363,40 @@ export default function AdminWordsClient() {
               </tbody>
             </table>
           </div>
+          {pageCount > 1 ? (
+            <nav className={styles.pagination} aria-label="單字列表頁碼">
+              {pageCount > maxVisiblePageButtons ? (
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  disabled={page === 1}
+                  aria-label="上一頁"
+                >
+                  ‹
+                </button>
+              ) : null}
+              {visiblePages.map((item) => (
+                <button
+                  key={item}
+                  className={item === page ? styles.currentPage : undefined}
+                  type="button"
+                  onClick={() => setPage(item)}
+                >
+                  {item}
+                </button>
+              ))}
+              {pageCount > maxVisiblePageButtons ? (
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                  disabled={page === pageCount}
+                  aria-label="下一頁"
+                >
+                  ›
+                </button>
+              ) : null}
+            </nav>
+          ) : null}
         </>
       )}
     </AdminShell>

@@ -11,6 +11,7 @@ type HomePageProps = {
 };
 
 type NoteMeta = {
+  blocks: unknown;
   cover_url: string | null;
   published_date: string | null;
   summary: string | null;
@@ -55,6 +56,33 @@ function toAbsoluteUrl(url: string, baseUrl: string) {
   }
 }
 
+function getBlockImageUrl(blocks: unknown) {
+  if (!Array.isArray(blocks)) {
+    return "";
+  }
+
+  const imageBlock = blocks.find((block) => {
+    if (!block || typeof block !== "object") {
+      return false;
+    }
+
+    const candidate = block as { imageUrl?: unknown; type?: unknown };
+    return candidate.type === "image" && typeof candidate.imageUrl === "string" && candidate.imageUrl.length > 0;
+  }) as { imageUrl?: string } | undefined;
+
+  return imageBlock?.imageUrl ?? "";
+}
+
+function getNoteImageUrl(noteMeta: NoteMeta | null, noteId?: string) {
+  const storedImage = noteMeta?.cover_url || getBlockImageUrl(noteMeta?.blocks);
+
+  if (storedImage?.startsWith("data:image/") && noteId) {
+    return `/api/notes/${encodeURIComponent(noteId)}/og-image`;
+  }
+
+  return storedImage || "";
+}
+
 async function readNoteMeta(noteId?: string): Promise<NoteMeta | null> {
   const numericId = Number(noteId);
   const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL");
@@ -66,7 +94,7 @@ async function readNoteMeta(noteId?: string): Promise<NoteMeta | null> {
 
   try {
     const response = await fetch(
-      `${supabaseUrl.replace(/\/$/, "")}/rest/v1/learning_notes?id=eq.${encodeURIComponent(String(numericId))}&select=title,summary,cover_url,published_date&limit=1`,
+      `${supabaseUrl.replace(/\/$/, "")}/rest/v1/learning_notes?id=eq.${encodeURIComponent(String(numericId))}&select=title,summary,cover_url,published_date,blocks&limit=1`,
       {
         cache: "no-store",
         headers: {
@@ -94,7 +122,7 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
   const noteMeta = title && summary && image ? null : await readNoteMeta(noteId);
   const pageTitle = title || noteMeta?.title || "日文學習筆記 | JapanNote";
   const description = summary || noteMeta?.summary || "自學日文筆記";
-  const imageUrl = toAbsoluteUrl(image || noteMeta?.cover_url || "/brand/logo_b.png", baseUrl);
+  const imageUrl = toAbsoluteUrl(image || getNoteImageUrl(noteMeta, noteId) || "/brand/logo_b.png", baseUrl);
 
   return {
     title: pageTitle,
