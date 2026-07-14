@@ -198,7 +198,7 @@ export default function AdminQuotesClient() {
             <div className={styles.wordFrontRow}>
               <label>
                 <span>日文</span>
-                <input
+                <textarea
                   value={draft.japanese}
                   placeholder="例：今日"
                   onChange={(event) => setDraft((current) => ({ ...current, japanese: event.target.value }))}
@@ -214,7 +214,7 @@ export default function AdminQuotesClient() {
               </label>
               <label>
                 <span>中譯</span>
-                <input value={draft.chinese} placeholder="例：今天" onChange={(event) => setDraft((current) => ({ ...current, chinese: event.target.value }))} />
+                <textarea value={draft.chinese} placeholder="例：今天" onChange={(event) => setDraft((current) => ({ ...current, chinese: event.target.value }))} />
               </label>
             </div>
             <div className={styles.wordAudioRow}>
