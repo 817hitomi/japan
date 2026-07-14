@@ -1041,6 +1041,15 @@
     margin-bottom: 14px;
   }
 
+  .heroCopy > :not(h1):not(.heroLead) {
+    position: relative;
+    z-index: 5;
+    order: 4;
+    width: min(560px, calc(100% - 36px));
+    margin-inline: auto;
+    margin-top: -114px;
+  }
+
   .heroArt {
     order: 3;
     min-height: 330px;
@@ -1074,11 +1083,8 @@
     transform: none;
     z-index: 5;
     order: 4;
-    width: min(560px, calc(100% - 36px));
     min-width: 0;
     min-height: 90px;
-    margin-inline: auto;
-    margin-top: -114px;
   }
 
   .titleRow {

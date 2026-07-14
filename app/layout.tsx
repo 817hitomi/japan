@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FrontendInteractionGuard } from "./FrontendInteractionGuard";
 import "./globals.scss";
 
 export const metadata: Metadata = {
@@ -18,7 +19,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-Hant">
-      <body>{children}</body>
+      <body>
+        <FrontendInteractionGuard />
+        {children}
+      </body>
     </html>
   );
 }
