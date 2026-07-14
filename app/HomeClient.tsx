@@ -231,10 +231,26 @@ function copyToClipboard(text: string) {
   return Promise.resolve();
 }
 
-function ArticleShareList({ noteId, summary, title }: { noteId?: number; summary: string; title: string }) {
+function ArticleShareList({ imageUrl, noteId, summary, title }: { imageUrl: string; noteId?: number; summary: string; title: string }) {
   const [copied, setCopied] = useState(false);
 
-  const getShareUrl = () => (noteId ? `${publicSiteUrl}/?note=${encodeURIComponent(String(noteId))}` : window.location.href);
+  const getShareUrl = () => {
+    if (!noteId) {
+      return window.location.href;
+    }
+
+    const params = new URLSearchParams({
+      note: String(noteId),
+      title,
+      summary: summary.slice(0, 240)
+    });
+
+    if (imageUrl) {
+      params.set("image", imageUrl);
+    }
+
+    return `${publicSiteUrl}/?${params.toString()}`;
+  };
 
   const encodedShareText = encodeURIComponent([title, summary].filter(Boolean).join("\n"));
   const getFacebookShareUrl = () => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}&quote=${encodedShareText}`;
@@ -575,7 +591,7 @@ export default function Home() {
               <h2>{currentNote?.title ?? "標題"}</h2>
               <p>{currentNote ? `${currentNote.category}　${currentNote.date}` : "觀看 0 次"}</p>
             </div>
-            <ArticleShareList noteId={currentNote?.id} title={currentNote?.title ?? "JapanNote"} summary={currentNote?.summary ?? ""} />
+            <ArticleShareList imageUrl={articleImage} noteId={currentNote?.id} title={currentNote?.title ?? "JapanNote"} summary={currentNote?.summary ?? ""} />
           </div>
 
           <section className={styles.summary}>{currentNote?.summary || "文章摘要"}</section>

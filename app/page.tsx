@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 const publicSiteUrl = "https://japan-note.com";
 
 type HomePageProps = {
-  searchParams: Promise<{ note?: string }>;
+  searchParams: Promise<{ image?: string; note?: string; summary?: string; title?: string }>;
 };
 
 async function getBaseUrl() {
@@ -55,22 +55,32 @@ async function getSharedNote(id?: string) {
 }
 
 export async function generateMetadata({ searchParams }: HomePageProps): Promise<Metadata> {
-  const { note: noteId } = await searchParams;
+  const { image, note: noteId, summary, title } = await searchParams;
   const baseUrl = await getBaseUrl();
   const articleUrl = noteId ? `${baseUrl}/?note=${encodeURIComponent(noteId)}` : baseUrl;
   const note = await getSharedNote(noteId);
 
   if (!note) {
+    const fallbackTitle = title || "日文學習筆記 | JapanNote";
+    const fallbackDescription = summary || "自學日文筆記";
+    const fallbackImage = toAbsoluteUrl(image || "/brand/logo_b.png", baseUrl);
+
     return {
-      title: "日文學習筆記 | JapanNote",
-      description: "自學日文筆記",
+      title: fallbackTitle,
+      description: fallbackDescription,
       openGraph: {
-        title: "日文學習筆記 | JapanNote",
-        description: "自學日文筆記",
+        title: fallbackTitle,
+        description: fallbackDescription,
         url: articleUrl,
         siteName: "JapanNote",
         type: "website",
-        images: [{ url: `${baseUrl}/brand/logo_b.png` }]
+        images: [{ url: fallbackImage }]
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: fallbackTitle,
+        description: fallbackDescription,
+        images: [fallbackImage]
       }
     };
   }
