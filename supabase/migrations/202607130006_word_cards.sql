@@ -13,8 +13,8 @@ create table if not exists public.word_cards (
   updated_at timestamptz not null default now()
 );
 
-create unique index if not exists word_cards_japanese_unique_idx
-  on public.word_cards (japanese);
+create unique index if not exists word_cards_japanese_kana_unique_idx
+  on public.word_cards (japanese, kana);
 
 create index if not exists word_cards_category_id_idx
   on public.word_cards (category, id desc);
@@ -81,4 +81,4 @@ values (
   '',
   ''
 )
-on conflict (japanese) do nothing;
+on conflict (japanese, kana) do nothing;

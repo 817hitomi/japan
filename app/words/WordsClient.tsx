@@ -26,6 +26,7 @@ const japaneseSpeechRate = 0.8;
 const preferredJapaneseVoiceName = "Google 日本語";
 const wordListPageSize = 12;
 const adInsertAfterCards = 6;
+const maxVisiblePageButtons = 10;
 
 const kanaRows = [
   { key: "a", label: "あ", kana: ["あ", "い", "う", "え", "お"] },
@@ -213,6 +214,18 @@ function getKanaRowKey(word: WordCardRecord) {
   return kanaRows.find((row) => row.kana.includes(firstKana))?.key ?? "";
 }
 
+function getVisiblePageNumbers(currentPage: number, totalPages: number) {
+  if (totalPages <= maxVisiblePageButtons) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const halfWindow = Math.floor(maxVisiblePageButtons / 2);
+  const lastStartPage = totalPages - maxVisiblePageButtons + 1;
+  const startPage = Math.max(1, Math.min(currentPage - halfWindow + 1, lastStartPage));
+
+  return Array.from({ length: maxVisiblePageButtons }, (_, index) => startPage + index);
+}
+
 export default function WordsClient() {
   const [words, setWords] = useState<WordCardRecord[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -250,6 +263,7 @@ export default function WordsClient() {
   );
 
   const totalWordListPages = Math.max(1, Math.ceil(selectedRowWords.length / wordListPageSize));
+  const visibleWordListPages = getVisiblePageNumbers(wordListPage, totalWordListPages);
   const pagedWordList = selectedRowWords.slice((wordListPage - 1) * wordListPageSize, wordListPage * wordListPageSize);
   const wordListBeforeAd = pagedWordList.slice(0, adInsertAfterCards);
   const wordListAfterAd = pagedWordList.slice(adInsertAfterCards);
@@ -400,7 +414,18 @@ export default function WordsClient() {
         {selectedRowWords.length === 0 ? <p className={styles.emptyText}>目前沒有這一行的單字。</p> : null}
         {totalWordListPages > 1 ? (
           <nav className={styles.pagination} aria-label="單字列表頁碼">
-            {Array.from({ length: totalWordListPages }, (_, index) => index + 1).map((page) => (
+            {totalWordListPages > maxVisiblePageButtons ? (
+              <button
+                className={styles.pageArrow}
+                type="button"
+                onClick={() => setWordListPage((current) => Math.max(1, current - 1))}
+                disabled={wordListPage === 1}
+                aria-label="上一頁"
+              >
+                ‹
+              </button>
+            ) : null}
+            {visibleWordListPages.map((page) => (
               <button
                 key={page}
                 className={wordListPage === page ? styles.activePage : ""}
@@ -410,6 +435,17 @@ export default function WordsClient() {
                 {page}
               </button>
             ))}
+            {totalWordListPages > maxVisiblePageButtons ? (
+              <button
+                className={styles.pageArrow}
+                type="button"
+                onClick={() => setWordListPage((current) => Math.min(totalWordListPages, current + 1))}
+                disabled={wordListPage === totalWordListPages}
+                aria-label="下一頁"
+              >
+                ›
+              </button>
+            ) : null}
           </nav>
         ) : null}
       </section>

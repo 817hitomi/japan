@@ -21,6 +21,10 @@ const emptyWord: WordCardRecord = {
   backAudioUrl: ""
 };
 
+function getWordDuplicateKey(word: Pick<WordCardRecord, "japanese" | "kana">) {
+  return `${word.japanese.trim()}\n${word.kana.trim()}`;
+}
+
 export default function AdminWordsClient() {
   const [words, setWords] = useState<WordCardRecord[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -111,7 +115,8 @@ export default function AdminWordsClient() {
       return;
     }
 
-    const duplicatedWord = words.find((word) => word.id !== nextWord.id && word.japanese.trim() === nextWord.japanese);
+    const nextWordDuplicateKey = getWordDuplicateKey(nextWord);
+    const duplicatedWord = words.find((word) => word.id !== nextWord.id && getWordDuplicateKey(word) === nextWordDuplicateKey);
 
     if (duplicatedWord) {
       setMessage(`「${nextWord.japanese}」已經存在，沒有新增重複單字。`);

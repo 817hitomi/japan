@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     if (error) {
       if (isUniqueViolation(error)) {
-        return NextResponse.json({ error: "Duplicated Japanese word" }, { status: 409 });
+        return NextResponse.json({ error: "Duplicated Japanese word and kana" }, { status: 409 });
       }
 
       throw error;
