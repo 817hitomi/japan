@@ -8,6 +8,16 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "routes": [
+    {
+      "pattern": "japan-note.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.japan-note.com",
+      "custom_domain": true
+    }
+  ],
   "observability": {
     "enabled": true
   }
