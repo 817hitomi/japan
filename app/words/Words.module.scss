@@ -187,7 +187,7 @@
   display: grid;
   gap: 32px;
   width: min(1260px, calc(100% - 48px));
-  margin: 0 auto 180px;
+  margin: 0 auto 135px;
 
   h2 {
     display: flex;
@@ -212,6 +212,103 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 120px 70px;
+}
+
+.kanaRowTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: -10px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 18px;
+    border: 2px solid #9bc0a8;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #638f74;
+    cursor: pointer;
+    font-weight: 800;
+  }
+
+  strong {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  span {
+    font-size: 12px;
+    line-height: 1;
+  }
+}
+
+.activeKanaRow {
+  background: #9bc0a8 !important;
+  color: #ffffff !important;
+}
+
+.wordListAd {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+  max-height: 185px;
+
+  a,
+  > div {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    object-fit: contain;
+  }
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 10vh;
+
+  button {
+    display: grid;
+    min-width: 38px;
+    height: 38px;
+    place-items: center;
+    border: 1px solid #9bc0a8;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #638f74;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 800;
+  }
+}
+
+.activePage {
+  background: #9bc0a8 !important;
+  color: #ffffff !important;
 }
 
 .wordCard {
@@ -271,6 +368,11 @@
 
   .cardGrid {
     grid-template-columns: 1fr;
+  }
+
+  .wordListAd {
+    width: 100%;
+    margin: 0;
   }
 
   .wordMain strong {

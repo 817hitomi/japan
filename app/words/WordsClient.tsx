@@ -24,6 +24,21 @@ const socialLinks = [
 
 const japaneseSpeechRate = 0.8;
 const preferredJapaneseVoiceName = "Google 日本語";
+const wordListPageSize = 12;
+const adInsertAfterCards = 6;
+
+const kanaRows = [
+  { key: "a", label: "あ", kana: "あいうえおアイウエオ" },
+  { key: "ka", label: "か", kana: "かきくけこがぎぐげごカキクケコガギグゲゴ" },
+  { key: "sa", label: "さ", kana: "さしすせそざじずぜぞサシスセソザジズゼゾ" },
+  { key: "ta", label: "た", kana: "たちつてとだぢづでどタチツテトダヂヅデド" },
+  { key: "na", label: "な", kana: "なにぬねのナニヌネノ" },
+  { key: "ha", label: "は", kana: "はひふへほばびぶべぼぱぴぷぺぽハヒフヘホバビブベボパピプペポ" },
+  { key: "ma", label: "ま", kana: "まみむめもマミムメモ" },
+  { key: "ya", label: "や", kana: "やゆよゃゅょヤユヨャュョ" },
+  { key: "ra", label: "ら", kana: "らりるれろラリルレロ" },
+  { key: "wa", label: "わ", kana: "わをんワヲン" }
+];
 
 const parallaxBalls = [
   { className: homeStyles.ballTopLeft, y: -0.1, x: 0.035 },
@@ -169,11 +184,32 @@ function WordCard({ compact = false, word }: { compact?: boolean; word: WordCard
   );
 }
 
+function getWordListKana(word: WordCardRecord) {
+  const kana = word.kana.trim();
+  if (kana) {
+    return kana.charAt(0);
+  }
+
+  const inlineReading = word.japanese.match(/[（(]([ぁ-んァ-ンー]+)[）)]/);
+  if (inlineReading?.[1]) {
+    return inlineReading[1].charAt(0);
+  }
+
+  return stripInlineReadings(word.japanese).trim().charAt(0);
+}
+
+function getKanaRowKey(word: WordCardRecord) {
+  const firstKana = getWordListKana(word);
+  return kanaRows.find((row) => row.kana.includes(firstKana))?.key ?? "";
+}
+
 export default function WordsClient() {
   const [words, setWords] = useState<WordCardRecord[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedKanaRow, setSelectedKanaRow] = useState("a");
+  const [wordListPage, setWordListPage] = useState(1);
 
   useEffect(() => {
     readWordCardsWithFallback().then(setWords).catch(() => undefined);
@@ -188,6 +224,25 @@ export default function WordsClient() {
     () => words.filter((word) => !selectedCategory || word.category === selectedCategory),
     [selectedCategory, words]
   );
+
+  const wordListCounts = useMemo(
+    () =>
+      kanaRows.map((row) => ({
+        ...row,
+        count: words.filter((word) => getKanaRowKey(word) === row.key).length
+      })),
+    [words]
+  );
+
+  const selectedRowWords = useMemo(
+    () => words.filter((word) => getKanaRowKey(word) === selectedKanaRow),
+    [selectedKanaRow, words]
+  );
+
+  const totalWordListPages = Math.max(1, Math.ceil(selectedRowWords.length / wordListPageSize));
+  const pagedWordList = selectedRowWords.slice((wordListPage - 1) * wordListPageSize, wordListPage * wordListPageSize);
+  const wordListBeforeAd = pagedWordList.slice(0, adInsertAfterCards);
+  const wordListAfterAd = pagedWordList.slice(adInsertAfterCards);
 
   const activeWord = filteredWords[activeIndex] ?? filteredWords[0] ?? words[0];
 
@@ -204,6 +259,14 @@ export default function WordsClient() {
     setActiveIndex(0);
     setFlipped(false);
   }, [selectedCategory]);
+
+  useEffect(() => {
+    setWordListPage(1);
+  }, [selectedKanaRow]);
+
+  useEffect(() => {
+    setWordListPage((current) => Math.min(current, totalWordListPages));
+  }, [totalWordListPages]);
 
   return (
     <main className={homeStyles.page}>
@@ -301,11 +364,43 @@ export default function WordsClient() {
 
       <section className={styles.wordListSection}>
         <h2>單字卡</h2>
+        <div className={styles.kanaRowTabs} aria-label="單字行分類">
+          {wordListCounts.map((row) => (
+            <button
+              key={row.key}
+              className={selectedKanaRow === row.key ? styles.activeKanaRow : ""}
+              type="button"
+              onClick={() => setSelectedKanaRow(row.key)}
+            >
+              <strong>{row.label}</strong>
+              <span>{row.count}</span>
+            </button>
+          ))}
+        </div>
         <div className={styles.cardGrid}>
-          {filteredWords.map((word) => (
+          {wordListBeforeAd.map((word) => (
+            <WordCard compact key={word.id} word={word} />
+          ))}
+          {wordListAfterAd.length > 0 ? <AdSlot slot="top-banner" className={styles.wordListAd} /> : null}
+          {wordListAfterAd.map((word) => (
             <WordCard compact key={word.id} word={word} />
           ))}
         </div>
+        {selectedRowWords.length === 0 ? <p className={styles.emptyText}>目前沒有這一行的單字。</p> : null}
+        {totalWordListPages > 1 ? (
+          <nav className={styles.pagination} aria-label="單字列表頁碼">
+            {Array.from({ length: totalWordListPages }, (_, index) => index + 1).map((page) => (
+              <button
+                key={page}
+                className={wordListPage === page ? styles.activePage : ""}
+                type="button"
+                onClick={() => setWordListPage(page)}
+              >
+                {page}
+              </button>
+            ))}
+          </nav>
+        ) : null}
       </section>
 
       <footer className={homeStyles.footer}>
