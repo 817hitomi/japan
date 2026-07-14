@@ -29,7 +29,8 @@ const socialLinks = [
   { label: "Facebook", color: "#1877f2", href: "https://facebook.com/17japanNote" }
 ];
 
-const japaneseSpeechRate = 0.75;
+const japaneseSpeechRate = 0.8;
+const preferredJapaneseVoiceName = "Google 日本語";
 
 const parallaxBalls = [
   { className: homeStyles.ballTopLeft, y: -0.1, x: 0.035 },
@@ -87,6 +88,11 @@ function SectionTitle({ title }: { title: string }) {
   );
 }
 
+function getJapaneseVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  return voices.find((voice) => voice.name === preferredJapaneseVoiceName) ?? voices.find((voice) => voice.lang.startsWith("ja")) ?? null;
+}
+
 function NoteCard({ note }: { note: PublicNoteRecord }) {
   const image = getNoteImage(note);
   const tags = getDisplayTags(note.tags);
@@ -122,7 +128,11 @@ function speakWord(word: WordCardRecord) {
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(stripInlineReadings(word.japanese));
+    const voice = getJapaneseVoice();
     utterance.lang = "ja-JP";
+    if (voice) {
+      utterance.voice = voice;
+    }
     utterance.rate = japaneseSpeechRate;
     window.speechSynthesis.speak(utterance);
   }
@@ -159,7 +169,11 @@ function speakBoardItem(item: QuoteRecord) {
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(stripInlineReadings(item.japanese));
+    const voice = getJapaneseVoice();
     utterance.lang = "ja-JP";
+    if (voice) {
+      utterance.voice = voice;
+    }
     utterance.rate = japaneseSpeechRate;
     window.speechSynthesis.speak(utterance);
   }

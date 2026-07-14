@@ -22,7 +22,8 @@ const socialLinks = [
   { label: "Facebook", color: "#1877f2", href: "https://facebook.com/17japanNote" }
 ];
 
-const japaneseSpeechRate = 0.75;
+const japaneseSpeechRate = 0.8;
+const preferredJapaneseVoiceName = "Google 日本語";
 
 const parallaxBalls = [
   { className: homeStyles.ballTopLeft, y: -0.1, x: 0.035 },
@@ -93,6 +94,11 @@ function getSpeechText(text: string) {
   return stripInlineReadings(text);
 }
 
+function getJapaneseVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  return voices.find((voice) => voice.name === preferredJapaneseVoiceName) ?? voices.find((voice) => voice.lang.startsWith("ja")) ?? null;
+}
+
 function speakWord(word: WordCardRecord, mode: "word" | "example" = "word") {
   const audioUrl = mode === "example" ? word.backAudioUrl : word.frontAudioUrl || word.audioUrl;
 
@@ -105,7 +111,11 @@ function speakWord(word: WordCardRecord, mode: "word" | "example" = "word") {
     window.speechSynthesis.cancel();
     const text = getSpeechText(mode === "example" ? word.exampleJapanese || word.japanese : word.japanese);
     const utterance = new SpeechSynthesisUtterance(text);
+    const voice = getJapaneseVoice();
     utterance.lang = "ja-JP";
+    if (voice) {
+      utterance.voice = voice;
+    }
     utterance.rate = japaneseSpeechRate;
     window.speechSynthesis.speak(utterance);
   }
