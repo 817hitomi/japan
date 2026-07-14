@@ -6,6 +6,7 @@ import type { PublicNoteRecord } from "./notes/noteTypes";
 import { rowToNote } from "./api/notes/noteMapper";
 
 export const dynamic = "force-dynamic";
+const publicSiteUrl = "https://japan-note.com";
 
 type HomePageProps = {
   searchParams: Promise<{ note?: string }>;
@@ -15,6 +16,10 @@ async function getBaseUrl() {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
   const protocol = requestHeaders.get("x-forwarded-proto") || "https";
+
+  if (host?.includes("workers.dev")) {
+    return publicSiteUrl;
+  }
 
   return host ? `${protocol}://${host}` : "https://japan-note.com";
 }

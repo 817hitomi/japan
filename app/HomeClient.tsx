@@ -24,7 +24,7 @@ const socialLinks = [
   { label: "Facebook", color: "#1877f2", href: "https://facebook.com/17japanNote" }
 ];
 
-const publicSiteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://japan-note.com").replace(/\/$/, "");
+const publicSiteUrl = "https://japan-note.com";
 const visitorIdStorageKey = "japannote-visitor-id";
 
 const parallaxBalls = [
