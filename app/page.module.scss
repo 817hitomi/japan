@@ -374,6 +374,7 @@
   gap: 80px;
   width: min(1260px, calc(100% - 48px));
   margin: 0 auto;
+  padding-bottom: 5vh;
 }
 
 .article {
@@ -705,7 +706,7 @@
   display: grid;
   align-content: start;
   gap: 38px;
-  max-height: calc(100vh - 108px);
+
   overflow-y: auto;
   scrollbar-width: thin;
 
@@ -1093,7 +1094,6 @@
   .sidebarSticky {
     top: 18px;
     gap: 24px;
-    max-height: calc(100vh - 36px);
   }
 
   .mobileToc {
@@ -1116,7 +1116,6 @@
   .adSquare {
     width: 100%;
     max-width: none;
-    height: 118px;
     aspect-ratio: auto;
   }
 
