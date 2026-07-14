@@ -231,25 +231,35 @@ function copyToClipboard(text: string) {
 }
 
 function ArticleShareList({ noteId, summary, title }: { noteId?: number; summary: string; title: string }) {
-  const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    setShareUrl(noteId ? `${window.location.origin}/share?id=${encodeURIComponent(String(noteId))}` : window.location.href);
-  }, [noteId]);
+  const getShareUrl = () => (noteId ? `${window.location.origin}/share?id=${encodeURIComponent(String(noteId))}` : window.location.href);
 
-  const encodedUrl = encodeURIComponent(shareUrl);
   const encodedShareText = encodeURIComponent([title, summary].filter(Boolean).join("\n"));
-  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedShareText}`;
-  const lineShareUrl = `https://social-plugins.line.me/lineit/share?url=${encodedUrl}&text=${encodedShareText}`;
+  const getFacebookShareUrl = () => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}&quote=${encodedShareText}`;
+  const getLineShareUrl = () => `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(getShareUrl())}&text=${encodedShareText}`;
+
+  const openShareWindow = (url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer,width=720,height=640");
+  };
+
+  const shareToFacebook = () => {
+    openShareWindow(getFacebookShareUrl());
+  };
+
+  const shareToLine = () => {
+    openShareWindow(getLineShareUrl());
+  };
 
   const copyShareUrl = async () => {
-    if (!shareUrl) {
+    const currentShareUrl = getShareUrl();
+
+    if (!currentShareUrl) {
       return;
     }
 
     try {
-      await copyToClipboard(shareUrl);
+      await copyToClipboard(currentShareUrl);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -258,13 +268,15 @@ function ArticleShareList({ noteId, summary, title }: { noteId?: number; summary
   };
 
   const shareToInstagram = async () => {
-    if (!shareUrl) {
+    const currentShareUrl = getShareUrl();
+
+    if (!currentShareUrl) {
       return;
     }
 
     if (navigator.share) {
       try {
-        await navigator.share({ title, text: summary, url: shareUrl });
+        await navigator.share({ title, text: summary, url: currentShareUrl });
         return;
       } catch {
         return;
@@ -277,15 +289,15 @@ function ArticleShareList({ noteId, summary, title }: { noteId?: number; summary
 
   return (
     <div className={styles.shareList} aria-label="分享列">
-      <a href={facebookShareUrl} target="_blank" rel="noreferrer" style={{ backgroundColor: "#1877f2" }} aria-label="分享到 Facebook">
+      <button type="button" onClick={shareToFacebook} style={{ backgroundColor: "#1877f2" }} aria-label="分享到 Facebook">
         FB
-      </a>
+      </button>
       <button type="button" onClick={shareToInstagram} style={{ backgroundColor: "#e4405f" }} aria-label="分享到 Instagram">
         IG
       </button>
-      <a href={lineShareUrl} target="_blank" rel="noreferrer" style={{ backgroundColor: "#06c755" }} aria-label="分享到 LINE">
+      <button type="button" onClick={shareToLine} style={{ backgroundColor: "#06c755" }} aria-label="分享到 LINE">
         LINE
-      </a>
+      </button>
       <button type="button" onClick={copyShareUrl} style={{ backgroundColor: "#7d7d7d" }} aria-label="複製網址">
         {copied ? "已複製" : "複製網址"}
       </button>
