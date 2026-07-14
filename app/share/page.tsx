@@ -13,16 +13,16 @@ type SharePageProps = {
 
 async function getBaseUrl() {
   const configuredUrl = getRuntimeEnv("NEXT_PUBLIC_SITE_URL");
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
 
-  if (configuredUrl) {
+  if (configuredUrl && !configuredUrl.includes("localhost") && !configuredUrl.includes("127.0.0.1")) {
     return configuredUrl.replace(/\/$/, "");
   }
 
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
   const protocol = requestHeaders.get("x-forwarded-proto") || "https";
 
-  return host ? `${protocol}://${host}` : "http://localhost:3000";
+  return host ? `${protocol}://${host}` : (configuredUrl || "https://japan-note.com").replace(/\/$/, "");
 }
 
 function getNoteImage(note: PublicNoteRecord) {
