@@ -25,7 +25,7 @@ const socialLinks = [
 ];
 
 const publicSiteUrl = "https://japan-note.com";
-const siteStatsEventName = "japannote-site-stats";
+const visitorIdStorageKey = "japannote-visitor-id";
 
 const parallaxBalls = [
   { className: styles.ballTopLeft, y: -0.1, x: 0.035 },
@@ -366,21 +366,26 @@ export default function Home() {
   useEffect(() => {
     let active = true;
 
-    function updateSiteCount(payload: { visitorCount?: number }) {
-      if (active) {
-        setSiteCount(Number.isFinite(payload.visitorCount) ? Number(payload.visitorCount) : 0);
-      }
-    }
-
-    function handleSiteStats(event: Event) {
-      updateSiteCount((event as CustomEvent<{ visitorCount?: number }>).detail ?? {});
-    }
-
-    async function loadSiteCount() {
+    async function recordSiteVisit() {
       try {
-        const response = await fetch("/api/site-stats", { cache: "no-store" });
+        let visitorId = window.localStorage.getItem(visitorIdStorageKey);
+
+        if (!visitorId) {
+          visitorId = window.crypto.randomUUID();
+          window.localStorage.setItem(visitorIdStorageKey, visitorId);
+        }
+
+        const response = await fetch("/api/site-stats", {
+          method: "POST",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ visitorId })
+        });
         const payload = (await response.json()) as { visitorCount?: number };
-        updateSiteCount(payload);
+
+        if (active) {
+          setSiteCount(Number.isFinite(payload.visitorCount) ? Number(payload.visitorCount) : 0);
+        }
       } catch {
         if (active) {
           setSiteCount(0);
@@ -388,12 +393,10 @@ export default function Home() {
       }
     }
 
-    window.addEventListener(siteStatsEventName, handleSiteStats);
-    loadSiteCount();
+    recordSiteVisit();
 
     return () => {
       active = false;
-      window.removeEventListener(siteStatsEventName, handleSiteStats);
     };
   }, []);
 
