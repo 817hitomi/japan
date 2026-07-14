@@ -22,6 +22,8 @@ const socialLinks = [
   { label: "Facebook", color: "#1877f2", href: "https://facebook.com/17japanNote" }
 ];
 
+const japaneseSpeechRate = 0.75;
+
 const parallaxBalls = [
   { className: homeStyles.ballTopLeft, y: -0.1, x: 0.035 },
   { className: homeStyles.ballHeroRight, y: 0.08, x: -0.03 },
@@ -104,6 +106,7 @@ function speakWord(word: WordCardRecord, mode: "word" | "example" = "word") {
     const text = getSpeechText(mode === "example" ? word.exampleJapanese || word.japanese : word.japanese);
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "ja-JP";
+    utterance.rate = japaneseSpeechRate;
     window.speechSynthesis.speak(utterance);
   }
 }
