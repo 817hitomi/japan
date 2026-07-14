@@ -74,12 +74,11 @@ export async function readQuotesWithFallback() {
 export async function readQuotesWithSource(): Promise<QuotesReadResult> {
   try {
     const remoteQuotes = await fetchQuotes();
-    writeStoredQuotes(remoteQuotes);
     return { source: "database", quotes: remoteQuotes };
   } catch (error) {
     return {
       source: "local",
-      quotes: readStoredQuotes(),
+      quotes: [],
       error: getErrorMessage(error)
     };
   }

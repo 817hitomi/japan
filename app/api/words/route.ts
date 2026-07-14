@@ -16,6 +16,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from("word_cards")
       .select("*")
+      .neq("category", "首頁白版")
       .order("category", { ascending: true })
       .order("id", { ascending: false });
 

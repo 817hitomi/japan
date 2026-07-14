@@ -145,19 +145,21 @@
     display: inline-flex;
     align-items: center;
     min-height: 20px;
-    color: #ffffff;
     font-size: 11px;
     line-height: 1;
+    white-space: nowrap;
   }
 
   span {
     color: #b9aaaa;
+    min-width: max-content;
   }
 
   strong {
     padding: 0 9px;
     border-radius: 999px;
-    background: var(--primary);
+    background: #c28080;
+    color: #ffffff;
   }
 }
 

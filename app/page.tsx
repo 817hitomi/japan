@@ -7,6 +7,8 @@ import { getAdSlotFromLabel } from "./ads/adTypes";
 import { renderInlineRuby } from "../lib/japaneseText";
 import NotesFrontClient from "./notes/NotesFrontClient";
 import { PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
+import { readWordCardsWithFallback } from "./words/wordStorage";
+import { WordCardRecord } from "./words/wordTypes";
 import styles from "./page.module.scss";
 
 const navItems = [
@@ -220,6 +222,7 @@ function ArticleToc({
 
 export default function Home() {
   const [notes, setNotes] = useState<PublicNoteRecord[]>([]);
+  const [words, setWords] = useState<WordCardRecord[]>([]);
   const [currentNote, setCurrentNote] = useState<PublicNoteRecord | null>(null);
   const [hasSelectedNote, setHasSelectedNote] = useState<boolean | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -232,14 +235,18 @@ export default function Home() {
   useEffect(() => {
     let active = true;
 
-    async function loadNotes() {
-      const storedNotes = await readNotesWithFallback("published");
+    async function loadHomeData() {
+      const [storedNotes, storedWords] = await Promise.all([
+        readNotesWithFallback("published"),
+        readWordCardsWithFallback()
+      ]);
 
       if (!active) {
         return;
       }
 
       setNotes(storedNotes);
+      setWords(storedWords);
       const rawNoteId = new URLSearchParams(window.location.search).get("note");
       const noteId = Number(rawNoteId);
       const selectedNote = rawNoteId && Number.isFinite(noteId) ? storedNotes.find((note) => note.id === noteId) : undefined;
@@ -247,7 +254,7 @@ export default function Home() {
       setHasSelectedNote(Boolean(selectedNote));
     }
 
-    loadNotes();
+    loadHomeData();
 
     return () => {
       active = false;
@@ -303,12 +310,12 @@ export default function Home() {
     const learningDays = new Set(publishedNotes.map((note) => note.date).filter(Boolean)).size;
 
     return {
-      wordCount: 0,
+      wordCount: words.length,
       learningDays,
       currentLevel: getCurrentLevel(publishedNotes),
       siteCount
     };
-  }, [publishedNotes, siteCount]);
+  }, [publishedNotes, siteCount, words.length]);
 
   const statItems = useMemo(
     () => [
@@ -384,12 +391,12 @@ export default function Home() {
         return;
       }
 
-      const fixedTop = window.matchMedia("(max-width: 820px)").matches ? 18 : 88;
-      const fixedStartY = 360;
+      const isDesktop = !window.matchMedia("(max-width: 820px)").matches;
+      const fixedTop = 88;
       const sidebarRect = sidebar.getBoundingClientRect();
       const stickyRect = sidebarSticky.getBoundingClientRect();
       const sidebarTop = sidebarRect.top + window.scrollY;
-      const shouldFix = window.scrollY >= Math.min(sidebarTop - fixedTop, fixedStartY);
+      const shouldFix = isDesktop && window.scrollY >= sidebarTop - fixedTop;
 
       setIsSidebarFixed(shouldFix);
       setSidebarBox({
@@ -423,7 +430,7 @@ export default function Home() {
   }, [categories.length, popularNotes.length, searchResults.length, tags.length, tocItems.length]);
 
   if (hasSelectedNote !== true) {
-    return <NotesFrontClient />;
+    return <NotesFrontClient siteCount={learningStats.siteCount} />;
   }
 
   return (

@@ -5,25 +5,31 @@ import { normalizeQuotes, QuoteRecord } from "../../quotes/quoteTypes";
 
 export const dynamic = "force-dynamic";
 
-type SiteQuoteRow = {
+const quoteCategory = "首頁白版";
+
+type WordCardQuoteRow = {
   id: number;
-  text: string | null;
   category: string | null;
-  japanese: string | null;
   kana: string | null;
+  japanese: string | null;
   chinese: string | null;
+  audio_url: string | null;
   front_audio_url: string | null;
 };
 
-function rowToQuote(row: SiteQuoteRow): QuoteRecord {
+function isUniqueViolation(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
+}
+
+function rowToQuote(row: WordCardQuoteRow): QuoteRecord {
   return normalizeQuotes([
     {
       id: Number(row.id),
-      category: row.category ?? "首頁白版",
-      japanese: row.japanese ?? row.text ?? "",
+      category: row.category ?? quoteCategory,
+      japanese: row.japanese ?? "",
       kana: row.kana ?? "",
       chinese: row.chinese ?? "",
-      frontAudioUrl: row.front_audio_url ?? ""
+      frontAudioUrl: row.front_audio_url ?? row.audio_url ?? ""
     }
   ])[0];
 }
@@ -32,19 +38,26 @@ function quoteToPayload(quote: QuoteRecord) {
   const normalized = normalizeQuotes([quote])[0];
 
   return {
-    text: normalized.japanese.trim(),
-    category: normalized.category.trim() || "首頁白版",
-    japanese: normalized.japanese.trim(),
+    category: quoteCategory,
     kana: normalized.kana.trim(),
+    japanese: normalized.japanese.trim(),
     chinese: normalized.chinese.trim(),
-    front_audio_url: normalized.frontAudioUrl.trim()
+    example_japanese: "",
+    example_chinese: "",
+    audio_url: "",
+    front_audio_url: normalized.frontAudioUrl.trim(),
+    back_audio_url: ""
   };
 }
 
 export async function GET() {
   try {
     const supabase = createSupabaseReadClient();
-    const { data, error } = await supabase.from("site_quotes").select("*").order("id", { ascending: false });
+    const { data, error } = await supabase
+      .from("word_cards")
+      .select("id,category,kana,japanese,chinese,audio_url,front_audio_url")
+      .eq("category", quoteCategory)
+      .order("id", { ascending: false });
 
     if (error) {
       throw error;
@@ -66,9 +79,17 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createSupabaseAdminClient();
-    const { data, error } = await supabase.from("site_quotes").insert(payload).select("*").single();
+    const { data, error } = await supabase
+      .from("word_cards")
+      .insert(payload)
+      .select("id,category,kana,japanese,chinese,audio_url,front_audio_url")
+      .single();
 
     if (error) {
+      if (isUniqueViolation(error)) {
+        return NextResponse.json({ error: "Duplicated Japanese item" }, { status: 409 });
+      }
+
       throw error;
     }
 
@@ -88,7 +109,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabase = createSupabaseAdminClient();
-    const { error } = await supabase.from("site_quotes").delete().in("id", ids);
+    const { error } = await supabase.from("word_cards").delete().eq("category", quoteCategory).in("id", ids);
 
     if (error) {
       throw error;

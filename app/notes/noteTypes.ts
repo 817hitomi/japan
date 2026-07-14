@@ -55,3 +55,11 @@ export function normalizeNote(note: PublicNoteRecord): PublicNoteRecord {
     blocks: Array.isArray(note.blocks) ? note.blocks : []
   };
 }
+
+export function getDisplayTags(tags: string, limit = 3) {
+  return tags
+    .split(/[,，、\s]+/)
+    .map((tag) => tag.trim().replace(/^#+/, ""))
+    .filter((tag) => tag && !/^\d+$/.test(tag) && !/^\d{4}-\d{1,2}-\d{1,2}$/.test(tag))
+    .slice(0, limit);
+}

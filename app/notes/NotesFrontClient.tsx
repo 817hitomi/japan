@@ -5,6 +5,7 @@ import type { KeyboardEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import AdSlot from "../ads/AdSlot";
 import { PublicNoteRecord, readNotesWithFallback } from "./noteStorage";
+import { getDisplayTags } from "./noteTypes";
 import { readWordCardsWithFallback } from "../words/wordStorage";
 import { WordCardRecord } from "../words/wordTypes";
 import { defaultQuotes, QuoteRecord } from "../quotes/quoteTypes";
@@ -86,11 +87,7 @@ function SectionTitle({ title }: { title: string }) {
 
 function NoteCard({ note }: { note: PublicNoteRecord }) {
   const image = getNoteImage(note);
-  const tags = note.tags
-    .split(/[,，、\s]+/)
-    .map((tag) => tag.trim())
-    .filter(Boolean)
-    .slice(0, 3);
+  const tags = getDisplayTags(note.tags);
 
   return (
     <a className={styles.card} href={`/?note=${note.id}`}>
@@ -229,7 +226,7 @@ function ParallaxBackground() {
   );
 }
 
-export default function NotesFrontClient() {
+export default function NotesFrontClient({ siteCount }: { siteCount: number }) {
   const [notes, setNotes] = useState<PublicNoteRecord[]>([]);
   const [words, setWords] = useState<WordCardRecord[]>([]);
   const [boardItems, setBoardItems] = useState<QuoteRecord[]>(defaultQuotes);
@@ -305,7 +302,7 @@ export default function NotesFrontClient() {
           <div className={homeStyles.heroArt}>
             <div className={homeStyles.dotGrid} aria-hidden="true" />
             <Image src="/brand/01.png" alt="JapanNote 角色" width={420} height={420} priority />
-            <div className={homeStyles.speech}>有 1 位一起學了喔</div>
+            <div className={homeStyles.speech}>有 {siteCount.toLocaleString("en-US")} 位一起學了喔</div>
           </div>
         </div>
       </section>

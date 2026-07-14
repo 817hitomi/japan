@@ -3,15 +3,12 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import AdSlot from "../ads/AdSlot";
+import { readQuotesWithFallback } from "../quotes/quoteStorage";
+import { QuoteRecord } from "../quotes/quoteTypes";
+import { getDisplayTags } from "./noteTypes";
 import { PublicNoteRecord, readNotesWithFallback } from "./noteStorage";
 import homeStyles from "../page.module.scss";
 import styles from "./NotesList.module.scss";
-
-const statItems = [
-  ["1,000", "學習例句"],
-  ["0", "已收錄文章"],
-  ["N5", "目前等級"]
-];
 
 const navItems = [
   { label: "單字卡", href: "/words" },
@@ -95,21 +92,26 @@ function ParallaxBackground() {
 
 export default function NotesListClient() {
   const [notes, setNotes] = useState<PublicNoteRecord[]>([]);
+  const [boardItems, setBoardItems] = useState<QuoteRecord[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     let active = true;
 
-    async function loadNotes() {
-      const nextNotes = await readNotesWithFallback("published");
+    async function loadNotesPageData() {
+      const [nextNotes, nextBoardItems] = await Promise.all([
+        readNotesWithFallback("published"),
+        readQuotesWithFallback()
+      ]);
 
       if (active) {
         setNotes(nextNotes);
+        setBoardItems(nextBoardItems);
       }
     }
 
-    loadNotes();
+    loadNotesPageData();
     setSelectedCategory(new URLSearchParams(window.location.search).get("category") ?? "");
 
     return () => {
@@ -142,6 +144,15 @@ export default function NotesListClient() {
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [notes, searchQuery, selectedCategory]);
 
+  const statItems = useMemo(
+    () => [
+      [boardItems.length.toLocaleString("en-US"), "學習例句"],
+      [publishedNotes.length.toLocaleString("en-US"), "已收錄文章"],
+      ["N5", "目前等級"]
+    ],
+    [boardItems.length, publishedNotes.length]
+  );
+
   return (
     <main className={homeStyles.page}>
       <ParallaxBackground />
@@ -172,7 +183,7 @@ export default function NotesListClient() {
             <div className={homeStyles.stats} aria-label="學習筆記統計">
               {statItems.map(([value, label], index) => (
                 <div key={label}>
-                  <strong>{index === 1 ? publishedNotes.length : value}</strong>
+                  <strong>{value}</strong>
                   <span>{label}</span>
                 </div>
               ))}
@@ -215,19 +226,23 @@ export default function NotesListClient() {
         <section className={styles.grid} aria-label="已發布文章">
           {publishedNotes.map((note) => {
             const image = getNoteImage(note);
+            const tags = getDisplayTags(note.tags);
 
             return (
               <a className={styles.card} href={`/?note=${note.id}`} key={note.id}>
                 <div className={styles.cover}>
                   {image ? <img className={styles.coverImage} src={image} alt="" /> : <div className={styles.coverFallback}>{note.category}</div>}
-                  <div className={styles.coverMeta}>
-                    <span>{note.category}</span>
-                    <time dateTime={note.date}>{note.date}</time>
-                  </div>
+                  {note.category ? <span className={styles.categoryPill}>{note.category}</span> : null}
                 </div>
                 <div className={styles.cardBody}>
                   <h2>{note.title}</h2>
                   <p>{getNoteExcerpt(note)}</p>
+                  <div className={styles.cardMeta}>
+                    <span>{note.date}</span>
+                    {tags.map((tag) => (
+                      <strong key={tag}>#{tag}</strong>
+                    ))}
+                  </div>
                 </div>
               </a>
             );

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { deleteQuotes, readQuotesWithSource, saveQuote, writeStoredQuotes } from "../../quotes/quoteStorage";
+import { deleteQuotes, readQuotesWithSource, saveQuote } from "../../quotes/quoteStorage";
 import { QuoteRecord } from "../../quotes/quoteTypes";
 import { uploadMediaFile } from "../../notes/noteStorage";
 import { AdminShell } from "../notes/AdminNotesClient";
@@ -34,18 +34,17 @@ export default function AdminQuotesClient() {
         setMessage(
           result.source === "database"
             ? "已載入資料庫首頁白版資料。"
-            : "資料庫尚未建立首頁白版資料表，暫時使用本機資料。"
+            : `資料庫無法同步：${result.error ?? "請先確認 word_cards 資料表。"}`
         );
       })
       .catch(() => {
         setStorageSource("local");
-        setMessage("資料庫讀取失敗，暫時顯示本機資料。");
+        setMessage("資料庫讀取失敗，請先確認 word_cards 資料表。");
       });
   }, []);
 
   function persist(nextItems: QuoteRecord[], nextMessage: string) {
     setItems(nextItems);
-    writeStoredQuotes(nextItems);
     setMessage(nextMessage);
   }
 
@@ -113,15 +112,7 @@ export default function AdminQuotesClient() {
     setMessage(selectedId ? "正在更新首頁白版資料。" : "正在新增首頁白版資料。");
 
     if (storageSource === "local") {
-      const savedItem = { ...nextItem, id: selectedId ?? nextItem.id };
-      const nextItems = selectedId
-        ? items.map((item) => (item.id === selectedId ? savedItem : item))
-        : [savedItem, ...items];
-
-      persist(nextItems, selectedId ? "已更新本機首頁白版資料。" : "已新增本機首頁白版資料。");
-      setSelectedId(savedItem.id);
-      setDraft(savedItem);
-      setShowEditor(false);
+      setMessage("資料庫尚未連線，未儲存。請先確認 word_cards 資料表。");
       return;
     }
 
@@ -149,11 +140,7 @@ export default function AdminQuotesClient() {
     setMessage("正在刪除首頁白版資料。");
 
     if (storageSource === "local") {
-      const nextItems = items.filter((item) => item.id !== selectedItem.id);
-      persist(nextItems, "已刪除本機首頁白版資料。");
-      setSelectedId(null);
-      setDraft(emptyBoardItem);
-      setShowEditor(false);
+      setMessage("資料庫尚未連線，未刪除。請先確認 word_cards 資料表。");
       return;
     }
 
