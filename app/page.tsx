@@ -24,13 +24,6 @@ const socialLinks = [
   { label: "Facebook", color: "#1877f2", href: "https://facebook.com/17japanNote" }
 ];
 
-const shareLinks = [
-  { label: "FB", color: "#1877f2" },
-  { label: "IG", color: "#e4405f" },
-  { label: "LINE", color: "#06c755" },
-  { label: "複製網址", color: "#7d7d7d" }
-];
-
 const visitorIdStorageKey = "japannote-visitor-id";
 
 const parallaxBalls = [
@@ -217,6 +210,86 @@ function ArticleToc({
         </a>
       ))}
     </nav>
+  );
+}
+
+function copyToClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.opacity = "0";
+  document.body.appendChild(textArea);
+  textArea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textArea);
+  return Promise.resolve();
+}
+
+function ArticleShareList({ noteId, summary, title }: { noteId?: number; summary: string; title: string }) {
+  const [shareUrl, setShareUrl] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setShareUrl(noteId ? `${window.location.origin}/share?id=${encodeURIComponent(String(noteId))}` : window.location.href);
+  }, [noteId]);
+
+  const encodedUrl = encodeURIComponent(shareUrl);
+  const encodedShareText = encodeURIComponent([title, summary].filter(Boolean).join("\n"));
+  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedShareText}`;
+  const lineShareUrl = `https://social-plugins.line.me/lineit/share?url=${encodedUrl}&text=${encodedShareText}`;
+
+  const copyShareUrl = async () => {
+    if (!shareUrl) {
+      return;
+    }
+
+    try {
+      await copyToClipboard(shareUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const shareToInstagram = async () => {
+    if (!shareUrl) {
+      return;
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: summary, url: shareUrl });
+        return;
+      } catch {
+        return;
+      }
+    }
+
+    await copyShareUrl();
+    window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <div className={styles.shareList} aria-label="分享列">
+      <a href={facebookShareUrl} target="_blank" rel="noreferrer" style={{ backgroundColor: "#1877f2" }} aria-label="分享到 Facebook">
+        FB
+      </a>
+      <button type="button" onClick={shareToInstagram} style={{ backgroundColor: "#e4405f" }} aria-label="分享到 Instagram">
+        IG
+      </button>
+      <a href={lineShareUrl} target="_blank" rel="noreferrer" style={{ backgroundColor: "#06c755" }} aria-label="分享到 LINE">
+        LINE
+      </a>
+      <button type="button" onClick={copyShareUrl} style={{ backgroundColor: "#7d7d7d" }} aria-label="複製網址">
+        {copied ? "已複製" : "複製網址"}
+      </button>
+    </div>
   );
 }
 
@@ -489,13 +562,7 @@ export default function Home() {
               <h2>{currentNote?.title ?? "標題"}</h2>
               <p>{currentNote ? `${currentNote.category}　${currentNote.date}` : "觀看 0 次"}</p>
             </div>
-            <div className={styles.shareList} aria-label="分享列">
-              {shareLinks.map((link) => (
-                <a key={link.label} href="#" style={{ backgroundColor: link.color }} aria-label={`分享到 ${link.label}`}>
-                  {link.label}
-                </a>
-              ))}
-            </div>
+            <ArticleShareList noteId={currentNote?.id} title={currentNote?.title ?? "JapanNote"} summary={currentNote?.summary ?? ""} />
           </div>
 
           <section className={styles.summary}>{currentNote?.summary || "文章摘要"}</section>

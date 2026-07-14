@@ -462,7 +462,8 @@
   display: flex;
   gap: 16px;
 
-  a {
+  a,
+  button {
     display: grid;
     min-width: 78px;
     height: 28px;
@@ -475,6 +476,11 @@
     line-height: 1;
     white-space: nowrap;
     box-shadow: 0 3px 0 rgba(126, 78, 78, 0.18);
+  }
+
+  button {
+    cursor: pointer;
+    font-family: inherit;
   }
 }
 

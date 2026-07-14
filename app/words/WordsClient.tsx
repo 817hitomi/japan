@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import AdSlot from "../ads/AdSlot";
-import { renderInlineRuby, renderWordRuby, shouldShowStandaloneKana, stripInlineReadings } from "../../lib/japaneseText";
+import { renderInlineRuby, renderWordRuby, shouldShowStandaloneKana, splitStandaloneReading, stripInlineReadings } from "../../lib/japaneseText";
 import homeStyles from "../page.module.scss";
 import { readWordCardsWithFallback } from "./wordStorage";
 import { WordCardRecord } from "./wordTypes";
@@ -28,16 +28,16 @@ const wordListPageSize = 12;
 const adInsertAfterCards = 6;
 
 const kanaRows = [
-  { key: "a", label: "あ", kana: "あいうえおアイウエオ" },
-  { key: "ka", label: "か", kana: "かきくけこがぎぐげごカキクケコガギグゲゴ" },
-  { key: "sa", label: "さ", kana: "さしすせそざじずぜぞサシスセソザジズゼゾ" },
-  { key: "ta", label: "た", kana: "たちつてとだぢづでどタチツテトダヂヅデド" },
-  { key: "na", label: "な", kana: "なにぬねのナニヌネノ" },
-  { key: "ha", label: "は", kana: "はひふへほばびぶべぼぱぴぷぺぽハヒフヘホバビブベボパピプペポ" },
-  { key: "ma", label: "ま", kana: "まみむめもマミムメモ" },
-  { key: "ya", label: "や", kana: "やゆよゃゅょヤユヨャュョ" },
-  { key: "ra", label: "ら", kana: "らりるれろラリルレロ" },
-  { key: "wa", label: "わ", kana: "わをんワヲン" }
+  { key: "a", label: "あ", kana: ["あ", "い", "う", "え", "お"] },
+  { key: "ka", label: "か", kana: ["か", "き", "く", "け", "こ", "が", "ぎ", "ぐ", "げ", "ご"] },
+  { key: "sa", label: "さ", kana: ["さ", "し", "す", "せ", "そ", "ざ", "じ", "ず", "ぜ", "ぞ"] },
+  { key: "ta", label: "た", kana: ["た", "ち", "つ", "て", "と", "だ", "ぢ", "づ", "で", "ど"] },
+  { key: "na", label: "な", kana: ["な", "に", "ぬ", "ね", "の"] },
+  { key: "ha", label: "は", kana: ["は", "ひ", "ふ", "へ", "ほ", "ば", "び", "ぶ", "べ", "ぼ", "ぱ", "ぴ", "ぷ", "ぺ", "ぽ"] },
+  { key: "ma", label: "ま", kana: ["ま", "み", "む", "め", "も"] },
+  { key: "ya", label: "や", kana: ["や", "ゆ", "よ", "ゃ", "ゅ", "ょ"] },
+  { key: "ra", label: "ら", kana: ["ら", "り", "る", "れ", "ろ"] },
+  { key: "wa", label: "わ", kana: ["わ", "を", "ん"] }
 ];
 
 const parallaxBalls = [
@@ -107,6 +107,15 @@ function getRandomIndex(length: number, currentIndex: number) {
 
 function getSpeechText(text: string) {
   return stripInlineReadings(text);
+}
+
+function toHiragana(text: string) {
+  return text.replace(/[\u30a1-\u30f6]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0x60));
+}
+
+function getFirstKana(text: string) {
+  const normalized = toHiragana(text);
+  return normalized.match(/[ぁ-ん]/)?.[0] ?? "";
 }
 
 function getJapaneseVoice() {
@@ -185,17 +194,18 @@ function WordCard({ compact = false, word }: { compact?: boolean; word: WordCard
 }
 
 function getWordListKana(word: WordCardRecord) {
-  const kana = word.kana.trim();
+  const kana = getFirstKana(word.kana.trim());
   if (kana) {
-    return kana.charAt(0);
+    return kana;
   }
 
-  const inlineReading = word.japanese.match(/[（(]([ぁ-んァ-ンー]+)[）)]/);
-  if (inlineReading?.[1]) {
-    return inlineReading[1].charAt(0);
+  const standaloneReading = splitStandaloneReading(word.japanese);
+  const standaloneKana = getFirstKana(standaloneReading?.kana ?? "");
+  if (standaloneKana) {
+    return standaloneKana;
   }
 
-  return stripInlineReadings(word.japanese).trim().charAt(0);
+  return getFirstKana(word.japanese);
 }
 
 function getKanaRowKey(word: WordCardRecord) {
@@ -229,14 +239,14 @@ export default function WordsClient() {
     () =>
       kanaRows.map((row) => ({
         ...row,
-        count: words.filter((word) => getKanaRowKey(word) === row.key).length
+        count: filteredWords.filter((word) => getKanaRowKey(word) === row.key).length
       })),
-    [words]
+    [filteredWords]
   );
 
   const selectedRowWords = useMemo(
-    () => words.filter((word) => getKanaRowKey(word) === selectedKanaRow),
-    [selectedKanaRow, words]
+    () => filteredWords.filter((word) => getKanaRowKey(word) === selectedKanaRow),
+    [filteredWords, selectedKanaRow]
   );
 
   const totalWordListPages = Math.max(1, Math.ceil(selectedRowWords.length / wordListPageSize));
@@ -258,6 +268,7 @@ export default function WordsClient() {
   useEffect(() => {
     setActiveIndex(0);
     setFlipped(false);
+    setSelectedKanaRow("a");
   }, [selectedCategory]);
 
   useEffect(() => {
