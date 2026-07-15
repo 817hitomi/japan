@@ -40,6 +40,21 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createSupabaseAdminClient();
+    const { data: duplicatedWord, error: duplicateError } = await supabase
+      .from("word_cards")
+      .select("id")
+      .eq("japanese", payload.japanese)
+      .limit(1)
+      .maybeSingle();
+
+    if (duplicateError) {
+      throw duplicateError;
+    }
+
+    if (duplicatedWord) {
+      return NextResponse.json({ error: "Duplicated Japanese word" }, { status: 409 });
+    }
+
     const { data, error } = await supabase
       .from("word_cards")
       .insert(payload)

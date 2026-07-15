@@ -25,6 +25,22 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     const supabase = createSupabaseAdminClient();
+    const { data: duplicatedWord, error: duplicateError } = await supabase
+      .from("word_cards")
+      .select("id")
+      .eq("japanese", payload.japanese)
+      .neq("id", Number(id))
+      .limit(1)
+      .maybeSingle();
+
+    if (duplicateError) {
+      throw duplicateError;
+    }
+
+    if (duplicatedWord) {
+      return NextResponse.json({ error: "Duplicated Japanese word" }, { status: 409 });
+    }
+
     const { data, error } = await supabase
       .from("word_cards")
       .update(payload)

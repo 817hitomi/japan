@@ -1,7 +1,6 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { splitStandaloneReading } from "../../../lib/japaneseText";
 import { AdminShell } from "../notes/AdminNotesClient";
 import { uploadMediaFile } from "../../notes/noteStorage";
 import { deleteWordCards, readWordCardsWithSource, saveWordCard, writeStoredWordCards } from "../../words/wordStorage";
@@ -24,8 +23,8 @@ const emptyWord: WordCardRecord = {
 const wordsPerPage = 10;
 const maxVisiblePageButtons = 10;
 
-function getWordDuplicateKey(word: Pick<WordCardRecord, "japanese" | "kana">) {
-  return `${word.japanese.trim()}\n${word.kana.trim()}`;
+function getWordDuplicateKey(word: Pick<WordCardRecord, "japanese">) {
+  return word.japanese.trim();
 }
 
 function getVisiblePageNumbers(currentPage: number, totalPages: number) {
@@ -123,13 +122,12 @@ export default function AdminWordsClient() {
   async function saveWord(event: FormEvent) {
     event.preventDefault();
 
-    const standaloneReading = splitStandaloneReading(draft.japanese);
     const nextWord = {
       ...draft,
       id: selectedId ?? (draft.id || Date.now()),
       category: draft.category.trim() || "N5",
-      japanese: standaloneReading?.japanese ?? draft.japanese.trim(),
-      kana: draft.kana.trim() || standaloneReading?.kana || "",
+      japanese: draft.japanese.trim(),
+      kana: draft.kana.trim(),
       chinese: draft.chinese.trim(),
       exampleJapanese: draft.exampleJapanese.trim(),
       exampleChinese: draft.exampleChinese.trim(),
