@@ -1346,6 +1346,145 @@
   align-items: start !important;
 }
 
+.reportsPanel {
+  display: grid;
+  gap: 18px;
+}
+
+.reportList {
+  display: grid;
+  gap: 16px;
+}
+
+.reportTools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--admin-text);
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--admin-primary);
+  }
+
+  button {
+    min-height: 38px;
+    padding: 0 16px;
+    border: 1px solid var(--admin-primary);
+    border-radius: var(--button-radius);
+    background: var(--admin-primary);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 900;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  > span {
+    color: #9a8b8b;
+    font-size: 13px;
+    font-weight: 800;
+  }
+}
+
+.reportCard {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: #fff;
+
+  p {
+    margin: 0;
+    color: var(--admin-text);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.75;
+    white-space: pre-wrap;
+  }
+
+  a {
+    color: var(--admin-primary);
+    font-size: 13px;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+  }
+
+  small,
+  .reportMeta {
+    color: #9a8b8b;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+}
+
+.reportCardSelected {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 2px rgba(194, 128, 128, 0.12);
+}
+
+.reportCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  strong {
+    color: var(--admin-primary);
+    font-size: 15px;
+  }
+
+  time {
+    color: #9a8b8b;
+    font-size: 12px;
+    font-weight: 800;
+  }
+}
+
+.reportSelect {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--admin-primary);
+  }
+}
+
+.reportScreenshot {
+  display: block;
+  width: min(360px, 100%);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  overflow: hidden;
+  line-height: 0;
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}
+
 @media (max-width: 980px) {
   .adminBody {
     grid-template-columns: 1fr;

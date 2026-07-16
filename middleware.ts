@@ -11,6 +11,10 @@ function isProtectedPath(request: NextRequest) {
     return true;
   }
 
+  if (pathname === "/api/content-reports") {
+    return request.method !== "POST";
+  }
+
   if (protectedApiPrefixes.some((prefix) => pathname.startsWith(prefix))) {
     return true;
   }

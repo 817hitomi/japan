@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
+import ContentReportDialog from "./ContentReportDialog";
 import styles from "./page.module.scss";
 
 const footerGroups = [
@@ -7,7 +8,7 @@ const footerGroups = [
     title: "關於日文筆記",
     links: [
       { label: "關於筆記", href: "/about" },
-      { label: "內容勘誤回報", href: "#" }
+      { label: "內容勘誤回報", href: "#content-report" }
     ]
   },
   {
@@ -71,11 +72,15 @@ export default function SiteFooter() {
           {footerGroups.map((group) => (
             <section key={group.title}>
               <h2>{group.title}</h2>
-              {group.links.map((link) => (
-                <a key={link.label} href={link.href}>
-                  {link.label}
-                </a>
-              ))}
+              {group.links.map((link) =>
+                link.href === "#content-report" ? (
+                  <ContentReportDialog key={link.label} />
+                ) : (
+                  <a key={link.label} href={link.href}>
+                    {link.label}
+                  </a>
+                )
+              )}
             </section>
           ))}
         </nav>
