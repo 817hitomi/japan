@@ -27,6 +27,10 @@ function isProtectedPath(request: NextRequest) {
     return request.method !== "GET" || searchParams.get("status") !== "published";
   }
 
+  if (pathname === "/api/notes/og") {
+    return request.method !== "GET";
+  }
+
   if (pathname.startsWith("/api/notes/")) {
     return true;
   }

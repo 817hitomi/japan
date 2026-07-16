@@ -7,12 +7,18 @@ import { getAdSlotFromLabel } from "./ads/adTypes";
 import SiteFooter from "./SiteFooter";
 import { renderInlineRuby } from "../lib/japaneseText";
 import NotesFrontClient from "./notes/NotesFrontClient";
-import { getNotePath, PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
+import { getNotePath, getNotePreviewImage, PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
 import { readWordCardsWithFallback } from "./words/wordStorage";
 import { WordCardRecord } from "./words/wordTypes";
 import { getOrCreateVisitorId } from "../lib/siteVisitor";
 import { defaultQuotes, QuoteRecord } from "./quotes/quoteTypes";
 import styles from "./page.module.scss";
+
+export type HomeLearningStats = {
+  currentLevel: string;
+  learningDays: number;
+  wordCount: number;
+};
 
 const navItems = [
   { label: "單字卡", href: "/words" },
@@ -91,12 +97,15 @@ function NoteContent({ html }: { html: string }) {
 }
 
 function getNoteImage(note: PublicNoteRecord) {
-  const imageBlock = note.blocks.find((block) => block.type === "image" && block.imageUrl);
-  return note.coverUrl || imageBlock?.imageUrl || "";
+  return getNotePreviewImage(note);
 }
 
 function getPublicNoteShareUrl(note: PublicNoteRecord) {
-  return `${publicSiteUrl}${getNotePath(note)}`;
+  const origin = typeof window === "undefined" ? publicSiteUrl : window.location.origin;
+  const url = new URL(getNotePath(note), origin);
+  const version = [note.id, note.date.replace(/[^\d]/g, "")].filter(Boolean).join("-");
+  url.searchParams.set("share", version || String(note.id));
+  return url.toString();
 }
 
 function getYouTubeEmbedUrl(url: string) {
@@ -142,6 +151,53 @@ function getCurrentLevel(notes: PublicNoteRecord[]) {
   }
 
   return "-";
+}
+
+function getCurrentWordLevel(words: WordCardRecord[]) {
+  for (const word of words) {
+    const level = word.category.match(/\bN[1-5]\b/i)?.[0];
+
+    if (level) {
+      return level.toUpperCase();
+    }
+  }
+
+  return "-";
+}
+
+function getCalendarDayStart(dateText: string) {
+  const [year, month, day] = dateText.slice(0, 10).split("-").map(Number);
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return null;
+  }
+
+  return Date.UTC(year, month - 1, day);
+}
+
+function getLearningDays(notes: PublicNoteRecord[]) {
+  const dates = notes.map((note) => note.date).filter(Boolean).sort();
+  const start = dates[0] ? getCalendarDayStart(dates[0]) : null;
+
+  if (start === null) {
+    return 0;
+  }
+
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const elapsedDays = Math.floor((today - start) / 86_400_000) + 1;
+
+  return Math.max(elapsedDays, 1);
+}
+
+function getFallbackLearningStats(notes: PublicNoteRecord[], words: WordCardRecord[]): HomeLearningStats {
+  const publishedNotes = notes.filter((note) => note.status === "已發布");
+
+  return {
+    currentLevel: getCurrentLevel(publishedNotes) === "-" ? getCurrentWordLevel(words) : getCurrentLevel(publishedNotes),
+    learningDays: getLearningDays(publishedNotes),
+    wordCount: words.length
+  };
 }
 
 function isDirectVideoUrl(url: string) {
@@ -313,12 +369,14 @@ function ArticleShareList({ note, summary, title }: { note?: PublicNoteRecord | 
 }
 
 export default function Home({
+  initialLearningStats,
   initialNotes = [],
   initialQuotes = defaultQuotes,
   initialSelectedNoteId,
   initialSelectedNoteSlug,
   initialWords = []
 }: {
+  initialLearningStats?: HomeLearningStats;
   initialNotes?: PublicNoteRecord[];
   initialQuotes?: QuoteRecord[];
   initialSelectedNoteId?: string;
@@ -334,6 +392,9 @@ export default function Home({
         : null;
   const [notes, setNotes] = useState<PublicNoteRecord[]>(initialNotes);
   const [words, setWords] = useState<WordCardRecord[]>(initialWords);
+  const [learningStats, setLearningStats] = useState<HomeLearningStats>(
+    initialLearningStats ?? getFallbackLearningStats(initialNotes, initialWords)
+  );
   const [currentNote, setCurrentNote] = useState<PublicNoteRecord | null>(initialSelectedNote);
   const [hasSelectedNote, setHasSelectedNote] = useState<boolean | null>(
     initialSelectedNoteId || initialSelectedNoteSlug ? Boolean(initialSelectedNote) : false
@@ -381,6 +442,42 @@ export default function Home({
   useEffect(() => {
     let active = true;
 
+    async function loadLearningStats() {
+      try {
+        const response = await fetch("/api/home-stats", { cache: "no-store" });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as Partial<HomeLearningStats>;
+
+        if (!active) {
+          return;
+        }
+
+        setLearningStats({
+          currentLevel: typeof payload.currentLevel === "string" ? payload.currentLevel : "-",
+          learningDays: Number.isFinite(payload.learningDays) ? Number(payload.learningDays) : 0,
+          wordCount: words.length || (Number.isFinite(payload.wordCount) ? Number(payload.wordCount) : 0)
+        });
+      } catch {
+        if (active) {
+          setLearningStats(getFallbackLearningStats(notes, words));
+        }
+      }
+    }
+
+    loadLearningStats();
+
+    return () => {
+      active = false;
+    };
+  }, [notes, words]);
+
+  useEffect(() => {
+    let active = true;
+
     async function recordSiteVisit() {
       try {
         const visitorId = getOrCreateVisitorId();
@@ -417,24 +514,15 @@ export default function Home({
     [notes]
   );
 
-  const learningStats = useMemo(() => {
-    const learningDays = new Set(publishedNotes.map((note) => note.date).filter(Boolean)).size;
-
-    return {
-      wordCount: words.length,
-      learningDays,
-      currentLevel: getCurrentLevel(publishedNotes),
-      siteCount
-    };
-  }, [publishedNotes, siteCount, words.length]);
+  const displayedWordCount = words.length || learningStats.wordCount;
 
   const statItems = useMemo(
     () => [
-      [learningStats.wordCount.toLocaleString("en-US"), "已收錄單字"],
+      [displayedWordCount.toLocaleString("en-US"), "已收錄單字"],
       [learningStats.learningDays.toLocaleString("en-US"), "已經學習天數"],
       [learningStats.currentLevel, "目前程度"]
     ],
-    [learningStats]
+    [displayedWordCount, learningStats]
   );
 
   const categories = useMemo(() => {
@@ -541,7 +629,7 @@ export default function Home({
   }, [categories.length, popularNotes.length, searchResults.length, tags.length, tocItems.length]);
 
   if (hasSelectedNote !== true) {
-    return <NotesFrontClient initialBoardItems={initialQuotes} initialNotes={initialNotes} initialWords={initialWords} siteCount={learningStats.siteCount} />;
+    return <NotesFrontClient initialBoardItems={initialQuotes} initialNotes={initialNotes} initialWords={initialWords} siteCount={siteCount} />;
   }
 
   return (
@@ -583,7 +671,7 @@ export default function Home({
           <div className={styles.heroArt}>
             <div className={styles.dotGrid} aria-hidden="true" />
             <Image src="/brand/01.png" alt="日文筆記角色" width={420} height={420} priority />
-            <div className={styles.speech}>有 {learningStats.siteCount.toLocaleString("en-US")} 位一起學了喔</div>
+            {siteCount > 0 ? <div className={styles.speech}>有 {siteCount.toLocaleString("en-US")} 位一起學了喔</div> : null}
           </div>
         </div>
       </section>

@@ -1314,6 +1314,25 @@
   }
 }
 
+.adHeadPreview {
+  display: grid;
+  min-height: 120px;
+  padding: 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--button-radius);
+  background: #fffdfd;
+  color: var(--admin-text);
+  overflow: auto;
+
+  code {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
+
 .adControlGrid {
   display: grid;
   gap: 16px;

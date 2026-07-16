@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import AdSlot from "../ads/AdSlot";
 import SiteFooter from "../SiteFooter";
 import { PublicNoteRecord, readNotesWithFallback } from "./noteStorage";
-import { getDisplayTags, getNotePath } from "./noteTypes";
+import { getDisplayTags, getNotePath, getNotePreviewImage } from "./noteTypes";
 import { readWordCardsWithFallback } from "../words/wordStorage";
 import { WordCardRecord } from "../words/wordTypes";
 import { defaultQuotes, QuoteRecord } from "../quotes/quoteTypes";
@@ -59,8 +59,7 @@ function getNoteExcerpt(note: PublicNoteRecord) {
 }
 
 function getNoteImage(note: PublicNoteRecord) {
-  const imageBlock = note.blocks.find((block) => block.type === "image" && block.imageUrl);
-  return note.coverUrl || imageBlock?.imageUrl || "";
+  return getNotePreviewImage(note);
 }
 
 function SectionTitle({ title }: { title: string }) {
@@ -318,7 +317,7 @@ export default function NotesFrontClient({
           <div className={homeStyles.heroArt}>
             <div className={homeStyles.dotGrid} aria-hidden="true" />
             <Image src="/brand/01.png" alt="JapanNote 角色" width={420} height={420} priority />
-            <div className={homeStyles.speech}>有 {siteCount.toLocaleString("en-US")} 位一起學了喔</div>
+            {siteCount > 0 ? <div className={homeStyles.speech}>有 {siteCount.toLocaleString("en-US")} 位一起學了喔</div> : null}
           </div>
         </div>
       </section>

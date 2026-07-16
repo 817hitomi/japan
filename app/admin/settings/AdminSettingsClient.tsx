@@ -20,9 +20,10 @@ function readFileAsDataUrl(event: ChangeEvent<HTMLInputElement>, callback: (url:
 
 export default function AdminSettingsClient() {
   const [ads, setAds] = useState<AdSetting[]>(defaultAdSettings);
-  const [activeSlot, setActiveSlot] = useState<AdSlotId>("top-banner");
+  const [activeSlot, setActiveSlot] = useState<AdSlotId>("global-head");
   const [message, setMessage] = useState("正在載入設定。");
   const activeAd = ads.find((item) => item.slot === activeSlot) ?? ads[0];
+  const isGlobalHeadSlot = activeAd.slot === "global-head";
 
   useEffect(() => {
     let active = true;
@@ -52,7 +53,16 @@ export default function AdminSettingsClient() {
   }, []);
 
   function updateAd(slot: AdSlotId, patch: Partial<AdSetting>) {
-    setAds((current) => current.map((item) => (item.slot === slot ? { ...item, ...patch } : item)));
+    setAds((current) =>
+      current.map((item) => {
+        if (item.slot !== slot) {
+          return item;
+        }
+
+        const nextItem = { ...item, ...patch };
+        return item.slot === "global-head" ? { ...nextItem, channel: "html" } : nextItem;
+      })
+    );
   }
 
   async function saveSettings(event: FormEvent) {
@@ -98,8 +108,10 @@ export default function AdminSettingsClient() {
           </div>
 
           <section className={styles.adSettingsPanel}>
-            <div className={styles.adPreview}>
-              {activeAd.channel === "html" && activeAd.htmlCode.trim() ? (
+            <div className={isGlobalHeadSlot ? styles.adHeadPreview : styles.adPreview}>
+              {isGlobalHeadSlot ? (
+                <code>{activeAd.htmlCode.trim() || "尚未設定全站 AdSense 驗證碼"}</code>
+              ) : activeAd.channel === "html" && activeAd.htmlCode.trim() ? (
                 <div dangerouslySetInnerHTML={{ __html: activeAd.htmlCode }} />
               ) : activeAd.imageUrl ? (
                 <img src={activeAd.imageUrl} alt="" />

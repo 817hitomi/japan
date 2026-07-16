@@ -1,4 +1,4 @@
-export type AdSlotId = "top-banner" | "article-mid" | "article-bottom" | "sidebar-square";
+export type AdSlotId = "global-head" | "top-banner" | "article-mid" | "article-bottom" | "sidebar-square";
 
 export type AdChannel = "affiliate" | "html";
 
@@ -14,6 +14,17 @@ export type AdSetting = {
 };
 
 export const defaultAdSettings: AdSetting[] = [
+  {
+    slot: "global-head",
+    label: "全站 AdSense 驗證碼",
+    enabled: true,
+    channel: "html",
+    linkUrl: "",
+    imageUrl: "",
+    altText: "JapanNote AdSense",
+    htmlCode:
+      '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9349912323064571" crossorigin="anonymous"></script>'
+  },
   {
     slot: "top-banner",
     label: "頁首橫幅",
@@ -70,12 +81,12 @@ export function normalizeAdSettings(settings: Partial<AdSetting>[] | unknown): A
       ...matched,
       slot: defaultSetting.slot,
       label: defaultSetting.label,
-      enabled: Boolean(matched?.enabled),
-      channel: matched?.channel === "html" ? "html" : "affiliate",
+      enabled: matched?.enabled ?? defaultSetting.enabled,
+      channel: defaultSetting.slot === "global-head" ? "html" : matched?.channel === "html" ? "html" : "affiliate",
       linkUrl: matched?.linkUrl ?? "",
       imageUrl: matched?.imageUrl ?? "",
       altText: matched?.altText || defaultSetting.altText,
-      htmlCode: matched?.htmlCode ?? ""
+      htmlCode: defaultSetting.slot === "global-head" && !matched?.htmlCode ? defaultSetting.htmlCode : matched?.htmlCode ?? ""
     };
   });
 }

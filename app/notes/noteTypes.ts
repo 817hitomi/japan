@@ -71,3 +71,19 @@ export function getNoteRouteKey(note: Pick<PublicNoteRecord, "id" | "slug">) {
 export function getNotePath(note: Pick<PublicNoteRecord, "id" | "slug">) {
   return `/notes/${encodeURIComponent(getNoteRouteKey(note))}`;
 }
+
+export function findNoteByRouteKey(notes: PublicNoteRecord[], routeKey: string) {
+  const key = decodeURIComponent(routeKey).trim();
+  const numericId = Number(key);
+
+  return (
+    notes.find((note) => note.slug?.trim() === key) ??
+    notes.find((note) => Number.isFinite(numericId) && note.id === numericId) ??
+    null
+  );
+}
+
+export function getNotePreviewImage(note: Pick<PublicNoteRecord, "blocks" | "coverUrl">, fallback = "") {
+  const imageBlock = note.blocks.find((block) => block.type === "image" && block.imageUrl?.trim());
+  return note.coverUrl?.trim() || imageBlock?.imageUrl?.trim() || fallback;
+}

@@ -6,7 +6,7 @@ import AdSlot from "../ads/AdSlot";
 import SiteFooter from "../SiteFooter";
 import { readQuotesWithFallback } from "../quotes/quoteStorage";
 import { QuoteRecord } from "../quotes/quoteTypes";
-import { getDisplayTags, getNotePath } from "./noteTypes";
+import { getDisplayTags, getNotePath, getNotePreviewImage } from "./noteTypes";
 import { PublicNoteRecord, readNotesWithFallback } from "./noteStorage";
 import homeStyles from "../page.module.scss";
 import styles from "./NotesList.module.scss";
@@ -43,8 +43,7 @@ function getNoteExcerpt(note: PublicNoteRecord) {
 }
 
 function getNoteImage(note: PublicNoteRecord) {
-  const imageBlock = note.blocks.find((block) => block.type === "image" && block.imageUrl);
-  return note.coverUrl || imageBlock?.imageUrl || "";
+  return getNotePreviewImage(note);
 }
 
 function ParallaxBackground() {

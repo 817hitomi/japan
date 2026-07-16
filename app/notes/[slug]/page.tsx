@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import HomeClient from "../../HomeClient";
-import { getNotePath, PublicNoteRecord } from "../noteTypes";
+import { findNoteByRouteKey, getNotePath, getNoteRouteKey, PublicNoteRecord } from "../noteTypes";
 import { readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForPublicPage } from "../../publicData";
 
 export const dynamic = "force-dynamic";
@@ -10,23 +10,8 @@ const publicSiteUrl = "https://japan-note.com";
 
 type NotePageProps = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ share?: string }>;
 };
-
-function findNote(notes: PublicNoteRecord[], routeKey: string) {
-  const key = decodeURIComponent(routeKey).trim();
-  const numericId = Number(key);
-
-  return (
-    notes.find((note) => note.slug?.trim() === key) ??
-    notes.find((note) => Number.isFinite(numericId) && note.id === numericId) ??
-    null
-  );
-}
-
-function getNoteImage(note: PublicNoteRecord) {
-  const imageBlock = note.blocks.find((block) => block.type === "image" && block.imageUrl);
-  return note.coverUrl || imageBlock?.imageUrl || "/brand/logo_b.png";
-}
 
 function toAbsoluteUrl(url: string) {
   const value = url.trim();
@@ -43,10 +28,11 @@ function toAbsoluteUrl(url: string) {
   }
 }
 
-export async function generateMetadata({ params }: NotePageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: NotePageProps): Promise<Metadata> {
   const { slug } = await params;
+  const { share } = (await searchParams) ?? {};
   const notes = await readPublishedNotesForPublicPage();
-  const note = findNote(notes, slug);
+  const note = findNoteByRouteKey(notes, slug);
 
   if (!note) {
     return {
@@ -54,8 +40,17 @@ export async function generateMetadata({ params }: NotePageProps): Promise<Metad
     };
   }
 
-  const url = `${publicSiteUrl}${getNotePath(note)}`;
-  const imageUrl = toAbsoluteUrl(getNoteImage(note));
+  const pageUrl = new URL(getNotePath(note), publicSiteUrl);
+  const imagePath = new URL("/api/notes/og", publicSiteUrl);
+  imagePath.searchParams.set("slug", getNoteRouteKey(note));
+
+  if (share?.trim()) {
+    pageUrl.searchParams.set("share", share.trim());
+    imagePath.searchParams.set("v", share.trim());
+  }
+
+  const url = pageUrl.toString();
+  const imageUrl = toAbsoluteUrl(imagePath.toString());
   const description = note.summary || "日文學習筆記";
 
   return {
@@ -69,7 +64,7 @@ export async function generateMetadata({ params }: NotePageProps): Promise<Metad
       siteName: "JapanNote",
       type: "article",
       publishedTime: note.date || undefined,
-      images: [{ url: imageUrl }]
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: note.title }]
     },
     twitter: {
       card: "summary_large_image",
@@ -87,7 +82,7 @@ export default async function NotePage({ params }: NotePageProps) {
     readWordsForPublicPage(),
     readQuotesForPublicPage()
   ]);
-  const note = findNote(notes, slug);
+  const note = findNoteByRouteKey(notes, slug);
 
   if (!note) {
     notFound();
