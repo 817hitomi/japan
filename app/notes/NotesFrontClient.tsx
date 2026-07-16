@@ -10,7 +10,7 @@ import { readWordCardsWithFallback } from "../words/wordStorage";
 import { WordCardRecord } from "../words/wordTypes";
 import { defaultQuotes, QuoteRecord } from "../quotes/quoteTypes";
 import { readQuotesWithFallback } from "../quotes/quoteStorage";
-import { renderWordRuby, shouldShowStandaloneKana, stripInlineReadings } from "../../lib/japaneseText";
+import { readingsToSpeechText, renderWordRuby, shouldShowStandaloneKana, stripInlineReadings } from "../../lib/japaneseText";
 import homeStyles from "../page.module.scss";
 import styles from "./NotesFront.module.scss";
 
@@ -93,6 +93,10 @@ function getJapaneseVoice() {
   return voices.find((voice) => voice.name === preferredJapaneseVoiceName) ?? voices.find((voice) => voice.lang.startsWith("ja")) ?? null;
 }
 
+function getWordSpeechText(word: Pick<WordCardRecord, "japanese" | "kana">) {
+  return word.kana.trim() || readingsToSpeechText(word.japanese);
+}
+
 function NoteCard({ note }: { note: PublicNoteRecord }) {
   const image = getNoteImage(note);
   const tags = getDisplayTags(note.tags);
@@ -127,7 +131,7 @@ function speakWord(word: WordCardRecord) {
 
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(stripInlineReadings(word.japanese));
+    const utterance = new SpeechSynthesisUtterance(getWordSpeechText(word));
     const voice = getJapaneseVoice();
     utterance.lang = "ja-JP";
     if (voice) {
@@ -168,7 +172,7 @@ function speakBoardItem(item: QuoteRecord) {
 
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(stripInlineReadings(item.japanese));
+    const utterance = new SpeechSynthesisUtterance(getWordSpeechText(item));
     const voice = getJapaneseVoice();
     utterance.lang = "ja-JP";
     if (voice) {

@@ -37,6 +37,11 @@ export function stripInlineReadings(text: string) {
   return text.replace(inlineReadingPattern, "$1");
 }
 
+export function readingsToSpeechText(text: string) {
+  inlineReadingPattern.lastIndex = 0;
+  return text.replace(inlineReadingPattern, "$2");
+}
+
 export function splitStandaloneReading(text: string) {
   const matched = text.trim().match(standaloneReadingPattern);
 

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import AdSlot from "../ads/AdSlot";
-import { renderInlineRuby, renderWordRuby, shouldShowStandaloneKana, splitStandaloneReading, stripInlineReadings } from "../../lib/japaneseText";
+import { readingsToSpeechText, renderInlineRuby, renderWordRuby, shouldShowStandaloneKana, splitStandaloneReading, stripInlineReadings } from "../../lib/japaneseText";
 import homeStyles from "../page.module.scss";
 import { readWordCardsWithFallback } from "./wordStorage";
 import { WordCardRecord } from "./wordTypes";
@@ -106,8 +106,13 @@ function getRandomIndex(length: number, currentIndex: number) {
   return nextIndex;
 }
 
-function getSpeechText(text: string) {
-  return stripInlineReadings(text);
+function getSpeechText(word: WordCardRecord, mode: "word" | "example") {
+  if (mode === "example") {
+    return readingsToSpeechText(word.exampleJapanese || word.japanese);
+  }
+
+  const standaloneReading = splitStandaloneReading(word.japanese);
+  return word.kana.trim() || standaloneReading?.kana || readingsToSpeechText(word.japanese);
 }
 
 function toHiragana(text: string) {
@@ -134,7 +139,7 @@ function speakWord(word: WordCardRecord, mode: "word" | "example" = "word") {
 
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
-    const text = getSpeechText(mode === "example" ? word.exampleJapanese || word.japanese : word.japanese);
+    const text = getSpeechText(word, mode);
     const utterance = new SpeechSynthesisUtterance(text);
     const voice = getJapaneseVoice();
     utterance.lang = "ja-JP";
