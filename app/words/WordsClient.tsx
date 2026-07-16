@@ -226,8 +226,8 @@ function getVisiblePageNumbers(currentPage: number, totalPages: number) {
   return Array.from({ length: maxVisiblePageButtons }, (_, index) => startPage + index);
 }
 
-export default function WordsClient() {
-  const [words, setWords] = useState<WordCardRecord[]>([]);
+export default function WordsClient({ initialWords = [] }: { initialWords?: WordCardRecord[] }) {
+  const [words, setWords] = useState<WordCardRecord[]>(initialWords);
   const [activeIndex, setActiveIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
