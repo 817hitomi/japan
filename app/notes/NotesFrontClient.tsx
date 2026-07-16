@@ -261,9 +261,9 @@ export default function NotesFrontClient({
         return;
       }
 
-      setNotes(nextNotes);
-      setWords(nextWords);
-      setBoardItems(nextQuotes.length > 0 ? nextQuotes : defaultQuotes);
+      setNotes(nextNotes.length > 0 || initialNotes.length === 0 ? nextNotes : initialNotes);
+      setWords(nextWords.length > 0 || initialWords.length === 0 ? nextWords : initialWords);
+      setBoardItems(nextQuotes.length > 0 ? nextQuotes : initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes);
     }
 
     loadHomeData();
@@ -271,7 +271,7 @@ export default function NotesFrontClient({
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialBoardItems, initialNotes, initialWords]);
 
   const publishedNotes = useMemo(
     () =>

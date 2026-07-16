@@ -1,4 +1,4 @@
-import { createSupabaseReadClient } from "../lib/supabase/server";
+import { getRuntimeEnv } from "../lib/runtimeEnv";
 import { rowToNote } from "./api/notes/noteMapper";
 import { rowToWord } from "./api/words/wordMapper";
 import { PublicNoteRecord } from "./notes/noteTypes";
@@ -7,6 +7,40 @@ import { normalizeWordCards, WordCardRecord } from "./words/wordTypes";
 
 const quoteCategory = "首頁白版";
 const publishedStatus = "已發布";
+
+function getSupabaseRestUrl(path: string, params: Record<string, string>) {
+  const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL");
+
+  if (!supabaseUrl) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
+  }
+
+  const url = new URL(`/rest/v1/${path}`, supabaseUrl.replace(/\/$/, ""));
+  Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+  return url;
+}
+
+async function fetchSupabaseRows<Row>(path: string, params: Record<string, string>): Promise<Row[]> {
+  const anonKey = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+
+  if (!anonKey) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  }
+
+  const response = await fetch(getSupabaseRestUrl(path, params), {
+    cache: "no-store",
+    headers: {
+      apikey: anonKey,
+      authorization: `Bearer ${anonKey}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase public read failed: ${response.status}`);
+  }
+
+  return (await response.json()) as Row[];
+}
 
 type QuoteRow = {
   id: number;
@@ -33,19 +67,13 @@ function rowToQuote(row: QuoteRow): QuoteRecord {
 
 export async function readPublishedNotesForPublicPage(): Promise<PublicNoteRecord[]> {
   try {
-    const supabase = createSupabaseReadClient();
-    const { data, error } = await supabase
-      .from("learning_notes")
-      .select("*")
-      .eq("status", publishedStatus)
-      .order("published_date", { ascending: false })
-      .order("id", { ascending: false });
+    const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>("learning_notes", {
+      select: "*",
+      status: `eq.${publishedStatus}`,
+      order: "published_date.desc,id.desc"
+    });
 
-    if (error) {
-      throw error;
-    }
-
-    return (data ?? []).map(rowToNote);
+    return rows.map(rowToNote);
   } catch {
     return [];
   }
@@ -53,19 +81,13 @@ export async function readPublishedNotesForPublicPage(): Promise<PublicNoteRecor
 
 export async function readWordsForPublicPage(): Promise<WordCardRecord[]> {
   try {
-    const supabase = createSupabaseReadClient();
-    const { data, error } = await supabase
-      .from("word_cards")
-      .select("*")
-      .neq("category", quoteCategory)
-      .order("category", { ascending: true })
-      .order("id", { ascending: false });
+    const rows = await fetchSupabaseRows<Parameters<typeof rowToWord>[0]>("word_cards", {
+      select: "*",
+      category: `neq.${quoteCategory}`,
+      order: "category.asc,id.desc"
+    });
 
-    if (error) {
-      throw error;
-    }
-
-    return normalizeWordCards((data ?? []).map(rowToWord), true);
+    return normalizeWordCards(rows.map(rowToWord), true);
   } catch {
     return [];
   }
@@ -73,18 +95,13 @@ export async function readWordsForPublicPage(): Promise<WordCardRecord[]> {
 
 export async function readQuotesForPublicPage(): Promise<QuoteRecord[]> {
   try {
-    const supabase = createSupabaseReadClient();
-    const { data, error } = await supabase
-      .from("word_cards")
-      .select("id,category,kana,japanese,chinese,audio_url,front_audio_url")
-      .eq("category", quoteCategory)
-      .order("id", { ascending: false });
+    const rows = await fetchSupabaseRows<QuoteRow>("word_cards", {
+      select: "id,category,kana,japanese,chinese,audio_url,front_audio_url",
+      category: `eq.${quoteCategory}`,
+      order: "id.desc"
+    });
 
-    if (error) {
-      throw error;
-    }
-
-    return normalizeQuotes((data ?? []).map(rowToQuote), true);
+    return normalizeQuotes(rows.map(rowToQuote), true);
   } catch {
     return defaultQuotes;
   }

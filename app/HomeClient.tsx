@@ -354,15 +354,17 @@ export default function Home({
         return;
       }
 
-      setNotes(storedNotes);
-      setWords(storedWords);
+      const nextNotes = storedNotes.length > 0 || initialNotes.length === 0 ? storedNotes : initialNotes;
+      const nextWords = storedWords.length > 0 || initialWords.length === 0 ? storedWords : initialWords;
+      setNotes(nextNotes);
+      setWords(nextWords);
       const rawNoteId = initialSelectedNoteSlug ?? new URLSearchParams(window.location.search).get("note");
       const noteId = Number(rawNoteId);
       const selectedNote = rawNoteId
-        ? storedNotes.find((note) => note.slug === rawNoteId || (Number.isFinite(noteId) && note.id === noteId))
+        ? nextNotes.find((note) => note.slug === rawNoteId || (Number.isFinite(noteId) && note.id === noteId))
         : undefined;
-      setCurrentNote(selectedNote ?? null);
-      setHasSelectedNote(Boolean(selectedNote));
+      setCurrentNote(selectedNote ?? initialSelectedNote ?? null);
+      setHasSelectedNote(Boolean(selectedNote ?? initialSelectedNote));
     }
 
     loadHomeData();
@@ -370,7 +372,7 @@ export default function Home({
     return () => {
       active = false;
     };
-  }, [initialSelectedNoteSlug]);
+  }, [initialNotes, initialSelectedNote, initialSelectedNoteSlug, initialWords]);
 
   useEffect(() => {
     let active = true;

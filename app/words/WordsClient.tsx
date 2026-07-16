@@ -235,8 +235,10 @@ export default function WordsClient({ initialWords = [] }: { initialWords?: Word
   const [wordListPage, setWordListPage] = useState(1);
 
   useEffect(() => {
-    readWordCardsWithFallback().then(setWords).catch(() => undefined);
-  }, []);
+    readWordCardsWithFallback()
+      .then((nextWords) => setWords(nextWords.length > 0 || initialWords.length === 0 ? nextWords : initialWords))
+      .catch(() => undefined);
+  }, [initialWords]);
 
   const categories = useMemo(
     () => Array.from(new Set(words.map((word) => word.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "zh-Hant")),

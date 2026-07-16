@@ -109,8 +109,8 @@ export default function NotesListClient({
       ]);
 
       if (active) {
-        setNotes(nextNotes);
-        setBoardItems(nextBoardItems);
+        setNotes(nextNotes.length > 0 || initialNotes.length === 0 ? nextNotes : initialNotes);
+        setBoardItems(nextBoardItems.length > 0 || initialBoardItems.length === 0 ? nextBoardItems : initialBoardItems);
       }
     }
 
@@ -120,7 +120,7 @@ export default function NotesListClient({
     return () => {
       active = false;
     };
-  }, [initialCategory]);
+  }, [initialBoardItems, initialCategory, initialNotes]);
 
   const categories = useMemo(() => {
     const names = notes
