@@ -9,6 +9,7 @@ import NotesFrontClient from "./notes/NotesFrontClient";
 import { PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
 import { readWordCardsWithFallback } from "./words/wordStorage";
 import { WordCardRecord } from "./words/wordTypes";
+import { getOrCreateVisitorId } from "../lib/siteVisitor";
 import styles from "./page.module.scss";
 
 const navItems = [
@@ -25,7 +26,6 @@ const socialLinks = [
 ];
 
 const publicSiteUrl = "https://japan-note.com";
-const visitorIdStorageKey = "japannote-visitor-id";
 
 const parallaxBalls = [
   { className: styles.ballTopLeft, y: -0.1, x: 0.035 },
@@ -368,13 +368,7 @@ export default function Home() {
 
     async function recordSiteVisit() {
       try {
-        let visitorId = window.localStorage.getItem(visitorIdStorageKey);
-
-        if (!visitorId) {
-          visitorId = window.crypto.randomUUID();
-          window.localStorage.setItem(visitorIdStorageKey, visitorId);
-        }
-
+        const visitorId = getOrCreateVisitorId();
         const response = await fetch("/api/site-stats", {
           method: "POST",
           cache: "no-store",

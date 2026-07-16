@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { FrontendInteractionGuard } from "./FrontendInteractionGuard";
+import { SiteAnalyticsTracker } from "./SiteAnalyticsTracker";
 import "./globals.scss";
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default function RootLayout({
     <html lang="zh-Hant">
       <body>
         <FrontendInteractionGuard />
+        <SiteAnalyticsTracker />
         {children}
       </body>
     </html>

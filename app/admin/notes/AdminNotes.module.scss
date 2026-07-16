@@ -99,12 +99,19 @@
   font-size: 20px;
 
   a {
+    display: grid;
+    min-width: 150px;
+    min-height: 40px;
+    place-items: center;
+    border-radius: var(--button-radius);
     color: var(--admin-text);
   }
 }
 
 .active {
+  background: #ffffff;
   color: var(--admin-primary) !important;
+  font-weight: 800;
 }
 
 .logoutButton,
@@ -129,6 +136,195 @@
   height: calc(100vh - 68px);
   padding: 58px 38px 72px;
   overflow-y: auto;
+}
+
+.analyticsPanel {
+  width: min(1228px, 100%);
+  margin: 0 auto 34px;
+  padding: 24px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.analyticsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+
+  p {
+    margin: 0 0 4px;
+    color: var(--admin-primary);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  h1 {
+    margin: 0;
+    color: var(--admin-text);
+    font-size: 28px;
+    line-height: 1.2;
+  }
+
+  span {
+    color: var(--admin-primary);
+    font-weight: 700;
+  }
+}
+
+.analyticsCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+
+  div {
+    display: grid;
+    gap: 8px;
+    min-height: 104px;
+    padding: 18px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: #fff8f8;
+  }
+
+  span {
+    color: var(--admin-text);
+    font-size: 15px;
+  }
+
+  strong {
+    color: var(--admin-primary);
+    font-size: 32px;
+    line-height: 1;
+  }
+}
+
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+}
+
+.hourlyChart {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(16px, 1fr));
+  align-items: end;
+  min-height: 268px;
+  padding: 18px 14px 10px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.analyticsEmpty {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  min-height: 268px;
+  padding: 28px;
+  border: 1px dashed var(--admin-border);
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: center;
+
+  strong {
+    color: var(--admin-primary);
+    font-size: 19px;
+  }
+
+  span {
+    max-width: 360px;
+    margin-top: 10px;
+    color: var(--admin-text);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+}
+
+.hourlyBar {
+  display: grid;
+  grid-template-rows: 22px 1fr 20px;
+  align-items: end;
+  justify-items: center;
+  height: 230px;
+  gap: 6px;
+
+  span,
+  small {
+    color: var(--admin-text);
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  div {
+    width: 70%;
+    min-height: 8px;
+    border-radius: 6px 6px 0 0;
+    background: var(--admin-primary);
+  }
+}
+
+.pageStats {
+  min-height: 220px;
+  padding: 18px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: #ffffff;
+
+  h2 {
+    margin: 0 0 14px;
+    color: var(--admin-primary);
+    font-size: 20px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #f0d4d5;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    color: var(--admin-primary);
+    font-size: 13px;
+  }
+
+  td {
+    color: var(--admin-text);
+    font-size: 14px;
+  }
+
+  td:first-child {
+    display: grid;
+    gap: 4px;
+  }
+
+  strong {
+    color: var(--admin-text);
+    font-size: 14px;
+    line-height: 1.3;
+  }
+
+  span {
+    color: #a18b8b;
+    font-size: 12px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  p {
+    margin: 0;
+    color: var(--admin-text);
+  }
 }
 
 .listTools {
@@ -1167,6 +1363,8 @@
   }
 
   .listTools,
+  .analyticsCards,
+  .analyticsGrid,
   .metaGrid,
   .articleSettings,
   .bottomGrid,
@@ -1188,6 +1386,20 @@
 
   .listTools {
     display: grid;
+  }
+
+  .analyticsPanel {
+    padding: 18px;
+  }
+
+  .analyticsHeader {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .hourlyChart {
+    grid-template-columns: repeat(12, minmax(18px, 1fr));
+    overflow-x: auto;
   }
 
   .blockHeader {
