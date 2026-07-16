@@ -21,10 +21,10 @@ const footerGroups = [
   {
     title: "網站政策",
     links: [
-      { label: "隱私權政策", href: "#" },
-      { label: "Cookie 政策", href: "#" },
-      { label: "使用條款", href: "#" },
-      { label: "免責聲明", href: "#" }
+      { label: "隱私權政策", href: "/privacy" },
+      { label: "Cookie 政策", href: "/cookies" },
+      { label: "使用條款", href: "/terms" },
+      { label: "免責聲明", href: "/disclaimer" }
     ]
   }
 ];
