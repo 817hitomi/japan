@@ -63,3 +63,11 @@ export function getDisplayTags(tags: string, limit = 3) {
     .filter((tag) => tag && !/^\d+$/.test(tag) && !/^\d{4}-\d{1,2}-\d{1,2}$/.test(tag))
     .slice(0, limit);
 }
+
+export function getNoteRouteKey(note: Pick<PublicNoteRecord, "id" | "slug">) {
+  return note.slug?.trim() || String(note.id);
+}
+
+export function getNotePath(note: Pick<PublicNoteRecord, "id" | "slug">) {
+  return `/notes/${encodeURIComponent(getNoteRouteKey(note))}`;
+}

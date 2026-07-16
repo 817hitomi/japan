@@ -6,7 +6,7 @@ import AdSlot from "../ads/AdSlot";
 import SiteFooter from "../SiteFooter";
 import { readQuotesWithFallback } from "../quotes/quoteStorage";
 import { QuoteRecord } from "../quotes/quoteTypes";
-import { getDisplayTags } from "./noteTypes";
+import { getDisplayTags, getNotePath } from "./noteTypes";
 import { PublicNoteRecord, readNotesWithFallback } from "./noteStorage";
 import homeStyles from "../page.module.scss";
 import styles from "./NotesList.module.scss";
@@ -85,10 +85,18 @@ function ParallaxBackground() {
   );
 }
 
-export default function NotesListClient() {
-  const [notes, setNotes] = useState<PublicNoteRecord[]>([]);
-  const [boardItems, setBoardItems] = useState<QuoteRecord[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
+export default function NotesListClient({
+  initialBoardItems = [],
+  initialCategory = "",
+  initialNotes = []
+}: {
+  initialBoardItems?: QuoteRecord[];
+  initialCategory?: string;
+  initialNotes?: PublicNoteRecord[];
+}) {
+  const [notes, setNotes] = useState<PublicNoteRecord[]>(initialNotes);
+  const [boardItems, setBoardItems] = useState<QuoteRecord[]>(initialBoardItems);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -107,12 +115,12 @@ export default function NotesListClient() {
     }
 
     loadNotesPageData();
-    setSelectedCategory(new URLSearchParams(window.location.search).get("category") ?? "");
+    setSelectedCategory(new URLSearchParams(window.location.search).get("category") ?? initialCategory);
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialCategory]);
 
   const categories = useMemo(() => {
     const names = notes
@@ -224,7 +232,7 @@ export default function NotesListClient() {
             const tags = getDisplayTags(note.tags);
 
             return (
-              <a className={styles.card} href={`/?note=${note.id}`} key={note.id}>
+              <a className={styles.card} href={getNotePath(note)} key={note.id}>
                 <div className={styles.cover}>
                   {image ? <img className={styles.coverImage} src={image} alt="" /> : <div className={styles.coverFallback}>{note.category}</div>}
                   {note.category ? <span className={styles.categoryPill}>{note.category}</span> : null}

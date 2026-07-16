@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import HomeClient from "./HomeClient";
 import { getRuntimeEnv } from "../lib/runtimeEnv";
+import { readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForPublicPage } from "./publicData";
 
 export const dynamic = "force-dynamic";
 const publicSiteUrl = "https://japan-note.com";
@@ -118,6 +119,20 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
   };
 }
 
-export default function HomePage() {
-  return <HomeClient />;
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const resolvedSearchParams = await searchParams;
+  const [notes, words, quotes] = await Promise.all([
+    readPublishedNotesForPublicPage(),
+    readWordsForPublicPage(),
+    readQuotesForPublicPage()
+  ]);
+
+  return (
+    <HomeClient
+      initialNotes={notes}
+      initialQuotes={quotes}
+      initialSelectedNoteId={resolvedSearchParams.note}
+      initialWords={words}
+    />
+  );
 }

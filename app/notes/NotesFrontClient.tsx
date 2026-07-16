@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import AdSlot from "../ads/AdSlot";
 import SiteFooter from "../SiteFooter";
 import { PublicNoteRecord, readNotesWithFallback } from "./noteStorage";
-import { getDisplayTags } from "./noteTypes";
+import { getDisplayTags, getNotePath } from "./noteTypes";
 import { readWordCardsWithFallback } from "../words/wordStorage";
 import { WordCardRecord } from "../words/wordTypes";
 import { defaultQuotes, QuoteRecord } from "../quotes/quoteTypes";
@@ -63,17 +63,6 @@ function getNoteImage(note: PublicNoteRecord) {
   return note.coverUrl || imageBlock?.imageUrl || "";
 }
 
-function shuffleBySession<T>(items: T[]) {
-  const nextItems = [...items];
-
-  for (let index = nextItems.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [nextItems[index], nextItems[swapIndex]] = [nextItems[swapIndex], nextItems[index]];
-  }
-
-  return nextItems;
-}
-
 function SectionTitle({ title }: { title: string }) {
   return (
     <div className={styles.sectionTitle}>
@@ -97,7 +86,7 @@ function NoteCard({ note }: { note: PublicNoteRecord }) {
   const tags = getDisplayTags(note.tags);
 
   return (
-    <a className={styles.card} href={`/?note=${note.id}`}>
+    <a className={styles.card} href={getNotePath(note)}>
       <div className={styles.cover}>
         {image ? <img className={styles.coverImage} src={image} alt="" /> : <div className={styles.coverFallback}>{note.category || "N5"}</div>}
         {note.category ? <span className={styles.categoryPill}>{note.category}</span> : null}
@@ -243,10 +232,20 @@ function ParallaxBackground() {
   );
 }
 
-export default function NotesFrontClient({ siteCount }: { siteCount: number }) {
-  const [notes, setNotes] = useState<PublicNoteRecord[]>([]);
-  const [words, setWords] = useState<WordCardRecord[]>([]);
-  const [boardItems, setBoardItems] = useState<QuoteRecord[]>(defaultQuotes);
+export default function NotesFrontClient({
+  initialBoardItems = defaultQuotes,
+  initialNotes = [],
+  initialWords = [],
+  siteCount
+}: {
+  initialBoardItems?: QuoteRecord[];
+  initialNotes?: PublicNoteRecord[];
+  initialWords?: WordCardRecord[];
+  siteCount: number;
+}) {
+  const [notes, setNotes] = useState<PublicNoteRecord[]>(initialNotes);
+  const [words, setWords] = useState<WordCardRecord[]>(initialWords);
+  const [boardItems, setBoardItems] = useState<QuoteRecord[]>(initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes);
 
   useEffect(() => {
     let active = true;
@@ -282,10 +281,10 @@ export default function NotesFrontClient({ siteCount }: { siteCount: number }) {
     [notes]
   );
 
-  const latestNotes = useMemo(() => shuffleBySession(publishedNotes.slice(0, 8)).slice(0, 2), [publishedNotes]);
-  const recommendedNotes = useMemo(() => shuffleBySession(publishedNotes).slice(0, 4), [publishedNotes]);
-  const randomWords = useMemo(() => shuffleBySession(words).slice(0, 4), [words]);
-  const randomBoardItem = useMemo(() => shuffleBySession(boardItems)[0] ?? defaultQuotes[0], [boardItems]);
+  const latestNotes = useMemo(() => publishedNotes.slice(0, 2), [publishedNotes]);
+  const recommendedNotes = useMemo(() => publishedNotes.slice(0, 4), [publishedNotes]);
+  const randomWords = useMemo(() => words.slice(0, 4), [words]);
+  const randomBoardItem = useMemo(() => boardItems[0] ?? defaultQuotes[0], [boardItems]);
 
   return (
     <main className={homeStyles.page}>

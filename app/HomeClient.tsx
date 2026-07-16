@@ -7,10 +7,11 @@ import { getAdSlotFromLabel } from "./ads/adTypes";
 import SiteFooter from "./SiteFooter";
 import { renderInlineRuby } from "../lib/japaneseText";
 import NotesFrontClient from "./notes/NotesFrontClient";
-import { PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
+import { getNotePath, PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
 import { readWordCardsWithFallback } from "./words/wordStorage";
 import { WordCardRecord } from "./words/wordTypes";
 import { getOrCreateVisitorId } from "../lib/siteVisitor";
+import { defaultQuotes, QuoteRecord } from "./quotes/quoteTypes";
 import styles from "./page.module.scss";
 
 const navItems = [
@@ -226,29 +227,19 @@ function copyToClipboard(text: string) {
   return Promise.resolve();
 }
 
-function ArticleShareList({ imageUrl, noteId, summary, title }: { imageUrl: string; noteId?: number; summary: string; title: string }) {
+function ArticleShareList({ note, summary, title }: { note?: PublicNoteRecord | null; summary: string; title: string }) {
   const [copied, setCopied] = useState(false);
 
   const getShareUrl = () => {
-    if (!noteId) {
+    if (!note) {
       return window.location.href;
     }
 
-    const params = new URLSearchParams({
-      note: String(noteId),
-      title,
-      summary: summary.slice(0, 240)
-    });
-
-    if (imageUrl) {
-      params.set("image", imageUrl);
-    }
-
-    return `${publicSiteUrl}/?${params.toString()}`;
+    return `${publicSiteUrl}${getNotePath(note)}`;
   };
 
   const encodedShareText = encodeURIComponent([title, summary].filter(Boolean).join("\n"));
-  const getFacebookShareUrl = () => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}&quote=${encodedShareText}`;
+  const getFacebookShareUrl = () => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}`;
   const getLineShareUrl = () => `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(getShareUrl())}&text=${encodedShareText}`;
 
   const openShareWindow = (url: string) => {
@@ -317,11 +308,32 @@ function ArticleShareList({ imageUrl, noteId, summary, title }: { imageUrl: stri
   );
 }
 
-export default function Home() {
-  const [notes, setNotes] = useState<PublicNoteRecord[]>([]);
-  const [words, setWords] = useState<WordCardRecord[]>([]);
-  const [currentNote, setCurrentNote] = useState<PublicNoteRecord | null>(null);
-  const [hasSelectedNote, setHasSelectedNote] = useState<boolean | null>(null);
+export default function Home({
+  initialNotes = [],
+  initialQuotes = defaultQuotes,
+  initialSelectedNoteId,
+  initialSelectedNoteSlug,
+  initialWords = []
+}: {
+  initialNotes?: PublicNoteRecord[];
+  initialQuotes?: QuoteRecord[];
+  initialSelectedNoteId?: string;
+  initialSelectedNoteSlug?: string;
+  initialWords?: WordCardRecord[];
+}) {
+  const initialNoteId = Number(initialSelectedNoteId);
+  const initialSelectedNote =
+    initialSelectedNoteSlug
+      ? initialNotes.find((note) => note.slug === initialSelectedNoteSlug || String(note.id) === initialSelectedNoteSlug) ?? null
+      : initialSelectedNoteId && Number.isFinite(initialNoteId)
+        ? initialNotes.find((note) => note.id === initialNoteId) ?? null
+        : null;
+  const [notes, setNotes] = useState<PublicNoteRecord[]>(initialNotes);
+  const [words, setWords] = useState<WordCardRecord[]>(initialWords);
+  const [currentNote, setCurrentNote] = useState<PublicNoteRecord | null>(initialSelectedNote);
+  const [hasSelectedNote, setHasSelectedNote] = useState<boolean | null>(
+    initialSelectedNoteId || initialSelectedNoteSlug ? Boolean(initialSelectedNote) : false
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [siteCount, setSiteCount] = useState(0);
   const sidebarRef = useRef<HTMLElement | null>(null);
@@ -344,9 +356,11 @@ export default function Home() {
 
       setNotes(storedNotes);
       setWords(storedWords);
-      const rawNoteId = new URLSearchParams(window.location.search).get("note");
+      const rawNoteId = initialSelectedNoteSlug ?? new URLSearchParams(window.location.search).get("note");
       const noteId = Number(rawNoteId);
-      const selectedNote = rawNoteId && Number.isFinite(noteId) ? storedNotes.find((note) => note.id === noteId) : undefined;
+      const selectedNote = rawNoteId
+        ? storedNotes.find((note) => note.slug === rawNoteId || (Number.isFinite(noteId) && note.id === noteId))
+        : undefined;
       setCurrentNote(selectedNote ?? null);
       setHasSelectedNote(Boolean(selectedNote));
     }
@@ -356,7 +370,7 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialSelectedNoteSlug]);
 
   useEffect(() => {
     let active = true;
@@ -521,7 +535,7 @@ export default function Home() {
   }, [categories.length, popularNotes.length, searchResults.length, tags.length, tocItems.length]);
 
   if (hasSelectedNote !== true) {
-    return <NotesFrontClient siteCount={learningStats.siteCount} />;
+    return <NotesFrontClient initialBoardItems={initialQuotes} initialNotes={initialNotes} initialWords={initialWords} siteCount={learningStats.siteCount} />;
   }
 
   return (
@@ -580,7 +594,7 @@ export default function Home() {
               <h2>{currentNote?.title ?? "標題"}</h2>
               <p>{currentNote ? `${currentNote.category}　${currentNote.date}` : "觀看 0 次"}</p>
             </div>
-            <ArticleShareList imageUrl={articleImage} noteId={currentNote?.id} title={currentNote?.title ?? "JapanNote"} summary={currentNote?.summary ?? ""} />
+            <ArticleShareList note={currentNote} title={currentNote?.title ?? "JapanNote"} summary={currentNote?.summary ?? ""} />
           </div>
 
           <section className={styles.summary}>{currentNote?.summary || "文章摘要"}</section>
@@ -685,7 +699,7 @@ export default function Home() {
                 {searchResults.length > 0 ? (
                   <div className={styles.sidebarLinkList}>
                     {searchResults.map((note) => (
-                      <a key={note.id} href={`/?note=${note.id}`}>
+                      <a key={note.id} href={getNotePath(note)}>
                         <strong>{note.title}</strong>
                         <span>{note.category}　{note.date}</span>
                       </a>
@@ -716,7 +730,7 @@ export default function Home() {
               {popularNotes.length > 0 ? (
                 <div className={styles.sidebarLinkList}>
                   {popularNotes.map((note) => (
-                    <a key={note.id} href={`/?note=${note.id}`}>
+                    <a key={note.id} href={getNotePath(note)}>
                       <strong>{note.title}</strong>
                       <span>{note.category}　{note.date}</span>
                     </a>

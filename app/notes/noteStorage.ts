@@ -4,7 +4,7 @@ import { normalizeNote, PublicNoteRecord, seedNotes } from "./noteTypes";
 import { readApiError } from "../../lib/apiErrors";
 
 export type { NoteBlockType, NoteContentBlock, PublicNoteRecord } from "./noteTypes";
-export { normalizeNote, seedNotes } from "./noteTypes";
+export { getNotePath, getNoteRouteKey, normalizeNote, seedNotes } from "./noteTypes";
 
 export const noteStorageKey = "japannote-admin-notes";
 const noteImportCompletedKey = "japannote-admin-notes-imported";
