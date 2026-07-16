@@ -95,6 +95,10 @@ function getNoteImage(note: PublicNoteRecord) {
   return note.coverUrl || imageBlock?.imageUrl || "";
 }
 
+function getPublicNoteShareUrl(note: PublicNoteRecord) {
+  return `${publicSiteUrl}${getNotePath(note)}`;
+}
+
 function getYouTubeEmbedUrl(url: string) {
   if (!url) {
     return "";
@@ -235,7 +239,7 @@ function ArticleShareList({ note, summary, title }: { note?: PublicNoteRecord | 
       return window.location.href;
     }
 
-    return `${publicSiteUrl}${getNotePath(note)}`;
+    return getPublicNoteShareUrl(note);
   };
 
   const encodedShareText = encodeURIComponent([title, summary].filter(Boolean).join("\n"));

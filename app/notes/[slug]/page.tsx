@@ -29,8 +29,15 @@ function getNoteImage(note: PublicNoteRecord) {
 }
 
 function toAbsoluteUrl(url: string) {
+  const value = url.trim();
+
+  if (!value || value.startsWith("data:") || value.startsWith("blob:")) {
+    return `${publicSiteUrl}/brand/logo_b.png`;
+  }
+
   try {
-    return new URL(url, publicSiteUrl).toString();
+    const parsed = new URL(value, publicSiteUrl);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : `${publicSiteUrl}/brand/logo_b.png`;
   } catch {
     return `${publicSiteUrl}/brand/logo_b.png`;
   }

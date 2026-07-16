@@ -11,12 +11,36 @@ type SiteVisitEventRow = {
   visited_at: string | null;
 };
 
+const analyticsTimeZone = "Asia/Taipei";
+const taipeiHourFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: analyticsTimeZone,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  hourCycle: "h23"
+});
+
+function getTaipeiHourParts(date: Date) {
+  const parts = taipeiHourFormatter.formatToParts(date);
+  const valueByType = new Map(parts.map((part) => [part.type, part.value]));
+
+  return {
+    year: valueByType.get("year") ?? "0000",
+    month: valueByType.get("month") ?? "00",
+    day: valueByType.get("day") ?? "00",
+    hour: valueByType.get("hour") ?? "00"
+  };
+}
+
 function formatHourLabel(date: Date) {
-  return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:00`;
+  const { month, day, hour } = getTaipeiHourParts(date);
+  return `${month}/${day} ${hour}:00`;
 }
 
 function getHourKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}`;
+  const { year, month, day, hour } = getTaipeiHourParts(date);
+  return `${year}-${month}-${day}T${hour}`;
 }
 
 function getSourceLabel(referrer: string | null) {
@@ -91,13 +115,11 @@ export async function GET() {
 
     for (let index = 23; index >= 0; index -= 1) {
       const hour = new Date(Date.now() - index * 60 * 60 * 1000);
-      hour.setMinutes(0, 0, 0);
       hourly.set(getHourKey(hour), { label: formatHourLabel(hour), visitors: new Set(), views: 0 });
     }
 
     rows.forEach((row) => {
       const visitedAt = new Date(row.visited_at as string);
-      visitedAt.setMinutes(0, 0, 0);
       const hour = hourly.get(getHourKey(visitedAt));
 
       if (hour && row.visitor_id) {

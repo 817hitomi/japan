@@ -96,7 +96,7 @@ export default function AdminDashboardClient() {
               {(analytics?.hourly ?? []).map((item) => (
                 <div key={item.label} className={styles.hourlyBar}>
                   <span>{item.views}</span>
-                  <div style={{ height: `${Math.max(8, (item.views / maxHourlyViews) * 100)}%` }} />
+                  <div style={{ height: item.views > 0 ? `${Math.max(8, (item.views / maxHourlyViews) * 100)}%` : 0 }} />
                   <small>{item.label.slice(-5)}</small>
                 </div>
               ))}

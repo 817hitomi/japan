@@ -18,6 +18,21 @@ type NoteMeta = {
   title: string | null;
 };
 
+function isPublicImageUrl(url?: string): url is string {
+  const value = url?.trim();
+
+  if (!value || value.startsWith("data:") || value.startsWith("blob:")) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(value, publicSiteUrl);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 async function getRequestUrl(searchParams: Awaited<HomePageProps["searchParams"]>) {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
@@ -37,7 +52,7 @@ async function getRequestUrl(searchParams: Awaited<HomePageProps["searchParams"]
     params.set("summary", searchParams.summary);
   }
 
-  if (searchParams.image) {
+  if (isPublicImageUrl(searchParams.image)) {
     params.set("image", searchParams.image);
   }
 
@@ -49,8 +64,15 @@ async function getRequestUrl(searchParams: Awaited<HomePageProps["searchParams"]
 }
 
 function toAbsoluteUrl(url: string, baseUrl: string) {
+  const value = url.trim();
+
+  if (!value || value.startsWith("data:") || value.startsWith("blob:")) {
+    return `${baseUrl}/brand/logo_b.png`;
+  }
+
   try {
-    return new URL(url, baseUrl).toString();
+    const parsed = new URL(value, baseUrl);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : `${baseUrl}/brand/logo_b.png`;
   } catch {
     return `${baseUrl}/brand/logo_b.png`;
   }
