@@ -18,12 +18,19 @@ type SiteAnalyticsPage = {
   lastSeenAt: string;
 };
 
+type SiteAnalyticsSource = {
+  source: string;
+  visitors: number;
+  views: number;
+};
+
 type SiteAnalytics = {
   totalVisitors: number;
   trackedVisitors: number;
   totalViews: number;
   hourly: SiteAnalyticsHour[];
   pages: SiteAnalyticsPage[];
+  sources: SiteAnalyticsSource[];
 };
 
 export default function AdminDashboardClient() {
@@ -127,6 +134,33 @@ export default function AdminDashboardClient() {
               </table>
             ) : (
               <p>尚未累積頁面瀏覽紀錄。</p>
+            )}
+          </div>
+          <div className={styles.sourceStats}>
+            <h2>訪客來源</h2>
+            {(analytics?.sources.length ?? 0) > 0 ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>來源</th>
+                    <th>訪客</th>
+                    <th>瀏覽</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics?.sources.map((source) => (
+                    <tr key={source.source}>
+                      <td>
+                        <strong>{source.source}</strong>
+                      </td>
+                      <td>{source.visitors}</td>
+                      <td>{source.views}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>目前還沒有可辨識的來源資料。</p>
             )}
           </div>
         </div>

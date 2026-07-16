@@ -4,6 +4,7 @@ import Image from "next/image";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import AdSlot from "./ads/AdSlot";
 import { getAdSlotFromLabel } from "./ads/adTypes";
+import SiteFooter from "./SiteFooter";
 import { renderInlineRuby } from "../lib/japaneseText";
 import NotesFrontClient from "./notes/NotesFrontClient";
 import { PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
@@ -17,12 +18,6 @@ const navItems = [
   { label: "模擬測驗", href: "#" },
   { label: "學習筆記", href: "/notes" },
   { label: "登入", href: "/admin" }
-];
-
-const socialLinks = [
-  { label: "YouTube", color: "#ff0000", href: "https://www.youtube.com/@japanNote" },
-  { label: "Instagram", color: "#e4405f", href: "#" },
-  { label: "Facebook", color: "#1877f2", href: "https://facebook.com/17japanNote" }
 ];
 
 const publicSiteUrl = "https://japan-note.com";
@@ -752,24 +747,7 @@ export default function Home() {
         </aside>
       </div>
 
-      <footer className={styles.footer}>
-        <Image src="/brand/logo.png" alt="" width={72} height={72} />
-        <div className={styles.footerLinks}>
-          {socialLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              style={{ backgroundColor: link.color }}
-              aria-label={link.label}
-              target={link.href === "#" ? undefined : "_blank"}
-              rel={link.href === "#" ? undefined : "noreferrer"}
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
-        <p>Copyright © 2026 by japanNote All Rights Reserved</p>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }

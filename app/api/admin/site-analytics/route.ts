@@ -7,6 +7,7 @@ type SiteVisitEventRow = {
   visitor_id: string | null;
   page_path: string | null;
   page_title: string | null;
+  referrer: string | null;
   visited_at: string | null;
 };
 
@@ -18,6 +19,53 @@ function getHourKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}`;
 }
 
+function getSourceLabel(referrer: string | null) {
+  if (!referrer) {
+    return "直接／未知";
+  }
+
+  try {
+    const url = new URL(referrer);
+    const host = url.hostname.replace(/^www\./, "").toLowerCase();
+
+    if (host === "japan-note.com" || host === "localhost") {
+      return "站內連結";
+    }
+
+    if (host.includes("google.")) {
+      return "Google 搜尋";
+    }
+
+    if (host.includes("yahoo.")) {
+      return "Yahoo 搜尋";
+    }
+
+    if (host.includes("bing.")) {
+      return "Bing 搜尋";
+    }
+
+    if (host.includes("facebook.") || host.includes("fb.")) {
+      return "Facebook";
+    }
+
+    if (host.includes("instagram.")) {
+      return "Instagram";
+    }
+
+    if (host.includes("line.")) {
+      return "LINE";
+    }
+
+    if (host.includes("youtube.") || host.includes("youtu.be")) {
+      return "YouTube";
+    }
+
+    return host;
+  } catch {
+    return "直接／未知";
+  }
+}
+
 export async function GET() {
   try {
     const supabase = createSupabaseAdminClient();
@@ -26,7 +74,7 @@ export async function GET() {
       supabase.from("site_visitors").select("visitor_id", { count: "exact", head: true }),
       supabase
         .from("site_visit_events")
-        .select("visitor_id,page_path,page_title,visited_at")
+        .select("visitor_id,page_path,page_title,referrer,visited_at")
         .gte("visited_at", since.toISOString())
         .order("visited_at", { ascending: false })
         .limit(5000)
@@ -39,6 +87,7 @@ export async function GET() {
     const rows = ((events ?? []) as SiteVisitEventRow[]).filter((row) => row.visitor_id && row.page_path && row.visited_at);
     const hourly = new Map<string, { label: string; visitors: Set<string>; views: number }>();
     const pages = new Map<string, { title: string; visitors: Set<string>; views: number; lastSeenAt: string }>();
+    const sources = new Map<string, { visitors: Set<string>; views: number }>();
 
     for (let index = 23; index >= 0; index -= 1) {
       const hour = new Date(Date.now() - index * 60 * 60 * 1000);
@@ -73,6 +122,16 @@ export async function GET() {
       }
 
       pages.set(path, page);
+
+      const sourceLabel = getSourceLabel(row.referrer);
+      const source = sources.get(sourceLabel) ?? { visitors: new Set<string>(), views: 0 };
+      source.views += 1;
+
+      if (row.visitor_id) {
+        source.visitors.add(row.visitor_id);
+      }
+
+      sources.set(sourceLabel, source);
     });
 
     return NextResponse.json({
@@ -93,6 +152,14 @@ export async function GET() {
           lastSeenAt: item.lastSeenAt
         }))
         .sort((first, second) => second.views - first.views)
+        .slice(0, 12),
+      sources: Array.from(sources.entries())
+        .map(([source, item]) => ({
+          source,
+          visitors: item.visitors.size,
+          views: item.views
+        }))
+        .sort((first, second) => second.views - first.views)
         .slice(0, 12)
     });
   } catch {
@@ -101,7 +168,8 @@ export async function GET() {
       trackedVisitors: 0,
       totalViews: 0,
       hourly: [],
-      pages: []
+      pages: [],
+      sources: []
     });
   }
 }

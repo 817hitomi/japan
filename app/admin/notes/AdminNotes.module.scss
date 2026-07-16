@@ -267,7 +267,8 @@
   }
 }
 
-.pageStats {
+.pageStats,
+.sourceStats {
   min-height: 220px;
   padding: 18px;
   border: 1px solid var(--admin-border);
@@ -303,11 +304,6 @@
     font-size: 14px;
   }
 
-  td:first-child {
-    display: grid;
-    gap: 4px;
-  }
-
   strong {
     color: var(--admin-text);
     font-size: 14px;
@@ -325,6 +321,11 @@
     margin: 0;
     color: var(--admin-text);
   }
+}
+
+.pageStats td:first-child {
+  display: grid;
+  gap: 4px;
 }
 
 .listTools {
