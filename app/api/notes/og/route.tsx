@@ -45,11 +45,6 @@ export async function GET(request: NextRequest) {
   const note = findNoteByRouteKey(notes, routeKey);
   const imageUrl = note ? getNotePreviewImage(note, "/brand/logo_b.png") : "/brand/logo_b.png";
 
-  if (imageUrl.startsWith("data:")) {
-    return dataUrlToResponse(imageUrl) ?? Response.redirect(new URL("/brand/logo_b.png", request.nextUrl.origin), 302);
-  }
-
-  return Response.redirect(new URL(imageUrl || "/brand/logo_b.png", request.nextUrl.origin), 302);
   const title = clampText(sanitizeImageText(note?.title || "") || "日文學習筆記", 44);
   const summary = clampText(sanitizeImageText(note?.summary || "") || "自學日文筆記", 88);
   const category = note?.category || "JapanNote";
