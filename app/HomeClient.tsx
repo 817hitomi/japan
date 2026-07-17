@@ -428,8 +428,10 @@ export default function Home({
       const selectedNote = rawNoteId
         ? nextNotes.find((note) => note.slug === rawNoteId || (Number.isFinite(noteId) && note.id === noteId))
         : undefined;
-      setCurrentNote(selectedNote ?? initialSelectedNote ?? null);
-      setHasSelectedNote(Boolean(selectedNote ?? initialSelectedNote));
+      const hydratedSelectedNote =
+        selectedNote && selectedNote.blocks.length > 0 ? selectedNote : initialSelectedNote ?? selectedNote;
+      setCurrentNote(hydratedSelectedNote ?? null);
+      setHasSelectedNote(Boolean(hydratedSelectedNote));
     }
 
     loadHomeData();

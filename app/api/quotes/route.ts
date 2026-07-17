@@ -4,6 +4,7 @@ import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../li
 import { normalizeQuotes, QuoteRecord } from "../../quotes/quoteTypes";
 
 export const dynamic = "force-dynamic";
+const publicQuotesLimit = 40;
 
 const quoteCategory = "首頁白版";
 
@@ -57,7 +58,8 @@ export async function GET() {
       .from("word_cards")
       .select("id,category,kana,japanese,chinese,audio_url,front_audio_url")
       .eq("category", quoteCategory)
-      .order("id", { ascending: false });
+      .order("id", { ascending: false })
+      .limit(publicQuotesLimit);
 
     if (error) {
       throw error;

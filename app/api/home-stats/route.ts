@@ -3,6 +3,8 @@ import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseReadClient } from "../../../lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+const publicStatsNotesLimit = 120;
+const publicStatsWordsLimit = 600;
 
 const publishedStatus = "已發布";
 const quoteCategory = "首頁白版";
@@ -79,8 +81,9 @@ export async function GET() {
         .select("published_date,category,tags,title")
         .eq("status", publishedStatus)
         .order("published_date", { ascending: true })
-        .order("id", { ascending: true }),
-      supabase.from("word_cards").select("category").neq("category", quoteCategory)
+        .order("id", { ascending: true })
+        .limit(publicStatsNotesLimit),
+      supabase.from("word_cards").select("category").neq("category", quoteCategory).limit(publicStatsWordsLimit)
     ]);
 
     if (notesResult.error) {

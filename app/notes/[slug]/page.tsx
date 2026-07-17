@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import HomeClient from "../../HomeClient";
-import { findNoteByRouteKey, getNotePath, getNoteRouteKey, PublicNoteRecord } from "../noteTypes";
-import { readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForPublicPage } from "../../publicData";
+import { getNotePath, getNoteRouteKey, PublicNoteRecord } from "../noteTypes";
+import { readPublishedNoteByRouteKey, readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForPublicPage } from "../../publicData";
 
 export const dynamic = "force-dynamic";
 
@@ -31,8 +31,7 @@ function toAbsoluteUrl(url: string) {
 export async function generateMetadata({ params, searchParams }: NotePageProps): Promise<Metadata> {
   const { slug } = await params;
   const { share } = (await searchParams) ?? {};
-  const notes = await readPublishedNotesForPublicPage();
-  const note = findNoteByRouteKey(notes, slug);
+  const note = await readPublishedNoteByRouteKey(slug);
 
   if (!note) {
     return {
@@ -77,20 +76,24 @@ export async function generateMetadata({ params, searchParams }: NotePageProps):
 
 export default async function NotePage({ params }: NotePageProps) {
   const { slug } = await params;
-  const [notes, words, quotes] = await Promise.all([
+  const [notes, note, words, quotes] = await Promise.all([
     readPublishedNotesForPublicPage(),
+    readPublishedNoteByRouteKey(slug),
     readWordsForPublicPage(),
     readQuotesForPublicPage()
   ]);
-  const note = findNoteByRouteKey(notes, slug);
 
   if (!note) {
     notFound();
   }
 
+  const initialNotes = notes.some((item) => item.id === note.id)
+    ? notes.map((item) => (item.id === note.id ? note : item))
+    : [note, ...notes];
+
   return (
     <HomeClient
-      initialNotes={notes}
+      initialNotes={initialNotes}
       initialQuotes={quotes}
       initialSelectedNoteSlug={note.slug || String(note.id)}
       initialWords={words}

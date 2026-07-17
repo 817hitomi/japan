@@ -5,6 +5,7 @@ import { WordCardRecord } from "../../words/wordTypes";
 import { rowToWord, wordToPayload } from "./wordMapper";
 
 export const dynamic = "force-dynamic";
+const publicWordsLimit = 600;
 
 function isUniqueViolation(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
@@ -18,7 +19,8 @@ export async function GET() {
       .select("*")
       .neq("category", "首頁白版")
       .order("category", { ascending: true })
-      .order("id", { ascending: false });
+      .order("id", { ascending: false })
+      .limit(publicWordsLimit);
 
     if (error) {
       throw error;

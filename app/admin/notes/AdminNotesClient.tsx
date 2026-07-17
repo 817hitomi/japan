@@ -145,6 +145,7 @@ function Sidebar() {
     { label: "學習筆記", href: "/admin/notes" },
     { label: "勘誤回報", href: "/admin/reports" },
     { label: "通路管理", href: "/admin/settings" },
+    { label: "聯盟管理", href: "/admin/affiliates" },
     { label: "首頁白版", href: "/admin/quotes" },
     { label: "設定", href: "/admin/settings" }
   ];

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import HomeClient from "./HomeClient";
-import { findNoteByRouteKey, getNoteRouteKey, PublicNoteRecord } from "./notes/noteTypes";
-import { readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForPublicPage } from "./publicData";
+import { getNoteRouteKey, PublicNoteRecord } from "./notes/noteTypes";
+import { readPublishedNoteByRouteKey, readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForPublicPage } from "./publicData";
 
 export const dynamic = "force-dynamic";
 const publicSiteUrl = "https://japan-note.com";
@@ -79,8 +79,7 @@ async function readNoteMeta(routeKey?: string): Promise<PublicNoteRecord | null>
   }
 
   try {
-    const notes = await readPublishedNotesForPublicPage();
-    return findNoteByRouteKey(notes, key);
+    return readPublishedNoteByRouteKey(key);
   } catch {
     return null;
   }

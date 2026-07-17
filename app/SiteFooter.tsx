@@ -8,7 +8,7 @@ const footerGroups = [
     title: "關於日文筆記",
     links: [
       { label: "關於筆記", href: "/about" },
-      { label: "內容勘誤回報", href: "#content-report" }
+      { label: "勘誤回報", href: "#content-report" }
     ]
   },
   {

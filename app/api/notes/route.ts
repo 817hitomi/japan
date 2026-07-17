@@ -5,19 +5,26 @@ import { PublicNoteRecord } from "../../notes/noteTypes";
 import { noteToPayload, rowToNote } from "./noteMapper";
 
 export const dynamic = "force-dynamic";
+const publicNotesLimit = 120;
+const publicNoteSummarySelect = "id,category,title,summary,status,published_date,slug,tags,cover_url";
 
 export async function GET(request: NextRequest) {
   try {
     const status = request.nextUrl.searchParams.get("status");
     const supabase = status === "published" ? createSupabaseReadClient() : createSupabaseAdminClient();
+    const selectColumns = status === "published" ? publicNoteSummarySelect : "*";
     let query = supabase
       .from("learning_notes")
-      .select("*")
+      .select(selectColumns)
       .order("published_date", { ascending: false })
       .order("id", { ascending: false });
 
     if (status === "published") {
       query = query.eq("status", "已發布");
+    }
+
+    if (status === "published") {
+      query = query.limit(publicNotesLimit);
     }
 
     const { data, error } = await query;
@@ -26,7 +33,8 @@ export async function GET(request: NextRequest) {
       throw error;
     }
 
-    return NextResponse.json({ notes: (data ?? []).map(rowToNote) });
+    const rows = (data ?? []) as unknown as Parameters<typeof rowToNote>[0][];
+    return NextResponse.json({ notes: rows.map(rowToNote) });
   } catch (error) {
     return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load notes") }, { status: 500 });
   }

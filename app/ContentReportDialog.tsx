@@ -76,7 +76,7 @@ export default function ContentReportDialog() {
   return (
     <>
       <button className={styles.footerTextButton} type="button" onClick={() => setOpen(true)}>
-        內容勘誤回報
+        勘誤回報
       </button>
 
       {open ? (

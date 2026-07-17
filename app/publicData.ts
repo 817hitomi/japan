@@ -8,6 +8,13 @@ import { normalizeWordCards, WordCardRecord } from "./words/wordTypes";
 const quoteCategory = "首頁白版";
 const publishedStatus = "已發布";
 
+const publicCacheSeconds = 300;
+const publicNotesLimit = 120;
+const publicWordsLimit = 600;
+const publicQuotesLimit = 40;
+const noteSummarySelect = "id,category,title,summary,status,published_date,slug,tags,cover_url";
+const noteFullSelect = `${noteSummarySelect},blocks`;
+
 function getSupabaseRestUrl(path: string, params: Record<string, string>) {
   const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL");
 
@@ -28,7 +35,7 @@ async function fetchSupabaseRows<Row>(path: string, params: Record<string, strin
   }
 
   const response = await fetch(getSupabaseRestUrl(path, params), {
-    cache: "no-store",
+    next: { revalidate: publicCacheSeconds },
     headers: {
       apikey: anonKey,
       authorization: `Bearer ${anonKey}`
@@ -68,9 +75,10 @@ function rowToQuote(row: QuoteRow): QuoteRecord {
 export async function readPublishedNotesForPublicPage(): Promise<PublicNoteRecord[]> {
   try {
     const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>("learning_notes", {
-      select: "*",
+      select: noteSummarySelect,
       status: `eq.${publishedStatus}`,
-      order: "published_date.desc,id.desc"
+      order: "published_date.desc,id.desc",
+      limit: String(publicNotesLimit)
     });
 
     return rows.map(rowToNote);
@@ -79,12 +87,35 @@ export async function readPublishedNotesForPublicPage(): Promise<PublicNoteRecor
   }
 }
 
+export async function readPublishedNoteByRouteKey(routeKey?: string): Promise<PublicNoteRecord | null> {
+  const key = routeKey?.trim();
+
+  if (!key) {
+    return null;
+  }
+
+  try {
+    const numericId = Number(key);
+    const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>("learning_notes", {
+      select: noteFullSelect,
+      status: `eq.${publishedStatus}`,
+      ...(Number.isFinite(numericId) && String(numericId) === key ? { id: `eq.${numericId}` } : { slug: `eq.${key}` }),
+      limit: "1"
+    });
+
+    return rows[0] ? rowToNote(rows[0]) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function readWordsForPublicPage(): Promise<WordCardRecord[]> {
   try {
     const rows = await fetchSupabaseRows<Parameters<typeof rowToWord>[0]>("word_cards", {
       select: "*",
       category: `neq.${quoteCategory}`,
-      order: "category.asc,id.desc"
+      order: "category.asc,id.desc",
+      limit: String(publicWordsLimit)
     });
 
     return normalizeWordCards(rows.map(rowToWord), true);
@@ -98,7 +129,8 @@ export async function readQuotesForPublicPage(): Promise<QuoteRecord[]> {
     const rows = await fetchSupabaseRows<QuoteRow>("word_cards", {
       select: "id,category,kana,japanese,chinese,audio_url,front_audio_url",
       category: `eq.${quoteCategory}`,
-      order: "id.desc"
+      order: "id.desc",
+      limit: String(publicQuotesLimit)
     });
 
     return normalizeQuotes(rows.map(rowToQuote), true);

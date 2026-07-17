@@ -3,9 +3,18 @@ import { getRuntimeEnv } from "./lib/runtimeEnv";
 
 const protectedApiPrefixes = ["/api/uploads"];
 const adminWriteApiPrefixes = ["/api/ads", "/api/words"];
+const publicAssetPrefixes = ["/_next/static", "/_next/image", "/brand"];
+
+function isPublicAssetPath(pathname: string) {
+  return pathname === "/favicon.ico" || publicAssetPrefixes.some((prefix) => pathname.startsWith(prefix));
+}
 
 function isProtectedPath(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+
+  if (isPublicAssetPath(pathname)) {
+    return false;
+  }
 
   if (pathname.startsWith("/admin")) {
     return true;
