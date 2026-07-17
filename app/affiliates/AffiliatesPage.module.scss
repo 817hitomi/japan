@@ -51,6 +51,145 @@
   margin: 72px auto 160px;
 }
 
+.carousel {
+  position: relative;
+  display: grid;
+  min-height: 420px;
+  align-items: center;
+  padding: 0 58px 42px;
+}
+
+.carouselStage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.22fr) minmax(280px, 0.78fr);
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid rgba(194, 128, 128, 0.72);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 0 rgba(194, 128, 128, 0.88);
+}
+
+.carouselImage {
+  display: grid;
+  min-height: 360px;
+  place-items: center;
+  background: #efe1ca;
+  overflow: hidden;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  span {
+    color: rgba(125, 125, 125, 0.42);
+    font-size: 48px;
+    font-weight: 900;
+  }
+}
+
+.carouselCopy {
+  display: grid;
+  align-content: center;
+  gap: 18px;
+  padding: 46px 42px;
+
+  span {
+    justify-self: start;
+    min-height: 28px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: #dfc399;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    color: #7d7d7d;
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1.36;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+  }
+
+  p {
+    color: #969090;
+    font-size: 16px;
+    line-height: 1.9;
+  }
+}
+
+.carouselButton {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #c28080;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 34px;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.prevButton {
+  left: 0;
+}
+
+.nextButton {
+  right: 0;
+}
+
+.dots {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+
+  button {
+    width: 12px;
+    height: 12px;
+    padding: 0;
+    border: 1px solid #c28080;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+  }
+}
+
+.currentDot {
+  background: #c28080 !important;
+}
+
+.carouselEmpty {
+  display: grid;
+  min-height: 300px;
+  place-items: center;
+  border: 1px dashed rgba(194, 128, 128, 0.58);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #c28080;
+  font-size: 20px;
+  font-weight: 900;
+}
+
 .searchTitle {
   display: grid;
   min-height: 108px;
@@ -222,6 +361,43 @@
   .content {
     width: min(100% - 28px, 620px);
     margin-top: 48px;
+  }
+
+  .carousel {
+    min-height: auto;
+    padding: 0 0 40px;
+  }
+
+  .carouselStage {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .carouselImage {
+    min-height: 210px;
+  }
+
+  .carouselCopy {
+    padding: 28px 22px 30px;
+
+    h2 {
+      font-size: 26px;
+    }
+  }
+
+  .carouselButton {
+    top: 105px;
+    width: 38px;
+    height: 38px;
+    font-size: 28px;
+  }
+
+  .prevButton {
+    left: 12px;
+  }
+
+  .nextButton {
+    right: 12px;
   }
 
   .searchTitle h2 {

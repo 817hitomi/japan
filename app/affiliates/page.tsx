@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createSupabaseReadClient } from "../../lib/supabase/server";
 import { AffiliateRecord } from "./affiliateTypes";
 import { rowToAffiliate, AffiliateRow } from "../api/affiliates/affiliateMapper";
-import AffiliatesPageClient from "./AffiliatesPageClient";
+import AffiliatesCarouselClient from "./AffiliatesCarouselClient";
 
 export const dynamic = "force-dynamic";
 
@@ -33,5 +33,5 @@ async function readPublishedAffiliates(): Promise<AffiliateRecord[]> {
 
 export default async function AffiliatesPage() {
   const affiliates = await readPublishedAffiliates();
-  return <AffiliatesPageClient initialAffiliates={affiliates} />;
+  return <AffiliatesCarouselClient initialAffiliates={affiliates} />;
 }
