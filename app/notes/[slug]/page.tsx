@@ -96,6 +96,7 @@ export default async function NotePage({ params }: NotePageProps) {
       initialNotes={initialNotes}
       initialQuotes={quotes}
       initialSelectedNoteSlug={note.slug || String(note.id)}
+      initialWordTotal={wordsResult.total}
       initialWords={wordsResult.words}
     />
   );

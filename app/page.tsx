@@ -132,6 +132,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       initialNotes={notes}
       initialQuotes={quotes}
       initialSelectedNoteId={resolvedSearchParams.note}
+      initialWordTotal={wordsResult.total}
       initialWords={wordsResult.words}
     />
   );

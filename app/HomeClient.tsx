@@ -8,7 +8,7 @@ import SiteFooter from "./SiteFooter";
 import { renderInlineRuby } from "../lib/japaneseText";
 import NotesFrontClient from "./notes/NotesFrontClient";
 import { getNotePath, getNotePreviewImage, PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
-import { readWordCardsWithFallback } from "./words/wordStorage";
+import { fetchWordCards } from "./words/wordStorage";
 import { WordCardRecord } from "./words/wordTypes";
 import { getOrCreateVisitorId } from "../lib/siteVisitor";
 import { defaultQuotes, QuoteRecord } from "./quotes/quoteTypes";
@@ -190,13 +190,13 @@ function getLearningDays(notes: PublicNoteRecord[]) {
   return Math.max(elapsedDays, 1);
 }
 
-function getFallbackLearningStats(notes: PublicNoteRecord[], words: WordCardRecord[]): HomeLearningStats {
+function getFallbackLearningStats(notes: PublicNoteRecord[], words: WordCardRecord[], wordCount = words.length): HomeLearningStats {
   const publishedNotes = notes.filter((note) => note.status === "已發布");
 
   return {
     currentLevel: getCurrentLevel(publishedNotes) === "-" ? getCurrentWordLevel(words) : getCurrentLevel(publishedNotes),
     learningDays: getLearningDays(publishedNotes),
-    wordCount: words.length
+    wordCount
   };
 }
 
@@ -374,6 +374,7 @@ export default function Home({
   initialQuotes = defaultQuotes,
   initialSelectedNoteId,
   initialSelectedNoteSlug,
+  initialWordTotal,
   initialWords = []
 }: {
   initialLearningStats?: HomeLearningStats;
@@ -381,6 +382,7 @@ export default function Home({
   initialQuotes?: QuoteRecord[];
   initialSelectedNoteId?: string;
   initialSelectedNoteSlug?: string;
+  initialWordTotal?: number;
   initialWords?: WordCardRecord[];
 }) {
   const initialNoteId = Number(initialSelectedNoteId);
@@ -393,7 +395,7 @@ export default function Home({
   const [notes, setNotes] = useState<PublicNoteRecord[]>(initialNotes);
   const [words, setWords] = useState<WordCardRecord[]>(initialWords);
   const [learningStats, setLearningStats] = useState<HomeLearningStats>(
-    initialLearningStats ?? getFallbackLearningStats(initialNotes, initialWords)
+    initialLearningStats ?? getFallbackLearningStats(initialNotes, initialWords, initialWordTotal ?? initialWords.length)
   );
   const [currentNote, setCurrentNote] = useState<PublicNoteRecord | null>(initialSelectedNote);
   const [hasSelectedNote, setHasSelectedNote] = useState<boolean | null>(
@@ -412,7 +414,7 @@ export default function Home({
     async function loadHomeData() {
       const [storedNotes, storedWords] = await Promise.all([
         readNotesWithFallback("published"),
-        readWordCardsWithFallback()
+        fetchWordCards().catch(() => ({ page: 1, pageSize: 0, total: 0, words: [] }))
       ]);
 
       if (!active) {
@@ -420,9 +422,14 @@ export default function Home({
       }
 
       const nextNotes = storedNotes.length > 0 || initialNotes.length === 0 ? storedNotes : initialNotes;
-      const nextWords = storedWords.length > 0 || initialWords.length === 0 ? storedWords : initialWords;
+      const nextWords = storedWords.words.length > 0 || initialWords.length === 0 ? storedWords.words : initialWords;
+      const nextWordCount = Math.max(storedWords.total, nextWords.length, initialWordTotal ?? 0);
       setNotes(nextNotes);
       setWords(nextWords);
+      setLearningStats((current) => ({
+        ...current,
+        wordCount: Math.max(current.wordCount, nextWordCount)
+      }));
       const rawNoteId = initialSelectedNoteSlug ?? new URLSearchParams(window.location.search).get("note");
       const noteId = Number(rawNoteId);
       const selectedNote = rawNoteId
@@ -439,7 +446,7 @@ export default function Home({
     return () => {
       active = false;
     };
-  }, [initialNotes, initialSelectedNote, initialSelectedNoteSlug, initialWords]);
+  }, [initialNotes, initialSelectedNote, initialSelectedNoteSlug, initialWordTotal, initialWords]);
 
   useEffect(() => {
     let active = true;
@@ -461,11 +468,15 @@ export default function Home({
         setLearningStats({
           currentLevel: typeof payload.currentLevel === "string" ? payload.currentLevel : "-",
           learningDays: Number.isFinite(payload.learningDays) ? Number(payload.learningDays) : 0,
-          wordCount: words.length || (Number.isFinite(payload.wordCount) ? Number(payload.wordCount) : 0)
+          wordCount: Math.max(
+            words.length,
+            Number.isFinite(payload.wordCount) ? Number(payload.wordCount) : 0,
+            initialWordTotal ?? 0
+          )
         });
       } catch {
         if (active) {
-          setLearningStats(getFallbackLearningStats(notes, words));
+          setLearningStats(getFallbackLearningStats(notes, words, Math.max(words.length, initialWordTotal ?? 0)));
         }
       }
     }
@@ -475,7 +486,7 @@ export default function Home({
     return () => {
       active = false;
     };
-  }, [notes, words]);
+  }, [initialWordTotal, notes, words]);
 
   useEffect(() => {
     let active = true;
@@ -516,7 +527,7 @@ export default function Home({
     [notes]
   );
 
-  const displayedWordCount = words.length || learningStats.wordCount;
+  const displayedWordCount = Math.max(words.length, learningStats.wordCount, initialWordTotal ?? 0);
 
   const statItems = useMemo(
     () => [
