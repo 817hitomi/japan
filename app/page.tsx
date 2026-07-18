@@ -121,7 +121,7 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const resolvedSearchParams = await searchParams;
-  const [notes, words, quotes] = await Promise.all([
+  const [notes, wordsResult, quotes] = await Promise.all([
     readPublishedNotesForPublicPage(),
     readWordsForPublicPage(),
     readQuotesForPublicPage()
@@ -132,7 +132,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       initialNotes={notes}
       initialQuotes={quotes}
       initialSelectedNoteId={resolvedSearchParams.note}
-      initialWords={words}
+      initialWords={wordsResult.words}
     />
   );
 }

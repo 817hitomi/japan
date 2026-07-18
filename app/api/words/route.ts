@@ -5,28 +5,55 @@ import { WordCardRecord } from "../../words/wordTypes";
 import { rowToWord, wordToPayload } from "./wordMapper";
 
 export const dynamic = "force-dynamic";
-const publicWordsLimit = 600;
+const defaultWordsPage = 1;
+const defaultWordsPageSize = 100;
+const maxWordsPageSize = 200;
+const quoteCategory = "擐??賜?";
+
+function getPositiveInteger(value: string | null, fallback: number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function escapeLikePattern(value: string) {
+  return value.replace(/[%_]/g, (match) => `\\${match}`);
+}
 
 function isUniqueViolation(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const page = getPositiveInteger(request.nextUrl.searchParams.get("page"), defaultWordsPage);
+    const requestedPageSize = getPositiveInteger(request.nextUrl.searchParams.get("pageSize"), defaultWordsPageSize);
+    const pageSize = Math.min(requestedPageSize, maxWordsPageSize);
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
     const supabase = createSupabaseReadClient();
-    const { data, error } = await supabase
+    let requestBuilder = supabase
       .from("word_cards")
-      .select("*")
-      .neq("category", "首頁白版")
+      .select("*", { count: "exact" })
+      .neq("category", "首頁白版");
+
+    if (query) {
+      const pattern = `%${escapeLikePattern(query)}%`;
+      requestBuilder = requestBuilder.or(
+        `category.ilike.${pattern},japanese.ilike.${pattern},kana.ilike.${pattern},chinese.ilike.${pattern},example_japanese.ilike.${pattern},example_chinese.ilike.${pattern}`
+      );
+    }
+
+    const { data, error, count } = await requestBuilder
       .order("category", { ascending: true })
       .order("id", { ascending: false })
-      .limit(publicWordsLimit);
+      .range(from, to);
 
     if (error) {
       throw error;
     }
 
-    return NextResponse.json({ words: (data ?? []).map(rowToWord) });
+    return NextResponse.json({ page, pageSize, total: count ?? 0, words: (data ?? []).map(rowToWord) });
   } catch (error) {
     return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load words") }, { status: 500 });
   }

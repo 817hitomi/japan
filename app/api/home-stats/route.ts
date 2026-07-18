@@ -4,7 +4,7 @@ import { createSupabaseReadClient } from "../../../lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 const publicStatsNotesLimit = 120;
-const publicStatsWordsLimit = 600;
+const publicStatsWordsLevelLimit = 200;
 
 const publishedStatus = "已發布";
 const quoteCategory = "首頁白版";
@@ -83,7 +83,11 @@ export async function GET() {
         .order("published_date", { ascending: true })
         .order("id", { ascending: true })
         .limit(publicStatsNotesLimit),
-      supabase.from("word_cards").select("category").neq("category", quoteCategory).limit(publicStatsWordsLimit)
+      supabase
+        .from("word_cards")
+        .select("category", { count: "exact" })
+        .neq("category", quoteCategory)
+        .limit(publicStatsWordsLevelLimit)
     ]);
 
     if (notesResult.error) {
@@ -100,7 +104,7 @@ export async function GET() {
     return NextResponse.json({
       currentLevel: getCurrentLevel(notes, words),
       learningDays: getLearningDays(notes[0]?.published_date),
-      wordCount: words.length
+      wordCount: wordsResult.count ?? words.length
     });
   } catch (error) {
     return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load home stats") }, { status: 500 });

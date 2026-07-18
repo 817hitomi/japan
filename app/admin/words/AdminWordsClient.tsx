@@ -23,6 +23,18 @@ const emptyWord: WordCardRecord = {
 const wordsPerPage = 10;
 const maxVisiblePageButtons = 10;
 
+function getAdminWordsPageHref(page: number, query = "") {
+  const path = page <= 1 ? "/admin/words" : `/admin/words/${page}`;
+  const params = new URLSearchParams();
+
+  if (query.trim()) {
+    params.set("q", query.trim());
+  }
+
+  const search = params.toString();
+  return search ? `${path}?${search}` : path;
+}
+
 function getWordDuplicateKey(word: Pick<WordCardRecord, "japanese">) {
   return word.japanese.trim();
 }
@@ -39,17 +51,24 @@ function getVisiblePageNumbers(currentPage: number, totalPages: number) {
   return Array.from({ length: maxVisiblePageButtons }, (_, index) => startPage + index);
 }
 
-export default function AdminWordsClient() {
+export default function AdminWordsClient({
+  initialPage = 1,
+  initialSearchText = ""
+}: {
+  initialPage?: number;
+  initialSearchText?: string;
+}) {
   const [words, setWords] = useState<WordCardRecord[]>([]);
+  const [totalWords, setTotalWords] = useState(0);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [draft, setDraft] = useState<WordCardRecord>(emptyWord);
   const [showEditor, setShowEditor] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [page, setPage] = useState(1);
+  const [searchText, setSearchText] = useState(initialSearchText);
+  const [page] = useState(initialPage);
   const [message, setMessage] = useState("單字卡會儲存在資料庫。");
 
   const filteredWords = useMemo(() => {
-    const keyword = searchText.trim().toLowerCase();
+    const keyword = initialSearchText.trim().toLowerCase();
 
     if (!keyword) {
       return words;
@@ -61,24 +80,17 @@ export default function AdminWordsClient() {
         .toLowerCase()
         .includes(keyword)
     );
-  }, [searchText, words]);
+  }, [initialSearchText, words]);
 
-  const pageCount = Math.max(1, Math.ceil(filteredWords.length / wordsPerPage));
+  const pageCount = Math.max(1, Math.ceil(totalWords / wordsPerPage));
   const visiblePages = getVisiblePageNumbers(page, pageCount);
-  const visibleWords = filteredWords.slice((page - 1) * wordsPerPage, page * wordsPerPage);
+  const visibleWords = filteredWords;
 
   useEffect(() => {
-    setPage(1);
-  }, [searchText]);
-
-  useEffect(() => {
-    setPage((current) => Math.min(current, pageCount));
-  }, [pageCount]);
-
-  useEffect(() => {
-    readWordCardsWithSource()
+    readWordCardsWithSource({ page, pageSize: wordsPerPage, query: initialSearchText })
       .then((result) => {
         setWords(result.words);
+        setTotalWords(result.total);
         setMessage(
           result.source === "database"
             ? "已載入資料庫單字。"
@@ -88,7 +100,12 @@ export default function AdminWordsClient() {
       .catch(() => {
         setMessage("資料庫讀取失敗，暫時顯示本機資料。");
       });
-  }, []);
+  }, [initialSearchText, page]);
+
+  function searchWords(event: FormEvent) {
+    event.preventDefault();
+    window.location.href = getAdminWordsPageHref(1, searchText);
+  }
 
   function persist(nextWords: WordCardRecord[], nextMessage: string) {
     setWords(nextWords);
@@ -158,6 +175,9 @@ export default function AdminWordsClient() {
         : [savedWord, ...words];
 
       persist(nextWords, selectedId ? "已更新單字卡。" : "已新增單字卡。");
+      if (!selectedId) {
+        setTotalWords((current) => current + 1);
+      }
       setSelectedId(savedWord.id);
       setDraft(savedWord);
       setShowEditor(false);
@@ -183,6 +203,7 @@ export default function AdminWordsClient() {
       await deleteWordCards([selectedId]);
       const nextWords = words.filter((word) => word.id !== selectedId);
       persist(nextWords, "已刪除單字卡。");
+      setTotalWords((current) => Math.max(0, current - 1));
       setSelectedId(null);
       setDraft(emptyWord);
       setShowEditor(false);
@@ -322,7 +343,7 @@ export default function AdminWordsClient() {
         </form>
       ) : (
         <>
-          <div className={styles.wordSearchBar}>
+          <form className={styles.wordSearchBar} onSubmit={searchWords}>
             <label>
               <span>搜尋</span>
               <input
@@ -331,7 +352,8 @@ export default function AdminWordsClient() {
                 onChange={(event) => setSearchText(event.target.value)}
               />
             </label>
-          </div>
+            <button type="submit">搜尋</button>
+          </form>
           <div className={styles.tableWrap}>
             <table className={styles.noteTable}>
               <thead>
@@ -364,34 +386,31 @@ export default function AdminWordsClient() {
           {pageCount > 1 ? (
             <nav className={styles.pagination} aria-label="單字列表頁碼">
               {pageCount > maxVisiblePageButtons ? (
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  disabled={page === 1}
+                <a
+                  href={getAdminWordsPageHref(Math.max(1, page - 1), initialSearchText)}
+                  aria-disabled={page === 1}
                   aria-label="上一頁"
                 >
                   ‹
-                </button>
+                </a>
               ) : null}
               {visiblePages.map((item) => (
-                <button
+                <a
                   key={item}
                   className={item === page ? styles.currentPage : undefined}
-                  type="button"
-                  onClick={() => setPage(item)}
+                  href={getAdminWordsPageHref(item, initialSearchText)}
                 >
                   {item}
-                </button>
+                </a>
               ))}
               {pageCount > maxVisiblePageButtons ? (
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-                  disabled={page === pageCount}
+                <a
+                  href={getAdminWordsPageHref(Math.min(pageCount, page + 1), initialSearchText)}
+                  aria-disabled={page === pageCount}
                   aria-label="下一頁"
                 >
                   ›
-                </button>
+                </a>
               ) : null}
             </nav>
           ) : null}

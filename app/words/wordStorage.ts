@@ -7,7 +7,16 @@ const wordStorageKey = "japannote-word-cards";
 export type WordCardsReadResult = {
   source: "database" | "local";
   words: WordCardRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
   error?: string;
+};
+
+export type WordCardsReadOptions = {
+  page?: number;
+  pageSize?: number;
+  query?: string;
 };
 
 function isOldDefaultCards(words: WordCardRecord[]) {
@@ -66,7 +75,7 @@ async function parseWordsResponse(response: Response) {
           }
         })()
       : {}
-  ) as { words?: WordCardRecord[]; word?: WordCardRecord; error?: string };
+  ) as { words?: WordCardRecord[]; word?: WordCardRecord; total?: number; page?: number; pageSize?: number; error?: string };
 
   if (!response.ok) {
     const error = new Error(payload.error || responseText || `Words API failed: ${response.status}`);
@@ -81,24 +90,58 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unknown words API error";
 }
 
-export async function fetchWordCards() {
-  const response = await fetch("/api/words", { cache: "no-store" });
-  const payload = await parseWordsResponse(response);
-  return normalizeWordCards(payload.words, true);
+function getWordsApiUrl(options: WordCardsReadOptions = {}) {
+  const params = new URLSearchParams();
+
+  if (options.page) {
+    params.set("page", String(options.page));
+  }
+
+  if (options.pageSize) {
+    params.set("pageSize", String(options.pageSize));
+  }
+
+  if (options.query?.trim()) {
+    params.set("q", options.query.trim());
+  }
+
+  const query = params.toString();
+  return query ? `/api/words?${query}` : "/api/words";
 }
 
-export async function readWordCardsWithFallback() {
-  const result = await readWordCardsWithSource();
+export async function fetchWordCards(options: WordCardsReadOptions = {}) {
+  const response = await fetch(getWordsApiUrl(options), { cache: "no-store" });
+  const payload = await parseWordsResponse(response);
+  const words = normalizeWordCards(payload.words, true);
+
+  return {
+    page: payload.page ?? options.page ?? 1,
+    pageSize: payload.pageSize ?? options.pageSize ?? words.length,
+    total: payload.total ?? words.length,
+    words
+  };
+}
+
+export async function readWordCardsWithFallback(options: WordCardsReadOptions = {}) {
+  const result = await readWordCardsWithSource(options);
   return result.words;
 }
 
-export async function readWordCardsWithSource(): Promise<WordCardsReadResult> {
+export async function readWordCardsWithSource(options: WordCardsReadOptions = {}): Promise<WordCardsReadResult> {
   try {
-    const remoteWords = await fetchWordCards();
-    writeStoredWordCards(remoteWords);
-    return { source: "database", words: remoteWords };
+    const result = await fetchWordCards(options);
+    writeStoredWordCards(result.words);
+    return { source: "database", ...result };
   } catch (error) {
-    return { source: "local", words: readStoredWordCards(), error: getErrorMessage(error) };
+    const words = readStoredWordCards();
+    return {
+      source: "local",
+      words,
+      total: words.length,
+      page: options.page ?? 1,
+      pageSize: options.pageSize ?? words.length,
+      error: getErrorMessage(error)
+    };
   }
 }
 

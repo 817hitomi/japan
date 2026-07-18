@@ -477,13 +477,17 @@
   width: min(1228px, 100%);
   margin: 34px auto 0;
 
-  button {
+  button,
+  a {
+    display: grid;
+    place-items: center;
     width: 38px;
     height: 38px;
     border: 1px solid var(--admin-border);
     background: #ffffff;
     color: var(--admin-primary);
     cursor: pointer;
+    text-decoration: none;
   }
 }
 

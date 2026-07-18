@@ -6,7 +6,6 @@ import AdSlot from "../ads/AdSlot";
 import SiteFooter from "../SiteFooter";
 import { readingsToSpeechText, renderInlineRuby, renderWordRuby, shouldShowStandaloneKana, splitStandaloneReading, stripInlineReadings } from "../../lib/japaneseText";
 import homeStyles from "../page.module.scss";
-import { readWordCardsWithFallback } from "./wordStorage";
 import { WordCardRecord } from "./wordTypes";
 import styles from "./Words.module.scss";
 
@@ -19,7 +18,6 @@ const navItems = [
 
 const japaneseSpeechRate = 0.8;
 const preferredJapaneseVoiceName = "Google 日本語";
-const wordListPageSize = 12;
 const adInsertAfterCards = 6;
 const maxVisiblePageButtons = 10;
 
@@ -226,19 +224,29 @@ function getVisiblePageNumbers(currentPage: number, totalPages: number) {
   return Array.from({ length: maxVisiblePageButtons }, (_, index) => startPage + index);
 }
 
-export default function WordsClient({ initialWords = [] }: { initialWords?: WordCardRecord[] }) {
+type WordsClientProps = {
+  initialPage?: number;
+  initialPageSize?: number;
+  initialTotal?: number;
+  initialWords?: WordCardRecord[];
+};
+
+function getWordsPageHref(page: number) {
+  return page <= 1 ? "/words" : `/words/${page}`;
+}
+
+export default function WordsClient({
+  initialPage = 1,
+  initialPageSize = 12,
+  initialTotal,
+  initialWords = []
+}: WordsClientProps) {
   const [words, setWords] = useState<WordCardRecord[]>(initialWords);
   const [activeIndex, setActiveIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedKanaRow, setSelectedKanaRow] = useState("");
   const [wordListPage, setWordListPage] = useState(1);
-
-  useEffect(() => {
-    readWordCardsWithFallback()
-      .then((nextWords) => setWords(nextWords.length > 0 || initialWords.length === 0 ? nextWords : initialWords))
-      .catch(() => undefined);
-  }, [initialWords]);
 
   const categories = useMemo(
     () => Array.from(new Set(words.map((word) => word.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "zh-Hant")),
@@ -264,13 +272,26 @@ export default function WordsClient({ initialWords = [] }: { initialWords?: Word
     [filteredWords, selectedKanaRow]
   );
 
-  const totalWordListPages = Math.max(1, Math.ceil(selectedRowWords.length / wordListPageSize));
-  const visibleWordListPages = getVisiblePageNumbers(wordListPage, totalWordListPages);
-  const pagedWordList = selectedRowWords.slice((wordListPage - 1) * wordListPageSize, wordListPage * wordListPageSize);
+  const isFilteredList = Boolean(selectedCategory || selectedKanaRow);
+  const displayPage = isFilteredList ? wordListPage : initialPage;
+  const totalWordListPages = Math.max(1, Math.ceil(selectedRowWords.length / initialPageSize));
+  const visibleWordListPages = getVisiblePageNumbers(displayPage, totalWordListPages);
+  const pagedWordList = selectedRowWords.slice((displayPage - 1) * initialPageSize, displayPage * initialPageSize);
   const wordListBeforeAd = pagedWordList.slice(0, adInsertAfterCards);
   const wordListAfterAd = pagedWordList.slice(adInsertAfterCards);
 
   const activeWord = filteredWords[activeIndex] ?? filteredWords[0] ?? words[0];
+
+  function showRandomCardFromWords(nextWords: WordCardRecord[]) {
+    if (nextWords.length === 0) {
+      setActiveIndex(0);
+      setFlipped(false);
+      return;
+    }
+
+    setActiveIndex(Math.floor(Math.random() * nextWords.length));
+    setFlipped(false);
+  }
 
   function showRandomCard() {
     if (filteredWords.length === 0) {
@@ -282,14 +303,13 @@ export default function WordsClient({ initialWords = [] }: { initialWords?: Word
   }
 
   useEffect(() => {
-    setActiveIndex(0);
-    setFlipped(false);
+    showRandomCardFromWords(filteredWords);
     setSelectedKanaRow("");
-  }, [selectedCategory]);
+  }, [filteredWords, selectedCategory]);
 
   useEffect(() => {
     setWordListPage(1);
-  }, [selectedKanaRow]);
+  }, [selectedCategory, selectedKanaRow]);
 
   useEffect(() => {
     setWordListPage((current) => Math.min(current, totalWordListPages));
@@ -324,7 +344,7 @@ export default function WordsClient({ initialWords = [] }: { initialWords?: Word
             <p className={homeStyles.heroLead}>點卡片翻面，左右鍵隨機換一張</p>
             <div className={`${homeStyles.stats} ${styles.wordStats}`} aria-label="單字卡統計">
               <div>
-                <strong>{words.length.toLocaleString("en-US")}</strong>
+                <strong>{(initialTotal ?? words.length).toLocaleString("en-US")}</strong>
                 <span>已收錄單字</span>
               </div>
               <div>
@@ -340,7 +360,7 @@ export default function WordsClient({ initialWords = [] }: { initialWords?: Word
           <div className={homeStyles.heroArt}>
             <div className={homeStyles.dotGrid} aria-hidden="true" />
             <Image src="/brand/01.png" alt="單字卡插圖" width={420} height={420} priority />
-            <div className={homeStyles.speech}>有 {words.length.toLocaleString("en-US")} 個單字了喔</div>
+            <div className={homeStyles.speech}>有 {(initialTotal ?? words.length).toLocaleString("en-US")} 個單字了喔</div>
           </div>
         </div>
       </section>
@@ -425,36 +445,68 @@ export default function WordsClient({ initialWords = [] }: { initialWords?: Word
         {totalWordListPages > 1 ? (
           <nav className={styles.pagination} aria-label="單字列表頁碼">
             {totalWordListPages > maxVisiblePageButtons ? (
-              <button
-                className={styles.pageArrow}
-                type="button"
-                onClick={() => setWordListPage((current) => Math.max(1, current - 1))}
-                disabled={wordListPage === 1}
-                aria-label="上一頁"
-              >
-                ‹
-              </button>
+              isFilteredList ? (
+                <button
+                  className={styles.pageArrow}
+                  type="button"
+                  onClick={() => setWordListPage((current) => Math.max(1, current - 1))}
+                  disabled={displayPage === 1}
+                  aria-label="上一頁"
+                >
+                  ‹
+                </button>
+              ) : (
+                <a
+                  className={styles.pageArrow}
+                  href={getWordsPageHref(Math.max(1, displayPage - 1))}
+                  aria-disabled={displayPage === 1}
+                  aria-label="上一頁"
+                >
+                  ‹
+                </a>
+              )
             ) : null}
             {visibleWordListPages.map((page) => (
-              <button
-                key={page}
-                className={wordListPage === page ? styles.activePage : ""}
-                type="button"
-                onClick={() => setWordListPage(page)}
-              >
-                {page}
-              </button>
+              isFilteredList ? (
+                <button
+                  key={page}
+                  className={displayPage === page ? styles.activePage : ""}
+                  type="button"
+                  onClick={() => setWordListPage(page)}
+                >
+                  {page}
+                </button>
+              ) : (
+                <a
+                  key={page}
+                  className={displayPage === page ? styles.activePage : ""}
+                  href={getWordsPageHref(page)}
+                >
+                  {page}
+                </a>
+              )
             ))}
             {totalWordListPages > maxVisiblePageButtons ? (
-              <button
-                className={styles.pageArrow}
-                type="button"
-                onClick={() => setWordListPage((current) => Math.min(totalWordListPages, current + 1))}
-                disabled={wordListPage === totalWordListPages}
-                aria-label="下一頁"
-              >
-                ›
-              </button>
+              isFilteredList ? (
+                <button
+                  className={styles.pageArrow}
+                  type="button"
+                  onClick={() => setWordListPage((current) => Math.min(totalWordListPages, current + 1))}
+                  disabled={displayPage === totalWordListPages}
+                  aria-label="下一頁"
+                >
+                  ›
+                </button>
+              ) : (
+                <a
+                  className={styles.pageArrow}
+                  href={getWordsPageHref(Math.min(totalWordListPages, displayPage + 1))}
+                  aria-disabled={displayPage === totalWordListPages}
+                  aria-label="下一頁"
+                >
+                  ›
+                </a>
+              )
             ) : null}
           </nav>
         ) : null}

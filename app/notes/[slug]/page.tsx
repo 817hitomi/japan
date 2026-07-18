@@ -76,7 +76,7 @@ export async function generateMetadata({ params, searchParams }: NotePageProps):
 
 export default async function NotePage({ params }: NotePageProps) {
   const { slug } = await params;
-  const [notes, note, words, quotes] = await Promise.all([
+  const [notes, note, wordsResult, quotes] = await Promise.all([
     readPublishedNotesForPublicPage(),
     readPublishedNoteByRouteKey(slug),
     readWordsForPublicPage(),
@@ -96,7 +96,7 @@ export default async function NotePage({ params }: NotePageProps) {
       initialNotes={initialNotes}
       initialQuotes={quotes}
       initialSelectedNoteSlug={note.slug || String(note.id)}
-      initialWords={words}
+      initialWords={wordsResult.words}
     />
   );
 }

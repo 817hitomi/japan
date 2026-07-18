@@ -291,7 +291,8 @@
   gap: 10px;
   padding-top: 10vh;
 
-  button {
+  button,
+  a {
     display: grid;
     min-width: 38px;
     height: 38px;
@@ -303,9 +304,11 @@
     cursor: pointer;
     font-size: 15px;
     font-weight: 800;
+    text-decoration: none;
   }
 
-  button:disabled {
+  button:disabled,
+  a[aria-disabled="true"] {
     cursor: not-allowed;
     opacity: 0.38;
   }

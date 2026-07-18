@@ -1,4 +1,5 @@
 import { getRuntimeEnv } from "../lib/runtimeEnv";
+import { createSupabaseReadClient } from "../lib/supabase/server";
 import { rowToNote } from "./api/notes/noteMapper";
 import { rowToWord } from "./api/words/wordMapper";
 import { PublicNoteRecord } from "./notes/noteTypes";
@@ -10,7 +11,7 @@ const publishedStatus = "已發布";
 
 const publicCacheSeconds = 300;
 const publicNotesLimit = 120;
-const publicWordsLimit = 600;
+export const publicWordsPageSize = 12;
 const publicQuotesLimit = 40;
 const noteSummarySelect = "id,category,title,summary,status,published_date,slug,tags,cover_url";
 const noteFullSelect = `${noteSummarySelect},blocks`;
@@ -109,18 +110,66 @@ export async function readPublishedNoteByRouteKey(routeKey?: string): Promise<Pu
   }
 }
 
-export async function readWordsForPublicPage(): Promise<WordCardRecord[]> {
-  try {
-    const rows = await fetchSupabaseRows<Parameters<typeof rowToWord>[0]>("word_cards", {
-      select: "*",
-      category: `neq.${quoteCategory}`,
-      order: "category.asc,id.desc",
-      limit: String(publicWordsLimit)
-    });
+export type PublicWordsPageResult = {
+  page: number;
+  pageSize: number;
+  total: number;
+  words: WordCardRecord[];
+};
 
-    return normalizeWordCards(rows.map(rowToWord), true);
+export function normalizePublicPage(value?: string | number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+}
+
+export async function readWordsForPublicPage(page = 1, pageSize = publicWordsPageSize): Promise<PublicWordsPageResult> {
+  const currentPage = normalizePublicPage(page);
+  const readBatchSize = 1000;
+
+  try {
+    const supabase = createSupabaseReadClient();
+    const rows: Parameters<typeof rowToWord>[0][] = [];
+    let total = 0;
+
+    for (let from = 0; ; from += readBatchSize) {
+      const to = from + readBatchSize - 1;
+      const { data, error, count } = await supabase
+        .from("word_cards")
+        .select("*", { count: from === 0 ? "exact" : undefined })
+        .neq("category", quoteCategory)
+        .order("category", { ascending: true })
+        .order("id", { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        throw error;
+      }
+
+      if (from === 0) {
+        total = count ?? 0;
+      }
+
+      rows.push(...(data ?? []));
+
+      if ((data ?? []).length < readBatchSize || (total > 0 && rows.length >= total)) {
+        break;
+      }
+    }
+
+    const words = normalizeWordCards(rows.map(rowToWord), true);
+    return {
+      page: currentPage,
+      pageSize,
+      total: total || words.length,
+      words
+    };
   } catch {
-    return [];
+    return {
+      page: currentPage,
+      pageSize,
+      total: 0,
+      words: []
+    };
   }
 }
 
