@@ -15,6 +15,8 @@ const knownPublicRoutes = new Set([
   "/notes",
   "/privacy",
   "/quiz",
+  "/quiz/random-10",
+  "/quiz/random-20",
   "/quiz/vocabulary",
   "/terms",
   "/words"

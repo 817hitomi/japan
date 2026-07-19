@@ -11,7 +11,7 @@
   z-index: 3;
   display: grid;
   gap: 32px;
-  width: min(860px, calc(100% - 48px));
+  width: min(1024px, calc(100% - 48px));
   margin: 0 auto 58px;
 }
 
@@ -64,7 +64,7 @@
   color: #ffffff;
   cursor: pointer;
   font-size: 28px;
-  line-height: 1;
+  line-height: 2;
 }
 
 .questionCard {
