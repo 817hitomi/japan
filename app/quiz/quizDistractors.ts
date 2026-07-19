@@ -275,19 +275,18 @@ function shuffle<T>(items: T[]) {
 
 export function generateQuizDistractors(answer: string, questions: QuizQuestionRecord[], manualOptions: string[] = []) {
   const normalizedAnswer = toHiragana(answer.trim());
-  const manualDistractors = uniqueOptions(manualOptions).filter((option) => isLikelyReadingDistractor(normalizedAnswer, option));
+  const manualDistractors = uniqueOptions(manualOptions).filter((option) => toHiragana(option) !== normalizedAnswer);
   const questionCandidates = questions.flatMap((question) => [question.answer, ...question.options]);
   const generatedVariants = createReadingVariants(normalizedAnswer);
   const scoredCandidates = uniqueOptions([...generatedVariants, ...questionCandidates])
-    .filter((option) => !manualDistractors.includes(option))
+    .filter((option) => !manualDistractors.includes(option) && toHiragana(option) !== normalizedAnswer)
     .map((option) => ({ option, score: scoreReadingDistractor(normalizedAnswer, option) }))
     .filter((candidate) => Number.isFinite(candidate.score))
     .sort((a, b) => b.score - a.score)
     .map((candidate) => candidate.option);
-  const autoDistractors = uniqueOptions(scoredCandidates).filter((option) => option !== normalizedAnswer);
-  const distractors = uniqueOptions([...manualDistractors, ...shuffle(autoDistractors)]).filter((option) =>
-    isLikelyReadingDistractor(normalizedAnswer, option)
-  );
+  const likelyDistractors = scoredCandidates.filter((option) => isLikelyReadingDistractor(normalizedAnswer, option));
+  const fallbackDistractors = scoredCandidates.filter((option) => !likelyDistractors.includes(option));
+  const distractors = uniqueOptions([...manualDistractors, ...shuffle(likelyDistractors), ...shuffle(fallbackDistractors)]);
 
   return distractors.slice(0, 3);
 }

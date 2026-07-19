@@ -76,6 +76,10 @@ function shuffle<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
+function uniqueOptions(options: string[]) {
+  return Array.from(new Set(options.map((option) => option.trim()).filter(Boolean)));
+}
+
 function getDisplayOptions(activeQuestion: QuizQuestionRecord, questions: QuizQuestionRecord[]) {
   const answer = activeQuestion.answer.trim();
   const relatedQuestions = questions.filter(
@@ -85,8 +89,12 @@ function getDisplayOptions(activeQuestion: QuizQuestionRecord, questions: QuizQu
       question.category === activeQuestion.category
   );
   const distractors = generateQuizDistractors(answer, relatedQuestions, activeQuestion.options);
+  const fallbackOptions = questions
+    .filter((question) => question.level === activeQuestion.level && question.category === activeQuestion.category)
+    .flatMap((question) => [question.answer, ...question.options]);
+  const options = uniqueOptions([answer, ...distractors, ...fallbackOptions]).filter((option) => option !== answer);
 
-  return shuffle([answer, ...distractors].slice(0, 4));
+  return shuffle([answer, ...options.slice(0, 3)]);
 }
 
 export default function QuizClient({

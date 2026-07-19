@@ -55,6 +55,7 @@
 
 .arrowButton {
   display: grid;
+  justify-self: center;
   width: 48px;
   height: 48px;
   place-items: center;
@@ -63,8 +64,8 @@
   background: #d6c09e;
   color: #ffffff;
   cursor: pointer;
-  font-size: 28px;
-  line-height: 2;
+  font-size: 22px;
+  line-height: 1;
 }
 
 .questionCard {
