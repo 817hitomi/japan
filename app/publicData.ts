@@ -1,4 +1,5 @@
 import { getRuntimeEnv } from "../lib/runtimeEnv";
+import { createRequestTimer } from "../lib/requestDiagnostics";
 import { createSupabaseReadClient } from "../lib/supabase/server";
 import { rowToNote } from "./api/notes/noteMapper";
 import { rowToWord } from "./api/words/wordMapper";
@@ -35,6 +36,7 @@ async function fetchSupabaseRows<Row>(path: string, params: Record<string, strin
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
 
+  const timer = createRequestTimer("database query", { table: path, operation: "public-rest-read" });
   const response = await fetch(getSupabaseRestUrl(path, params), {
     next: { revalidate: publicCacheSeconds },
     headers: {
@@ -44,10 +46,13 @@ async function fetchSupabaseRows<Row>(path: string, params: Record<string, strin
   });
 
   if (!response.ok) {
+    timer.end({ status: response.status });
     throw new Error(`Supabase public read failed: ${response.status}`);
   }
 
-  return (await response.json()) as Row[];
+  const rows = (await response.json()) as Row[];
+  timer.end({ status: response.status, rows: rows.length });
+  return rows;
 }
 
 type QuoteRow = {
@@ -124,43 +129,37 @@ export function normalizePublicPage(value?: string | number) {
 
 export async function readWordsForPublicPage(page = 1, pageSize = publicWordsPageSize): Promise<PublicWordsPageResult> {
   const currentPage = normalizePublicPage(page);
-  const readBatchSize = 1000;
+  const from = (currentPage - 1) * pageSize;
+  const to = from + pageSize - 1;
 
   try {
     const supabase = createSupabaseReadClient();
-    const rows: Parameters<typeof rowToWord>[0][] = [];
-    let total = 0;
+    const timer = createRequestTimer("database query", {
+      table: "word_cards",
+      operation: "public-words-page",
+      page: currentPage,
+      pageSize
+    });
+    const { data, error, count } = await supabase
+      .from("word_cards")
+      .select("*", { count: "exact" })
+      .neq("category", quoteCategory)
+      .order("category", { ascending: true })
+      .order("id", { ascending: false })
+      .range(from, to);
 
-    for (let from = 0; ; from += readBatchSize) {
-      const to = from + readBatchSize - 1;
-      const { data, error, count } = await supabase
-        .from("word_cards")
-        .select("*", { count: from === 0 ? "exact" : undefined })
-        .neq("category", quoteCategory)
-        .order("category", { ascending: true })
-        .order("id", { ascending: false })
-        .range(from, to);
-
-      if (error) {
-        throw error;
-      }
-
-      if (from === 0) {
-        total = count ?? 0;
-      }
-
-      rows.push(...(data ?? []));
-
-      if ((data ?? []).length < readBatchSize || (total > 0 && rows.length >= total)) {
-        break;
-      }
+    if (error) {
+      timer.end({ status: "error" });
+      throw error;
     }
 
+    const rows = data ?? [];
+    timer.end({ status: "ok", rows: rows.length, total: count ?? 0 });
     const words = normalizeWordCards(rows.map(rowToWord), true);
     return {
       page: currentPage,
       pageSize,
-      total: total || words.length,
+      total: count ?? words.length,
       words
     };
   } catch {

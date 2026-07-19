@@ -138,10 +138,11 @@ async function uploadVideoFile(event: ChangeEvent<HTMLInputElement>, callback: (
 
 function Sidebar() {
   const pathname = usePathname();
+  const isQuizActive = pathname.startsWith("/admin/quiz");
   const navItems = [
     { label: "總覽", href: "/admin" },
     { label: "單字卡", href: "/admin/words" },
-    { label: "模擬測驗", href: "#" },
+    { label: "模擬測驗", href: "/admin/quiz?level=N5&category=文字．語彙" },
     { label: "學習筆記", href: "/admin/notes" },
     { label: "勘誤回報", href: "/admin/reports" },
     { label: "通路管理", href: "/admin/settings" },
@@ -162,9 +163,16 @@ function Sidebar() {
       </div>
       <nav className={styles.sideNav} aria-label="後台功能">
         {navItems.map((item, index) => (
-          <Link key={item.label} href={item.href} className={index === activeIndex ? styles.active : undefined}>
-            {item.label}
-          </Link>
+          <div className={styles.sideNavGroup} key={item.label}>
+            <Link href={item.href} className={index === activeIndex ? styles.active : undefined}>
+              {item.label}
+            </Link>
+            {item.label === "模擬測驗" && isQuizActive ? (
+              <Link className={styles.subNavItem} href="/admin/quiz?level=N5&category=文字．語彙">
+                N5
+              </Link>
+            ) : null}
+          </div>
         ))}
       </nav>
       <button className={styles.logoutButton} type="button">

@@ -11,7 +11,7 @@ import styles from "./Words.module.scss";
 
 const navItems = [
   { label: "單字卡", href: "/words" },
-  { label: "模擬測驗", href: "#" },
+  { label: "模擬測驗", href: "/quiz", children: [{ label: "文字．語彙", href: "/quiz/vocabulary" }] },
   { label: "學習筆記", href: "/notes" },
   { label: "登入", href: "/admin" }
 ];
@@ -274,9 +274,12 @@ export default function WordsClient({
 
   const isFilteredList = Boolean(selectedCategory || selectedKanaRow);
   const displayPage = isFilteredList ? wordListPage : initialPage;
-  const totalWordListPages = Math.max(1, Math.ceil(selectedRowWords.length / initialPageSize));
+  const totalWordListItems = isFilteredList ? selectedRowWords.length : initialTotal ?? selectedRowWords.length;
+  const totalWordListPages = Math.max(1, Math.ceil(totalWordListItems / initialPageSize));
   const visibleWordListPages = getVisiblePageNumbers(displayPage, totalWordListPages);
-  const pagedWordList = selectedRowWords.slice((displayPage - 1) * initialPageSize, displayPage * initialPageSize);
+  const pagedWordList = isFilteredList
+    ? selectedRowWords.slice((displayPage - 1) * initialPageSize, displayPage * initialPageSize)
+    : selectedRowWords;
   const wordListBeforeAd = pagedWordList.slice(0, adInsertAfterCards);
   const wordListAfterAd = pagedWordList.slice(adInsertAfterCards);
 
@@ -329,9 +332,20 @@ export default function WordsClient({
           </a>
           <nav className={homeStyles.nav} aria-label="主要選單">
             {navItems.map((item) => (
-              <a key={item.label} href={item.href} className={item.label === "單字卡" ? homeStyles.activeNav : undefined}>
-                {item.label}
-              </a>
+              <div className={homeStyles.navItem} key={item.label}>
+                <a className={`${item.children ? homeStyles.navParent : ""} ${item.label === "單字卡" ? homeStyles.activeNav : ""}`} href={item.href}>
+                  {item.label}
+                </a>
+                {item.children ? (
+                  <div className={homeStyles.subNav} aria-label={`${item.label}子選單`}>
+                    {item.children.map((child) => (
+                      <a key={child.label} href={child.href}>
+                        {child.label}
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ))}
           </nav>
         </div>

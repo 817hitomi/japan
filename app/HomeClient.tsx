@@ -22,7 +22,7 @@ export type HomeLearningStats = {
 
 const navItems = [
   { label: "單字卡", href: "/words" },
-  { label: "模擬測驗", href: "#" },
+  { label: "模擬測驗", href: "/quiz", children: [{ label: "文字．語彙", href: "/quiz/vocabulary" }] },
   { label: "學習筆記", href: "/notes" },
   { label: "登入", href: "/admin" }
 ];
@@ -659,9 +659,20 @@ export default function Home({
           </a>
           <nav className={styles.nav} aria-label="主要選單">
             {navItems.map((item) => (
-              <a key={item.label} href={item.href} className={item.label === "學習筆記" ? styles.activeNav : undefined}>
-                {item.label}
-              </a>
+              <div className={styles.navItem} key={item.label}>
+                <a className={`${item.children ? styles.navParent : ""} ${item.label === "學習筆記" ? styles.activeNav : ""}`} href={item.href}>
+                  {item.label}
+                </a>
+                {item.children ? (
+                  <div className={styles.subNav} aria-label={`${item.label}子選單`}>
+                    {item.children.map((child) => (
+                      <a key={child.label} href={child.href}>
+                        {child.label}
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ))}
           </nav>
         </div>

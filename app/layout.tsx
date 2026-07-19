@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getGlobalHeadAdHtml } from "./ads/serverAdSettings";
 import { FrontendInteractionGuard } from "./FrontendInteractionGuard";
 import { SiteAnalyticsTracker } from "./SiteAnalyticsTracker";
+import { createRequestTimer } from "../lib/requestDiagnostics";
 import "./globals.scss";
 
 export const metadata: Metadata = {
@@ -19,7 +20,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const timer = createRequestTimer("layout", { route: "root" });
   const globalHeadAdHtml = await getGlobalHeadAdHtml();
+  timer.end({ globalHeadAd: Boolean(globalHeadAdHtml) });
 
   return (
     <html lang="zh-Hant">

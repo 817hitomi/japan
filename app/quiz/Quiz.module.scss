@@ -1,0 +1,180 @@
+.quizStats {
+  box-shadow: 0 8px 0 #d6c09e;
+
+  strong {
+    color: #d6c09e;
+  }
+}
+
+.quizSection {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  gap: 32px;
+  width: min(860px, calc(100% - 48px));
+  margin: 0 auto 58px;
+}
+
+.filterPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+
+  span,
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 118px;
+    height: 34px;
+    padding: 0 18px;
+    border: 1px solid #d6c09e;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #d6c09e;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  .activeCategoryPill {
+    background: #d6c09e;
+    color: #ffffff;
+  }
+}
+
+.practiceRow {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 58px;
+  align-items: center;
+  gap: 28px;
+}
+
+.arrowButton {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #d6c09e;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.questionCard {
+  display: grid;
+  min-height: 280px;
+  gap: 20px;
+  align-content: center;
+  padding: 46px 28px 30px;
+  border: 1px solid rgba(214, 192, 158, 0.68);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 0 #d6c09e;
+  color: #7d7d7d;
+
+  p {
+    margin: 0;
+    color: #7d7d7d;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 2;
+    text-align: center;
+  }
+}
+
+.optionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 22px;
+
+  button {
+    min-height: 45px;
+    border: 1px solid rgba(214, 192, 158, 0.72);
+    border-radius: 999px;
+    background: #ffffff;
+    color: #8c8c8c;
+    cursor: pointer;
+  }
+}
+
+.selectedOption {
+  border-color: #d6c09e !important;
+  background: #d6c09e !important;
+  color: #ffffff !important;
+}
+
+.correctMessage,
+.wrongMessage,
+.emptyText {
+  margin: 0;
+  color: #619360;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.wrongMessage {
+  color: #c28080;
+}
+
+.quizModeSection {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  width: min(860px, calc(100% - 48px));
+  margin: 0 auto 135px;
+}
+
+.modeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 48px 48px;
+
+  button {
+    display: grid;
+    min-height: 150px;
+    place-items: center;
+    border: 1px solid rgba(214, 192, 158, 0.6);
+    border-radius: 8px;
+    background: #ffffff;
+    color: #7d7d7d;
+    font-size: 24px;
+    font-weight: 700;
+    box-shadow: 0 8px 0 #d6c09e;
+    cursor: pointer;
+  }
+}
+
+@media (max-width: 820px) {
+  .quizSection,
+  .quizModeSection {
+    width: min(100% - 28px, 860px);
+  }
+
+  .practiceRow {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 10px;
+  }
+
+  .arrowButton {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .questionCard {
+    padding: 24px 20px;
+  }
+
+  .optionGrid,
+  .modeGrid {
+    grid-template-columns: 1fr;
+  }
+}

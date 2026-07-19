@@ -15,7 +15,7 @@ const footerGroups = [
     title: "學習日文",
     links: [
       { label: "N5 單字", href: "/words" },
-      { label: "模擬測驗", href: "#" },
+      { label: "模擬測驗", href: "/quiz/vocabulary" },
       { label: "日文筆記", href: "/notes" }
     ]
   },

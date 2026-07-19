@@ -1,4 +1,5 @@
-import { unstable_noStore as noStore } from "next/cache";
+import { unstable_cache } from "next/cache";
+import { createRequestTimer } from "../../lib/requestDiagnostics";
 import { createSupabaseReadClient } from "../../lib/supabase/server";
 import { AdSetting, normalizeAdSettings } from "./adTypes";
 
@@ -26,17 +27,22 @@ function rowToAd(row: SiteAdRow): Partial<AdSetting> {
   };
 }
 
-export async function getGlobalHeadAdHtml() {
-  noStore();
-
+async function readGlobalHeadAdHtml() {
   try {
     const supabase = createSupabaseReadClient();
-    const { data, error } = await supabase.from("site_ads").select("*").eq("slot", "global-head").maybeSingle();
+    const timer = createRequestTimer("database query", { table: "site_ads", operation: "global-head-ad" });
+    const { data, error } = await supabase
+      .from("site_ads")
+      .select("slot,label,enabled,channel,link_url,image_url,alt_text,html_code")
+      .eq("slot", "global-head")
+      .maybeSingle();
 
     if (error) {
+      timer.end({ status: "error" });
       throw error;
     }
 
+    timer.end({ status: "ok", rows: data ? 1 : 0 });
     const [setting] = normalizeAdSettings(data ? [rowToAd(data)] : []);
 
     if (setting?.enabled && setting.channel === "html") {
@@ -52,3 +58,7 @@ export async function getGlobalHeadAdHtml() {
 
   return "";
 }
+
+export const getGlobalHeadAdHtml = unstable_cache(readGlobalHeadAdHtml, ["global-head-ad-html"], {
+  revalidate: 300
+});

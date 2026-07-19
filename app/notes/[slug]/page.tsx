@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { createRequestTimer } from "../../../lib/requestDiagnostics";
 import HomeClient from "../../HomeClient";
 import { getNotePath, getNoteRouteKey, PublicNoteRecord } from "../noteTypes";
 import { readPublishedNoteByRouteKey, readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForPublicPage } from "../../publicData";
@@ -30,10 +31,12 @@ function toAbsoluteUrl(url: string) {
 
 export async function generateMetadata({ params, searchParams }: NotePageProps): Promise<Metadata> {
   const { slug } = await params;
+  const timer = createRequestTimer("page render", { route: "/notes/[slug]", phase: "metadata" });
   const { share } = (await searchParams) ?? {};
   const note = await readPublishedNoteByRouteKey(slug);
 
   if (!note) {
+    timer.end({ status: 404 });
     return {
       title: "文章不存在 | JapanNote"
     };
@@ -52,6 +55,7 @@ export async function generateMetadata({ params, searchParams }: NotePageProps):
   const imageUrl = toAbsoluteUrl(imagePath.toString());
   const description = note.summary || "日文學習筆記";
 
+  timer.end({ status: 200 });
   return {
     title: `${note.title} | JapanNote`,
     description,
@@ -76,21 +80,29 @@ export async function generateMetadata({ params, searchParams }: NotePageProps):
 
 export default async function NotePage({ params }: NotePageProps) {
   const { slug } = await params;
-  const [notes, note, wordsResult, quotes] = await Promise.all([
+  const timer = createRequestTimer("page render", { route: "/notes/[slug]" });
+  timer.mark("database query start", { groups: "note" });
+  const note = await readPublishedNoteByRouteKey(slug);
+  timer.mark("database query end", { note: Boolean(note) });
+
+  if (!note) {
+    timer.end({ status: 404 });
+    notFound();
+  }
+
+  timer.mark("database query start", { groups: "notes,words,quotes" });
+  const [notes, wordsResult, quotes] = await Promise.all([
     readPublishedNotesForPublicPage(),
-    readPublishedNoteByRouteKey(slug),
     readWordsForPublicPage(),
     readQuotesForPublicPage()
   ]);
-
-  if (!note) {
-    notFound();
-  }
+  timer.mark("database query end", { notes: notes.length, words: wordsResult.words.length, quotes: quotes.length });
 
   const initialNotes = notes.some((item) => item.id === note.id)
     ? notes.map((item) => (item.id === note.id ? note : item))
     : [note, ...notes];
 
+  timer.end({ status: 200 });
   return (
     <HomeClient
       initialNotes={initialNotes}

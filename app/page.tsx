@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { createRequestTimer } from "../lib/requestDiagnostics";
 import HomeClient from "./HomeClient";
 import { getNoteRouteKey, PublicNoteRecord } from "./notes/noteTypes";
 import { readPublishedNoteByRouteKey, readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForPublicPage } from "./publicData";
@@ -86,6 +87,7 @@ async function readNoteMeta(routeKey?: string): Promise<PublicNoteRecord | null>
 }
 
 export async function generateMetadata({ searchParams }: HomePageProps): Promise<Metadata> {
+  const timer = createRequestTimer("page render", { route: "/", phase: "metadata" });
   const resolvedSearchParams = await searchParams;
   const { image, note: noteId, summary, title } = resolvedSearchParams;
   const { baseUrl, url } = await getRequestUrl(resolvedSearchParams);
@@ -96,6 +98,7 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
     image && isPublicImageUrl(image)
       ? toAbsoluteUrl(image, baseUrl)
       : toAbsoluteUrl(noteMeta ? `/api/notes/og?slug=${encodeURIComponent(getNoteRouteKey(noteMeta))}` : "/brand/logo_b.png", baseUrl);
+  timer.end({ noteMeta: Boolean(noteMeta) });
 
   return {
     title: pageTitle,
@@ -120,12 +123,16 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
+  const timer = createRequestTimer("page render", { route: "/" });
   const resolvedSearchParams = await searchParams;
+  timer.mark("database query start", { groups: "notes,words,quotes" });
   const [notes, wordsResult, quotes] = await Promise.all([
     readPublishedNotesForPublicPage(),
     readWordsForPublicPage(),
     readQuotesForPublicPage()
   ]);
+  timer.mark("database query end", { notes: notes.length, words: wordsResult.words.length, quotes: quotes.length });
+  timer.end({ status: 200 });
 
   return (
     <HomeClient

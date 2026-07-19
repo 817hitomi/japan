@@ -19,7 +19,7 @@ const publishedStatus = "已發布";
 
 const navItems = [
   { label: "單字卡", href: "/words" },
-  { label: "模擬測驗", href: "#" },
+  { label: "模擬測驗", href: "/quiz", children: [{ label: "文字．語彙", href: "/quiz/vocabulary" }] },
   { label: "學習筆記", href: "/notes" },
   { label: "登入", href: "/admin" }
 ];
@@ -193,6 +193,11 @@ function HeroBoardCard({ item }: { item: QuoteRecord }) {
   );
 }
 
+function pickRandomBoardItem(items: QuoteRecord[]) {
+  const candidates = items.length > 0 ? items : defaultQuotes;
+  return candidates[Math.floor(Math.random() * candidates.length)] ?? defaultQuotes[0];
+}
+
 function ParallaxBackground() {
   const [scrollY, setScrollY] = useState(0);
 
@@ -245,6 +250,9 @@ export default function NotesFrontClient({
   const [notes, setNotes] = useState<PublicNoteRecord[]>(initialNotes);
   const [words, setWords] = useState<WordCardRecord[]>(initialWords);
   const [boardItems, setBoardItems] = useState<QuoteRecord[]>(initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes);
+  const [randomBoardItem, setRandomBoardItem] = useState<QuoteRecord>(() =>
+    pickRandomBoardItem(initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes)
+  );
 
   useEffect(() => {
     let active = true;
@@ -260,9 +268,14 @@ export default function NotesFrontClient({
         return;
       }
 
+      const resolvedBoardItems = nextQuotes.length > 0 ? nextQuotes : initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes;
+
       setNotes(nextNotes.length > 0 || initialNotes.length === 0 ? nextNotes : initialNotes);
       setWords(nextWords.length > 0 || initialWords.length === 0 ? nextWords : initialWords);
-      setBoardItems(nextQuotes.length > 0 ? nextQuotes : initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes);
+      setBoardItems(resolvedBoardItems);
+      setRandomBoardItem((current) =>
+        resolvedBoardItems.some((item) => item.id === current.id) ? current : pickRandomBoardItem(resolvedBoardItems)
+      );
     }
 
     loadHomeData();
@@ -283,7 +296,7 @@ export default function NotesFrontClient({
   const latestNotes = useMemo(() => publishedNotes.slice(0, 2), [publishedNotes]);
   const recommendedNotes = useMemo(() => publishedNotes.slice(0, 4), [publishedNotes]);
   const randomWords = useMemo(() => words.slice(0, 4), [words]);
-  const randomBoardItem = useMemo(() => boardItems[0] ?? defaultQuotes[0], [boardItems]);
+  const displayedBoardItem = randomBoardItem ?? boardItems[0] ?? defaultQuotes[0];
 
   return (
     <main className={homeStyles.page}>
@@ -299,9 +312,20 @@ export default function NotesFrontClient({
           </a>
           <nav className={homeStyles.nav} aria-label="主選單">
             {navItems.map((item) => (
-              <a key={item.label} href={item.href}>
-                {item.label}
-              </a>
+              <div className={homeStyles.navItem} key={item.label}>
+                <a className={item.children ? homeStyles.navParent : undefined} href={item.href}>
+                  {item.label}
+                </a>
+                {item.children ? (
+                  <div className={homeStyles.subNav} aria-label={`${item.label}子選單`}>
+                    {item.children.map((child) => (
+                      <a key={child.label} href={child.href}>
+                        {child.label}
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ))}
           </nav>
         </div>
@@ -312,7 +336,7 @@ export default function NotesFrontClient({
           <div className={homeStyles.heroCopy}>
             <h1>日文筆記</h1>
             <p className={homeStyles.heroLead}>每天學習一點點</p>
-            <HeroBoardCard item={randomBoardItem} />
+            <HeroBoardCard item={displayedBoardItem} />
           </div>
           <div className={homeStyles.heroArt}>
             <div className={homeStyles.dotGrid} aria-hidden="true" />

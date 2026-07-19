@@ -13,7 +13,7 @@ import styles from "./NotesList.module.scss";
 
 const navItems = [
   { label: "單字卡", href: "/words" },
-  { label: "模擬測驗", href: "#" },
+  { label: "模擬測驗", href: "/quiz", children: [{ label: "文字．語彙", href: "/quiz/vocabulary" }] },
   { label: "學習筆記", href: "/notes" },
   { label: "登入", href: "/admin" }
 ];
@@ -169,9 +169,20 @@ export default function NotesListClient({
           </a>
           <nav className={homeStyles.nav} aria-label="主要選單">
             {navItems.map((item) => (
-              <a key={item.label} href={item.href} className={item.label === "學習筆記" ? homeStyles.activeNav : undefined}>
-                {item.label}
-              </a>
+              <div className={homeStyles.navItem} key={item.label}>
+                <a className={`${item.children ? homeStyles.navParent : ""} ${item.label === "學習筆記" ? homeStyles.activeNav : ""}`} href={item.href}>
+                  {item.label}
+                </a>
+                {item.children ? (
+                  <div className={homeStyles.subNav} aria-label={`${item.label}子選單`}>
+                    {item.children.map((child) => (
+                      <a key={child.label} href={child.href}>
+                        {child.label}
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ))}
           </nav>
         </div>

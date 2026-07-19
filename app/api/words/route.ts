@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../lib/apiErrors";
+import { createRequestTimer } from "../../../lib/requestDiagnostics";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
 import { WordCardRecord } from "../../words/wordTypes";
 import { rowToWord, wordToPayload } from "./wordMapper";
@@ -24,6 +25,7 @@ function isUniqueViolation(error: unknown) {
 }
 
 export async function GET(request: NextRequest) {
+  const timer = createRequestTimer("route handler", { route: "/api/words", method: "GET" });
   try {
     const page = getPositiveInteger(request.nextUrl.searchParams.get("page"), defaultWordsPage);
     const requestedPageSize = getPositiveInteger(request.nextUrl.searchParams.get("pageSize"), defaultWordsPageSize);
@@ -32,6 +34,7 @@ export async function GET(request: NextRequest) {
     const to = from + pageSize - 1;
     const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
     const supabase = createSupabaseReadClient();
+    timer.mark("database query start", { table: "word_cards", page, pageSize });
     let requestBuilder = supabase
       .from("word_cards")
       .select("*", { count: "exact" })
@@ -50,11 +53,16 @@ export async function GET(request: NextRequest) {
       .range(from, to);
 
     if (error) {
+      timer.end({ status: 500 });
       throw error;
     }
 
-    return NextResponse.json({ page, pageSize, total: count ?? 0, words: (data ?? []).map(rowToWord) });
+    const words = (data ?? []).map(rowToWord);
+    timer.mark("database query end", { rows: words.length, total: count ?? 0 });
+    timer.end({ status: 200 });
+    return NextResponse.json({ page, pageSize, total: count ?? 0, words });
   } catch (error) {
+    timer.end({ status: 500 });
     return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load words") }, { status: 500 });
   }
 }

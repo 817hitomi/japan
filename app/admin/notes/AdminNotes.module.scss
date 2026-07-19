@@ -108,6 +108,20 @@
   }
 }
 
+.sideNavGroup {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.subNavItem {
+  min-width: 88px !important;
+  min-height: 28px !important;
+  color: var(--admin-primary) !important;
+  font-size: 16px;
+  font-weight: 800;
+}
+
 .active {
   background: #ffffff;
   color: var(--admin-primary) !important;
@@ -1315,6 +1329,229 @@
     max-height: 240px;
     border: 0;
     object-fit: contain;
+  }
+}
+
+.quizEditorForm {
+  width: min(960px, 100%);
+  gap: 24px;
+}
+
+.quizStatusMessage {
+  display: block;
+}
+
+.quizPanel {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 18px 14px;
+  align-items: center;
+  padding: 32px 44px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--button-radius);
+  background: #ffffff;
+
+  textarea {
+    min-height: 92px;
+    padding: 14px 18px 0;
+    resize: vertical;
+  }
+
+  input {
+    height: 38px;
+    padding: 0 18px;
+  }
+
+  input,
+  textarea,
+  .quizEditableField {
+    border: 1px solid var(--admin-border);
+    border-radius: var(--button-radius);
+    color: var(--admin-text);
+    font-size: 16px;
+    outline: none;
+  }
+}
+
+.quizEditableField {
+  min-height: 92px;
+  padding: 14px 18px;
+  background: #ffffff;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  &:empty::before {
+    content: attr(data-placeholder);
+    color: #b7adad;
+    pointer-events: none;
+    white-space: pre-wrap;
+  }
+}
+
+.quizColorTools {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  align-self: start;
+  margin: 0;
+
+  button {
+    min-width: 0;
+    height: 24px;
+    padding: 0 7px;
+    border: 1px solid #d8d8d8;
+    border-radius: 4px;
+    background: #f8f8f8;
+    color: var(--admin-text);
+    font-size: 16px;
+    line-height: 1;
+  }
+}
+
+.quizBoldButton {
+  width: 18px;
+  padding: 0 !important;
+  font-weight: 800;
+}
+
+.quizPresetButton {
+  width: auto;
+}
+
+.quizColorDot {
+  width: 14px;
+  height: 14px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+}
+
+.quizFieldLabel {
+  display: grid;
+  gap: 4px;
+  color: var(--admin-text);
+  font-size: 17px;
+  font-weight: 800;
+
+  small {
+    color: #a9a9a9;
+    font-size: 11px;
+    font-weight: 500;
+  }
+}
+
+.quizPromptField,
+.quizNoteField {
+  width: 100%;
+}
+
+.quizAnswerField {
+  width: 180px !important;
+}
+
+.quizOptionGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.quizOptionRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+
+  input {
+    min-width: 0;
+  }
+}
+
+.quizOptionGroup small {
+  color: #b7adad;
+  font-size: 12px;
+}
+
+.quizPanelActions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 6px;
+
+  button {
+    min-width: 82px;
+    height: 38px;
+    padding: 0 18px;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--button-radius);
+    background: var(--admin-primary);
+    color: #ffffff;
+    font-size: inherit;
+    cursor: pointer;
+  }
+}
+
+.quizCategoryModal {
+  display: grid;
+  gap: 18px;
+  width: min(440px, 100%);
+  margin: 0 auto 28px;
+  padding: 18px 22px 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 0 var(--admin-primary);
+
+  > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 24px;
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--admin-text);
+    font-size: 16px;
+  }
+
+  input {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    appearance: none;
+    border: 1px solid var(--admin-border);
+    border-radius: 0;
+    background: #ffffff;
+
+    &:checked {
+      background:
+        linear-gradient(45deg, transparent 45%, #ffffff 46% 56%, transparent 57%),
+        linear-gradient(-45deg, transparent 45%, #ffffff 46% 56%, transparent 57%),
+        var(--admin-primary);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+  }
+
+  footer {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  button {
+    min-width: 96px;
+    height: 36px;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--button-radius);
+    background: var(--admin-primary);
+    color: #ffffff;
+    cursor: pointer;
   }
 }
 
