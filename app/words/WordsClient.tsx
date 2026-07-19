@@ -225,6 +225,7 @@ function getVisiblePageNumbers(currentPage: number, totalPages: number) {
 }
 
 type WordsClientProps = {
+  initialFilterWords?: WordCardRecord[];
   initialPage?: number;
   initialPageSize?: number;
   initialTotal?: number;
@@ -236,12 +237,14 @@ function getWordsPageHref(page: number) {
 }
 
 export default function WordsClient({
+  initialFilterWords = [],
   initialPage = 1,
   initialPageSize = 12,
   initialTotal,
   initialWords = []
 }: WordsClientProps) {
   const [words, setWords] = useState<WordCardRecord[]>(initialWords);
+  const filterWords = initialFilterWords.length > 0 ? initialFilterWords : words;
   const [activeIndex, setActiveIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -249,13 +252,13 @@ export default function WordsClient({
   const [wordListPage, setWordListPage] = useState(1);
 
   const categories = useMemo(
-    () => Array.from(new Set(words.map((word) => word.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "zh-Hant")),
-    [words]
+    () => Array.from(new Set(filterWords.map((word) => word.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "zh-Hant")),
+    [filterWords]
   );
 
   const filteredWords = useMemo(
-    () => words.filter((word) => !selectedCategory || word.category === selectedCategory),
-    [selectedCategory, words]
+    () => filterWords.filter((word) => !selectedCategory || word.category === selectedCategory),
+    [filterWords, selectedCategory]
   );
 
   const wordListCounts = useMemo(
@@ -279,7 +282,7 @@ export default function WordsClient({
   const visibleWordListPages = getVisiblePageNumbers(displayPage, totalWordListPages);
   const pagedWordList = isFilteredList
     ? selectedRowWords.slice((displayPage - 1) * initialPageSize, displayPage * initialPageSize)
-    : selectedRowWords;
+    : words;
   const wordListBeforeAd = pagedWordList.slice(0, adInsertAfterCards);
   const wordListAfterAd = pagedWordList.slice(adInsertAfterCards);
 

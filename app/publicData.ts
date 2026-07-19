@@ -127,6 +127,51 @@ export function normalizePublicPage(value?: string | number) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
+export async function readWordsForPublicFilters(): Promise<WordCardRecord[]> {
+  const batchSize = 1000;
+
+  try {
+    const supabase = createSupabaseReadClient();
+    const timer = createRequestTimer("database query", {
+      table: "word_cards",
+      operation: "public-words-filter-source"
+    });
+    const rows: Parameters<typeof rowToWord>[0][] = [];
+    let total = 0;
+
+    for (let from = 0; ; from += batchSize) {
+      const to = from + batchSize - 1;
+      const { data, error, count } = await supabase
+        .from("word_cards")
+        .select("*", { count: from === 0 ? "exact" : undefined })
+        .neq("category", quoteCategory)
+        .order("category", { ascending: true })
+        .order("id", { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        timer.end({ status: "error" });
+        throw error;
+      }
+
+      if (from === 0) {
+        total = count ?? 0;
+      }
+
+      rows.push(...(data ?? []));
+
+      if ((data ?? []).length < batchSize || (total > 0 && rows.length >= total)) {
+        break;
+      }
+    }
+
+    timer.end({ status: "ok", rows: rows.length, total });
+    return normalizeWordCards(rows.map(rowToWord), true);
+  } catch {
+    return [];
+  }
+}
+
 export async function readWordsForPublicPage(page = 1, pageSize = publicWordsPageSize): Promise<PublicWordsPageResult> {
   const currentPage = normalizePublicPage(page);
   const from = (currentPage - 1) * pageSize;
