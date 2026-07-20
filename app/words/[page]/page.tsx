@@ -2,7 +2,7 @@ import { createRequestTimer } from "../../../lib/requestDiagnostics";
 import WordsClient from "../WordsClient";
 import { normalizePublicPage, readWordsForPublicFilters, readWordsForPublicPage } from "../../publicData";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type WordsPagedRouteProps = {
   params: Promise<{

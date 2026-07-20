@@ -2,7 +2,7 @@ import RandomQuizClient from "../RandomQuizClient";
 import { readWordsForPublicPage } from "../../publicData";
 import { seedQuizQuestions } from "../quizTypes";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function RandomTwentyQuizPage() {
   const wordsResult = await readWordsForPublicPage(1);

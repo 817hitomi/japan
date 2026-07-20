@@ -1,7 +1,7 @@
 import NotesListClient from "./NotesListClient";
 import { readPublishedNotesForPublicPage, readQuotesForPublicPage } from "../publicData";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type NotesPageProps = {
   searchParams: Promise<{ category?: string }>;

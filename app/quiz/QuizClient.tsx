@@ -113,11 +113,25 @@ export default function QuizClient({
   const [words, setWords] = useState(initialWords);
   const [questions, setQuestions] = useState(() => normalizeQuizQuestions(initialQuestions));
   const [categories, setCategories] = useState<QuizCategoryRecord[]>(seedQuizCategories);
-  const [selectedLevel] = useState<QuizLevel>(initialLevel);
+  const [selectedLevel, setSelectedLevel] = useState<QuizLevel>(initialLevel);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [modeCount, setModeCount] = useState(10);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextLevel = params.get("level");
+    const nextCategory = params.get("category")?.trim();
+
+    if (nextLevel === "N5") {
+      setSelectedLevel(nextLevel);
+    }
+
+    if (nextCategory) {
+      setSelectedCategory(nextCategory);
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;

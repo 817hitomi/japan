@@ -2,7 +2,7 @@ import { createRequestTimer } from "../../lib/requestDiagnostics";
 import WordsClient from "./WordsClient";
 import { readWordsForPublicFilters, readWordsForPublicPage } from "../publicData";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function WordsPage() {
   const timer = createRequestTimer("page render", { route: "/words" });

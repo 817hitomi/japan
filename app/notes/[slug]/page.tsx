@@ -5,7 +5,8 @@ import HomeClient from "../../HomeClient";
 import { getNotePath, getNoteRouteKey, PublicNoteRecord } from "../noteTypes";
 import { readPublishedNoteByRouteKey, readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForPublicPage } from "../../publicData";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+export const dynamicParams = true;
 
 const publicSiteUrl = "https://japan-note.com";
 
@@ -13,6 +14,14 @@ type NotePageProps = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<{ share?: string }>;
 };
+
+export async function generateStaticParams() {
+  const notes = await readPublishedNotesForPublicPage();
+
+  return notes.map((note) => ({
+    slug: getNoteRouteKey(note)
+  }));
+}
 
 function toAbsoluteUrl(url: string) {
   const value = url.trim();

@@ -4,7 +4,7 @@ import { readPublishedNotesForPublicPage } from "./publicData";
 
 const siteUrl = "https://japan-note.com";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const notes = await readPublishedNotesForPublicPage();
