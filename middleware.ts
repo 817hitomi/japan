@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { evaluateAdminAccess } from "./lib/adminAuth";
 import { createRequestTimer } from "./lib/requestDiagnostics";
 import { getRuntimeEnv } from "./lib/runtimeEnv";
+import {
+  createBlockedSensitivePathResponse,
+  isBlockedSensitivePath,
+  normalizeSecurityPathname
+} from "./lib/securityFirstRequest";
 
 const protectedApiPrefixes = ["/api/uploads"];
 const adminWriteApiPrefixes = ["/api/ads", "/api/words", "/api/quiz", "/api/quotes", "/api/affiliates"];
@@ -118,6 +123,18 @@ function deniedResponse(request: NextRequest, status: 401 | 403 | 503, authRespo
 export async function middleware(request: NextRequest) {
   const pathname = normalizePathname(request.nextUrl.pathname);
   const startedAt = performance.now();
+
+  // Security checks must run before assets, routing, auth, Supabase, rewrites, or rendering.
+  const securityPathname = normalizeSecurityPathname(pathname);
+  if (isBlockedSensitivePath(securityPathname)) {
+    return createBlockedSensitivePathResponse(
+      securityPathname,
+      request.method,
+      "middleware-route",
+      startedAt
+    );
+  }
+
   const timer = createRequestTimer("middleware", { method: request.method, path: pathname });
 
   function finish(response: NextResponse, branch: string, details: { reason?: string; maskedEmail?: string } = {}) {
@@ -132,10 +149,14 @@ export async function middleware(request: NextRequest) {
   if (pathname === "/favicon.ico") {
     return finish(NextResponse.rewrite(new URL("/brand/logo_b.png", request.url)), "favicon-rewrite");
   }
+  if (isPublicAssetPath(pathname)) return finish(NextResponse.next(), "public-asset");
   if (isApiPath(pathname) && !isKnownApiPath(pathname)) return finish(quickApi404(), "api-404", { reason: "unknown-api-route" });
-  const fast404Reason = shouldFast404(pathname);
-  if (fast404Reason) return finish(quick404(), "fast-404", { reason: fast404Reason });
-  if (!isProtectedRequest(request)) return finish(NextResponse.next(), "next");
+
+  if (!isProtectedRequest(request)) {
+    const fast404Reason = shouldFast404(pathname);
+    if (fast404Reason) return finish(quick404(), "fast-404", { reason: fast404Reason });
+    return finish(NextResponse.next(), "next");
+  }
 
   const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL");
   const anonKey = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");

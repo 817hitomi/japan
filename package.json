@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "test": "npm run test:admin-auth && npm run test:security-routes",
+    "test:admin-auth": "node --experimental-strip-types tests/adminAuth.assertions.ts",
+    "test:security-routes": "node --experimental-strip-types tests/securityRoutes.assertions.ts",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },

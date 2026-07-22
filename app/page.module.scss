@@ -761,6 +761,25 @@
   line-height: 1.5;
 }
 
+.articleEndSections {
+  display: grid;
+  gap: 38px;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 45px;
+    margin: 0;
+    padding: 0 14px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: var(--white);
+    font-size: 14px;
+    line-height: 3;
+  }
+}
+
 .sidebar {
   align-self: start;
   min-width: 0;

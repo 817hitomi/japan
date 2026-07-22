@@ -371,6 +371,7 @@ function ArticleShareList({ note, summary, title }: { note?: PublicNoteRecord | 
 export default function Home({
   disableClientDataRefresh = false,
   disableSiteStatsWrite = false,
+  initialDailySelectionKey,
   initialLearningStats,
   initialNoteTotal,
   initialNotes = [],
@@ -384,6 +385,7 @@ export default function Home({
 }: {
   disableClientDataRefresh?: boolean;
   disableSiteStatsWrite?: boolean;
+  initialDailySelectionKey?: string;
   initialLearningStats?: HomeLearningStats;
   initialNoteTotal?: number;
   initialNextNote?: PublicNoteRecord | null;
@@ -669,7 +671,15 @@ export default function Home({
   }, [categories.length, popularNotes.length, searchResults.length, tags.length, tocItems.length]);
 
   if (hasSelectedNote !== true) {
-    return <NotesFrontClient initialBoardItems={initialQuotes} initialNotes={initialNotes} initialWords={initialWords} siteCount={siteCount} />;
+    return (
+      <NotesFrontClient
+        initialBoardItems={initialQuotes}
+        initialDailySelectionKey={initialDailySelectionKey}
+        initialNotes={initialNotes}
+        initialWords={initialWords}
+        siteCount={siteCount}
+      />
+    );
   }
 
   return (
@@ -814,6 +824,39 @@ export default function Home({
               <div className={styles.poemCard}>文章內容</div>
             </section>
           )}
+
+          <div className={styles.articleEndSections}>
+            <section>
+              <h2>熱門文章</h2>
+              {popularNotes.length > 0 ? (
+                <div className={styles.sidebarLinkList}>
+                  {popularNotes.map((note) => (
+                    <a key={note.id} href={getNotePath(note)}>
+                      <strong>{note.title}</strong>
+                      <span>{note.category}　{note.date}</span>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.emptySidebarText}>尚無熱門文章</p>
+              )}
+            </section>
+            <section>
+              <h2>tag</h2>
+              {tags.length > 0 ? (
+                <div className={styles.tagList}>
+                  {tags.map(([tag, count]) => (
+                    <button key={tag} type="button" onClick={() => setSearchQuery(tag)}>
+                      <span>{tag}</span>
+                      <strong>{count}</strong>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.emptySidebarText}>尚無 tag</p>
+              )}
+            </section>
+          </div>
         </article>
 
         <aside className={styles.sidebar} ref={sidebarRef} style={{ minHeight: sidebarBox.height || undefined }}>
@@ -889,36 +932,6 @@ export default function Home({
                 </div>
               </section>
             ) : null}
-            <section>
-              <h2>熱門文章</h2>
-              {popularNotes.length > 0 ? (
-                <div className={styles.sidebarLinkList}>
-                  {popularNotes.map((note) => (
-                    <a key={note.id} href={getNotePath(note)}>
-                      <strong>{note.title}</strong>
-                      <span>{note.category}　{note.date}</span>
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <p className={styles.emptySidebarText}>尚無熱門文章</p>
-              )}
-            </section>
-            <section>
-              <h2>tag</h2>
-              {tags.length > 0 ? (
-                <div className={styles.tagList}>
-                  {tags.map(([tag, count]) => (
-                    <button key={tag} type="button" onClick={() => setSearchQuery(tag)}>
-                      <span>{tag}</span>
-                      <strong>{count}</strong>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className={styles.emptySidebarText}>尚無 tag</p>
-              )}
-            </section>
             <AdSlot slot="sidebar-square" className={styles.adSquare} />
             <ArticleToc className={styles.sidebarToc} items={tocItems} />
           </div>

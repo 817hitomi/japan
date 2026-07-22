@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { createRequestTimer } from "../lib/requestDiagnostics";
 import HomeClient from "./HomeClient";
+import { getTaipeiDailySelectionKey } from "./dailySelection";
 import { getNoteRouteKey, PublicNoteRecord } from "./notes/noteTypes";
-import { readPublishedNoteByRouteKey, readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForPublicPage } from "./publicData";
+import { readPublishedNoteByRouteKey, readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForHomePage } from "./publicData";
 
 export const dynamic = "force-dynamic";
 const publicSiteUrl = "https://japan-note.com";
@@ -125,10 +126,11 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
 export default async function HomePage({ searchParams }: HomePageProps) {
   const timer = createRequestTimer("page render", { route: "/" });
   const resolvedSearchParams = await searchParams;
+  const dailySelectionKey = getTaipeiDailySelectionKey();
   timer.mark("database query start", { groups: "notes,words,quotes" });
   const [notes, wordsResult, quotes] = await Promise.all([
     readPublishedNotesForPublicPage(),
-    readWordsForPublicPage(),
+    readWordsForHomePage(dailySelectionKey),
     readQuotesForPublicPage()
   ]);
   timer.mark("database query end", { notes: notes.length, words: wordsResult.words.length, quotes: quotes.length });
@@ -139,6 +141,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       initialNotes={notes}
       initialQuotes={quotes}
       initialSelectedNoteId={resolvedSearchParams.note}
+      initialDailySelectionKey={dailySelectionKey}
       initialWordTotal={wordsResult.total}
       initialWords={wordsResult.words}
     />

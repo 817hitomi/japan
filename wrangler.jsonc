@@ -1,12 +1,42 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "japannote",
-  "main": ".open-next/worker.js",
+  "main": "custom-worker.ts",
   "compatibility_date": "2026-07-12",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/.git",
+      "/.git/*",
+      "/*/.git",
+      "/*/.git/*",
+      "/.env",
+      "/.env.*",
+      "/*/.env",
+      "/*/.env.*",
+      "/node_modules",
+      "/node_modules/*",
+      "/*/node_modules",
+      "/*/node_modules/*",
+      "/wrangler.toml",
+      "/*/wrangler.toml",
+      "/package.json",
+      "/*/package.json",
+      "/package-lock.json",
+      "/*/package-lock.json",
+      "/pnpm-lock.yaml",
+      "/*/pnpm-lock.yaml",
+      "/yarn.lock",
+      "/*/yarn.lock",
+      "/src",
+      "/src/*",
+      "/backup",
+      "/backup/*",
+      "/staging",
+      "/staging/*"
+    ]
   },
   "routes": [
     {

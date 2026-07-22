@@ -2,6 +2,7 @@ import { getRuntimeEnv } from "../lib/runtimeEnv";
 import { createRequestTimer } from "../lib/requestDiagnostics";
 import { rowToNote } from "./api/notes/noteMapper";
 import { rowToWord } from "./api/words/wordMapper";
+import { getDailySelectionIndex } from "./dailySelection";
 import { PublicNoteRecord } from "./notes/noteTypes";
 import { defaultQuotes, normalizeQuotes, QuoteRecord } from "./quotes/quoteTypes";
 import { getKanaRowKey, kanaRows, KanaRowKey, normalizeKanaRowKey } from "./words/kanaRows";
@@ -530,6 +531,20 @@ export async function readWordsForPublicPage(
       words: []
     };
   }
+}
+
+export async function readWordsForHomePage(dailyKey: string): Promise<PublicWordsPageResult> {
+  const dailyPoolSize = 100;
+  const countResult = await readWordsForPublicPage(1, 1);
+
+  if (countResult.total <= 1) {
+    return countResult;
+  }
+
+  const pageCount = Math.ceil(countResult.total / dailyPoolSize);
+  const dailyPage = getDailySelectionIndex(pageCount, dailyKey, "word-pool") + 1;
+
+  return readWordsForPublicPage(dailyPage, dailyPoolSize);
 }
 
 export async function readQuotesForPublicPage(): Promise<QuoteRecord[]> {

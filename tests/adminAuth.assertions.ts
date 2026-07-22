@@ -1,5 +1,5 @@
 import type { User } from "@supabase/supabase-js";
-import { evaluateAdminAccess } from "../lib/adminAuth";
+import { evaluateAdminAccess } from "../lib/adminAuth.ts";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
@@ -46,4 +46,3 @@ const misconfigured = evaluateAdminAccess(googleUser("admin@example.com"), undef
 assert(misconfigured.status === 503, "missing ADMIN_EMAIL must fail closed");
 
 console.log("admin auth assertions passed");
-

@@ -9,6 +9,11 @@ import { PublicNoteRecord, readNotesWithFallback } from "./noteStorage";
 import { getDisplayTags, getNotePath, getNotePreviewImage } from "./noteTypes";
 import { readWordCardsWithFallback } from "../words/wordStorage";
 import { WordCardRecord } from "../words/wordTypes";
+import {
+  getMillisecondsUntilNextTaipeiReset,
+  getTaipeiDailySelectionKey,
+  selectDailyItems
+} from "../dailySelection";
 import { defaultQuotes, QuoteRecord } from "../quotes/quoteTypes";
 import { readQuotesWithFallback } from "../quotes/quoteStorage";
 import { readingsToSpeechText, renderWordRuby, shouldShowStandaloneKana, stripInlineReadings } from "../../lib/japaneseText";
@@ -238,11 +243,13 @@ function ParallaxBackground() {
 
 export default function NotesFrontClient({
   initialBoardItems = defaultQuotes,
+  initialDailySelectionKey = getTaipeiDailySelectionKey(),
   initialNotes = [],
   initialWords = [],
   siteCount
 }: {
   initialBoardItems?: QuoteRecord[];
+  initialDailySelectionKey?: string;
   initialNotes?: PublicNoteRecord[];
   initialWords?: WordCardRecord[];
   siteCount: number;
@@ -250,18 +257,32 @@ export default function NotesFrontClient({
   const [notes, setNotes] = useState<PublicNoteRecord[]>(initialNotes);
   const [words, setWords] = useState<WordCardRecord[]>(initialWords);
   const [boardItems, setBoardItems] = useState<QuoteRecord[]>(initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes);
+  const [dailySelectionKey, setDailySelectionKey] = useState(initialDailySelectionKey);
   const [randomBoardItem, setRandomBoardItem] = useState<QuoteRecord>(() =>
     pickRandomBoardItem(initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes)
   );
+
+  useEffect(() => {
+    let resetTimer: ReturnType<typeof setTimeout>;
+
+    const syncDailySelection = () => {
+      setDailySelectionKey(getTaipeiDailySelectionKey());
+      resetTimer = setTimeout(syncDailySelection, getMillisecondsUntilNextTaipeiReset() + 1000);
+    };
+
+    syncDailySelection();
+
+    return () => clearTimeout(resetTimer);
+  }, []);
 
   useEffect(() => {
     let active = true;
 
     async function loadHomeData() {
       const [nextNotes, nextWords, nextQuotes] = await Promise.all([
-        readNotesWithFallback("published"),
-        readWordCardsWithFallback(),
-        readQuotesWithFallback()
+        initialNotes.length > 0 ? Promise.resolve(initialNotes) : readNotesWithFallback("published"),
+        initialWords.length > 0 ? Promise.resolve(initialWords) : readWordCardsWithFallback(),
+        initialBoardItems.length > 0 ? Promise.resolve(initialBoardItems) : readQuotesWithFallback()
       ]);
 
       if (!active) {
@@ -294,8 +315,14 @@ export default function NotesFrontClient({
   );
 
   const latestNotes = useMemo(() => publishedNotes.slice(0, 2), [publishedNotes]);
-  const recommendedNotes = useMemo(() => publishedNotes.slice(0, 4), [publishedNotes]);
-  const randomWords = useMemo(() => words.slice(0, 4), [words]);
+  const recommendedNotes = useMemo(
+    () => selectDailyItems(publishedNotes, 4, dailySelectionKey, "recommended-notes"),
+    [dailySelectionKey, publishedNotes]
+  );
+  const randomWords = useMemo(
+    () => selectDailyItems(words, 4, dailySelectionKey, "word-cards"),
+    [dailySelectionKey, words]
+  );
   const displayedBoardItem = randomBoardItem ?? boardItems[0] ?? defaultQuotes[0];
 
   return (
