@@ -7,7 +7,7 @@ import { getAdSlotFromLabel } from "./ads/adTypes";
 import SiteFooter from "./SiteFooter";
 import { renderInlineRuby } from "../lib/japaneseText";
 import NotesFrontClient from "./notes/NotesFrontClient";
-import { getNotePath, getNotePreviewImage, PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
+import { getNotePath, PublicNoteRecord, readNotesWithFallback } from "./notes/noteStorage";
 import { fetchWordCards } from "./words/wordStorage";
 import { WordCardRecord } from "./words/wordTypes";
 import { getOrCreateVisitorId } from "../lib/siteVisitor";
@@ -94,10 +94,6 @@ function NoteContent({ html }: { html: string }) {
       ))}
     </div>
   );
-}
-
-function getNoteImage(note: PublicNoteRecord) {
-  return getNotePreviewImage(note);
 }
 
 function getPublicNoteShareUrl(note: PublicNoteRecord) {
@@ -615,7 +611,6 @@ export default function Home({
       .slice(0, 5);
   }, [publishedNotes, searchQuery]);
 
-  const articleImage = currentNote ? getNoteImage(currentNote) : "";
   const articleBlocks = currentNote?.blocks ?? [];
   const tocItems = articleBlocks
     .map((block, index) => ({ label: block.heading?.trim() ?? "", id: `article-section-${index}` }))
@@ -743,8 +738,6 @@ export default function Home({
 
       <div className={styles.layout}>
         <article className={styles.article}>
-          <div className={styles.videoBox}>{articleImage ? <img src={articleImage} alt="" /> : "yt/封面"}</div>
-
           <div className={styles.titleRow}>
             <span className={styles.titleBar} />
             <div>
