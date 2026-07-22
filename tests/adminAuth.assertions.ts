@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { evaluateAdminAccess } from "../lib/adminAuth.ts";
+import { getRuntimeEnv, getRuntimeEnvHeaderName } from "../lib/runtimeEnv.ts";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
@@ -44,5 +45,10 @@ assert(authorized.status === 200 && authorized.maskedEmail !== "admin@example.co
 
 const misconfigured = evaluateAdminAccess(googleUser("admin@example.com"), undefined);
 assert(misconfigured.status === 503, "missing ADMIN_EMAIL must fail closed");
+
+const runtimeHeaders = new Headers({
+  [getRuntimeEnvHeaderName("ADMIN_EMAIL")]: "admin@example.com"
+});
+assert(getRuntimeEnv("ADMIN_EMAIL", runtimeHeaders) === "admin@example.com", "middleware must read bridged runtime bindings");
 
 console.log("admin auth assertions passed");

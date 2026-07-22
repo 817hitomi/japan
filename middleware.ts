@@ -158,8 +158,8 @@ export async function middleware(request: NextRequest) {
     return finish(NextResponse.next(), "next");
   }
 
-  const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const anonKey = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL", request.headers);
+  const anonKey = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", request.headers);
   let authResponse = NextResponse.next({ request });
 
   if (!supabaseUrl || !anonKey) {
@@ -179,7 +179,7 @@ export async function middleware(request: NextRequest) {
   });
 
   const { data, error } = await supabase.auth.getUser();
-  const access = evaluateAdminAccess(error ? null : data.user, getRuntimeEnv("ADMIN_EMAIL"));
+  const access = evaluateAdminAccess(error ? null : data.user, getRuntimeEnv("ADMIN_EMAIL", request.headers));
 
   if (access.status !== 200) {
     const response = deniedResponse(request, access.status, authResponse);
