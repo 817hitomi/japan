@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../lib/adminRouteAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,9 @@ function getSafeName(name: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../../lib/adminRouteAuth";
 import { WordCardRecord } from "../../../words/wordTypes";
 import { rowToWord, wordToPayload } from "../wordMapper";
 
@@ -15,6 +16,9 @@ function isUniqueViolation(error: unknown) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const { id } = await context.params;
     const word = (await request.json()) as WordCardRecord;

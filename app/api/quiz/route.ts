@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../lib/adminRouteAuth";
 import { generateQuizDistractors } from "../../quiz/quizDistractors";
 import { QuizQuestionRecord } from "../../quiz/quizTypes";
 import { quizQuestionToPayload, QuizQuestionRow, rowToQuizQuestion } from "./quizMapper";
@@ -64,6 +65,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const question = (await request.json()) as QuizQuestionRecord;
     const payload = quizQuestionToPayload(question);
@@ -98,6 +102,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const body = (await request.json()) as { ids?: number[] };
     const ids = Array.isArray(body.ids) ? body.ids.filter(Number.isFinite) : [];

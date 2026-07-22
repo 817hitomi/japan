@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../lib/adminRouteAuth";
 import { PublicNoteRecord } from "../../notes/noteTypes";
 import { noteToPayload, rowToNote } from "./noteMapper";
 
@@ -11,6 +12,10 @@ const publicNoteSummarySelect = "id,category,title,status,published_date,slug,ta
 export async function GET(request: NextRequest) {
   try {
     const status = request.nextUrl.searchParams.get("status");
+    if (status !== "published") {
+      const authError = await requireAdminRoute();
+      if (authError) return authError;
+    }
     const supabase = status === "published" ? createSupabaseReadClient() : createSupabaseAdminClient();
     const selectColumns = status === "published" ? publicNoteSummarySelect : "*";
     let query = supabase
@@ -41,6 +46,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const note = (await request.json()) as PublicNoteRecord;
     const supabase = createSupabaseAdminClient();
@@ -61,6 +69,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const body = (await request.json()) as { fromCategory?: string; toCategory?: string };
 
@@ -85,6 +96,9 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const body = (await request.json()) as { ids?: number[] };
     const ids = Array.isArray(body.ids) ? body.ids.filter(Number.isFinite) : [];

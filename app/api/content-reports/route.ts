@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../lib/adminRouteAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -206,6 +207,9 @@ async function saveStorageReport(report: StoredContentReport) {
 }
 
 export async function GET() {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
@@ -309,6 +313,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const body = (await request.json()) as { ids?: number[] };
     const ids = Array.isArray(body.ids) ? body.ids.filter((id) => Number.isFinite(id)) : [];

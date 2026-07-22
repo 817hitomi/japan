@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../lib/adminRouteAuth";
 import { normalizeQuotes, QuoteRecord } from "../../quotes/quoteTypes";
 
 export const dynamic = "force-dynamic";
@@ -72,6 +73,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const quote = (await request.json()) as QuoteRecord;
     const payload = quoteToPayload(quote);
@@ -102,6 +106,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const body = (await request.json()) as { ids?: number[] };
     const ids = Array.isArray(body.ids) ? body.ids.filter(Number.isFinite) : [];

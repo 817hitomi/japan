@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createRequestTimer } from "../../../lib/requestDiagnostics";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../lib/adminRouteAuth";
 import { WordCardRecord } from "../../words/wordTypes";
 import { rowToWord, wordToPayload } from "./wordMapper";
 
@@ -68,6 +69,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const word = (await request.json()) as WordCardRecord;
     const payload = wordToPayload(word);
@@ -113,6 +117,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const body = (await request.json()) as { ids?: number[] };
     const ids = Array.isArray(body.ids) ? body.ids.filter(Number.isFinite) : [];

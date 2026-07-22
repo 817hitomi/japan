@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../../lib/adminRouteAuth";
 import { generateQuizDistractors } from "../../../quiz/quizDistractors";
 import { QuizQuestionRecord } from "../../../quiz/quizTypes";
 import { quizQuestionToPayload, QuizQuestionRow, rowToQuizQuestion } from "../quizMapper";
@@ -12,6 +13,9 @@ type RouteContext = {
 };
 
 export async function PUT(request: NextRequest, context: RouteContext) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const { id } = await context.params;
     const question = (await request.json()) as QuizQuestionRecord;

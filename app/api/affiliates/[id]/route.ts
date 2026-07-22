@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../../lib/adminRouteAuth";
 import { AffiliateRecord } from "../../../affiliates/affiliateTypes";
 import { affiliateToPayload, rowToAffiliate } from "../affiliateMapper";
 
@@ -11,6 +12,9 @@ type AffiliateRouteParams = {
 export const dynamic = "force-dynamic";
 
 export async function PUT(request: NextRequest, { params }: AffiliateRouteParams) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const { id } = await params;
     const affiliate = (await request.json()) as AffiliateRecord;

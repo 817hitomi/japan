@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../../lib/adminRouteAuth";
 import { normalizeQuotes, QuoteRecord } from "../../../quotes/quoteTypes";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +56,9 @@ function quoteToPayload(quote: QuoteRecord) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const { id } = await context.params;
     const quote = (await request.json()) as QuoteRecord;

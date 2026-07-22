@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../../lib/adminRouteAuth";
 import { PublicNoteRecord } from "../../../notes/noteTypes";
 import { noteToPayload, rowToNote } from "../noteMapper";
 
@@ -11,6 +12,9 @@ type RouteContext = {
 };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const { id } = await context.params;
     const supabase = createSupabaseAdminClient();
@@ -35,6 +39,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const { id } = await context.params;
     const note = (await request.json()) as PublicNoteRecord;

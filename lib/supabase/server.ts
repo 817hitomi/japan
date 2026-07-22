@@ -1,8 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
+import { getRuntimeEnv } from "../runtimeEnv";
 
 export function createSupabaseAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const serviceRoleKey = getRuntimeEnv("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!supabaseUrl) {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
@@ -21,8 +22,8 @@ export function createSupabaseAdminClient() {
 }
 
 export function createSupabaseReadClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const anonKey = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
   if (!supabaseUrl) {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");

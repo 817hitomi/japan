@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../lib/adminRouteAuth";
 import { AdSetting, defaultAdSettings, normalizeAdSettings } from "../../ads/adTypes";
 
 type SiteAdRow = {
@@ -56,6 +57,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const body = (await request.json()) as { ads?: AdSetting[] };
     const ads = normalizeAdSettings(body.ads);

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/server";
+import { requireAdminRoute } from "../../../../lib/adminRouteAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,9 @@ function getSourceLabel(referrer: string | null) {
 }
 
 export async function GET() {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
   try {
     const supabase = createSupabaseAdminClient();
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
