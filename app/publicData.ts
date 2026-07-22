@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getRuntimeEnv } from "../lib/runtimeEnv";
 import { createRequestTimer } from "../lib/requestDiagnostics";
 import { rowToNote } from "./api/notes/noteMapper";
@@ -20,7 +21,7 @@ const publicQuotesLimit = 40;
 const noteSummarySelect = "id,category,title,status,published_date,slug,tags";
 const noteListSelect = `${noteSummarySelect},summary`;
 const notePreviewSelect = `${noteListSelect},cover_url`;
-const noteFullSelect = `${noteListSelect},cover_url,blocks`;
+const noteFullSelect = `${noteListSelect},blocks`;
 const wordSelect = "id,category,kana,japanese,chinese,example_japanese,example_chinese,audio_url,front_audio_url,back_audio_url";
 
 function getWorkerDefaultCache() {
@@ -287,7 +288,9 @@ export async function readPublishedNoteCategories() {
   }
 }
 
-export async function readPublishedNoteByRouteKey(routeKey?: string): Promise<PublicNoteRecord | null> {
+export const readPublishedNoteByRouteKey = cache(async function readPublishedNoteByRouteKey(
+  routeKey?: string
+): Promise<PublicNoteRecord | null> {
   const key = routeKey?.trim();
 
   if (!key) {
@@ -307,7 +310,7 @@ export async function readPublishedNoteByRouteKey(routeKey?: string): Promise<Pu
   } catch {
     return null;
   }
-}
+});
 
 export async function readPublishedNotePreviewByRouteKey(routeKey?: string): Promise<PublicNoteRecord | null> {
   const key = routeKey?.trim();
