@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { findNoteByRouteKey, getNotePreviewImage } from "../../../notes/noteTypes";
-import { readPublishedNotesForPublicPage } from "../../../publicData";
+import { getRuntimeEnv } from "../../../../lib/runtimeEnv";
+import { getNotePreviewImage } from "../../../notes/noteTypes";
+import { readPublishedNotePreviewByRouteKey } from "../../../publicData";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,39 @@ function dataUrlToResponse(dataUrl: string) {
   });
 }
 
+async function supabaseStorageImageToResponse(imageUrl: string) {
+  try {
+    const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL");
+
+    if (!supabaseUrl) {
+      return null;
+    }
+
+    const source = new URL(imageUrl);
+    const allowedOrigin = new URL(supabaseUrl).origin;
+
+    if (source.protocol !== "https:" || source.origin !== allowedOrigin || !source.pathname.startsWith("/storage/v1/object/public/")) {
+      return null;
+    }
+
+    const response = await fetch(source, { cache: "no-store" });
+    const contentType = response.headers.get("content-type") ?? "";
+
+    if (!response.ok || !contentType.startsWith("image/")) {
+      return null;
+    }
+
+    return new Response(response.body, {
+      headers: {
+        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+        "Content-Type": contentType
+      }
+    });
+  } catch {
+    return null;
+  }
+}
+
 function sanitizeImageText(text: string) {
   return text
     .replace(/[\u3040-\u30ff\u31f0-\u31ff\uff66-\uff9f〜～]/g, "")
@@ -41,9 +75,19 @@ function sanitizeImageText(text: string) {
 
 export async function GET(request: NextRequest) {
   const routeKey = request.nextUrl.searchParams.get("slug") ?? "";
-  const notes = await readPublishedNotesForPublicPage();
-  const note = findNoteByRouteKey(notes, routeKey);
+  const note = await readPublishedNotePreviewByRouteKey(routeKey);
   const imageUrl = note ? getNotePreviewImage(note, "/brand/logo_b.png") : "/brand/logo_b.png";
+  const embeddedImageResponse = dataUrlToResponse(imageUrl);
+
+  if (embeddedImageResponse) {
+    return embeddedImageResponse;
+  }
+
+  const storageImageResponse = await supabaseStorageImageToResponse(imageUrl);
+
+  if (storageImageResponse) {
+    return storageImageResponse;
+  }
 
   const title = clampText(sanitizeImageText(note?.title || "") || "日文學習筆記", 44);
   const summary = clampText(sanitizeImageText(note?.summary || "") || "自學日文筆記", 88);

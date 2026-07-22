@@ -370,6 +370,7 @@ function ArticleShareList({ note, summary, title }: { note?: PublicNoteRecord | 
 
 export default function Home({
   disableClientDataRefresh = false,
+  disableNotesAndWordsRefresh = false,
   disableSiteStatsWrite = false,
   initialDailySelectionKey,
   initialLearningStats,
@@ -384,6 +385,7 @@ export default function Home({
   initialWords = []
 }: {
   disableClientDataRefresh?: boolean;
+  disableNotesAndWordsRefresh?: boolean;
   disableSiteStatsWrite?: boolean;
   initialDailySelectionKey?: string;
   initialLearningStats?: HomeLearningStats;
@@ -421,7 +423,7 @@ export default function Home({
   const [sidebarBox, setSidebarBox] = useState({ height: 0, left: 0, top: 88, width: 0 });
 
   useEffect(() => {
-    if (disableClientDataRefresh) {
+    if (disableClientDataRefresh || disableNotesAndWordsRefresh) {
       return;
     }
 
@@ -462,7 +464,7 @@ export default function Home({
     return () => {
       active = false;
     };
-  }, [disableClientDataRefresh, initialNotes, initialSelectedNote, initialSelectedNoteSlug, initialWordTotal, initialWords]);
+  }, [disableClientDataRefresh, disableNotesAndWordsRefresh, initialNotes, initialSelectedNote, initialSelectedNoteSlug, initialWordTotal, initialWords]);
 
   useEffect(() => {
     if (disableClientDataRefresh) {

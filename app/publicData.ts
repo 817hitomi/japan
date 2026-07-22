@@ -3,7 +3,7 @@ import { createRequestTimer } from "../lib/requestDiagnostics";
 import { rowToNote } from "./api/notes/noteMapper";
 import { rowToWord } from "./api/words/wordMapper";
 import { getDailySelectionIndex } from "./dailySelection";
-import { PublicNoteRecord } from "./notes/noteTypes";
+import { getNoteRouteKey, PublicNoteRecord } from "./notes/noteTypes";
 import { defaultQuotes, normalizeQuotes, QuoteRecord } from "./quotes/quoteTypes";
 import { getKanaRowKey, kanaRows, KanaRowKey, normalizeKanaRowKey } from "./words/kanaRows";
 import { normalizeWordCards, WordCardRecord } from "./words/wordTypes";
@@ -18,9 +18,9 @@ export const publicNotesPageSize = 10;
 export const publicWordsPageSize = 12;
 const publicQuotesLimit = 40;
 const noteSummarySelect = "id,category,title,status,published_date,slug,tags";
-const noteListSelect = `${noteSummarySelect},summary,cover_url`;
-const noteCardSelect = `${noteSummarySelect},summary,cover_url,blocks`;
-const noteFullSelect = noteCardSelect;
+const noteListSelect = `${noteSummarySelect},summary`;
+const notePreviewSelect = `${noteListSelect},cover_url`;
+const noteFullSelect = `${noteListSelect},cover_url,blocks`;
 const wordSelect = "id,category,kana,japanese,chinese,example_japanese,example_chinese,audio_url,front_audio_url,back_audio_url";
 
 function getWorkerDefaultCache() {
@@ -39,8 +39,12 @@ function getSupabaseRestUrl(path: string, params: Record<string, string>) {
   return url;
 }
 
-async function fetchSupabaseRows<Row>(path: string, params: Record<string, string>): Promise<Row[]> {
-  const { rows } = await fetchSupabaseRowsWithCount<Row>(path, params);
+async function fetchSupabaseRows<Row>(
+  path: string,
+  params: Record<string, string>,
+  options: { useNextCache?: boolean } = {}
+): Promise<Row[]> {
+  const { rows } = await fetchSupabaseRowsWithCount<Row>(path, params, undefined, options);
   return rows;
 }
 
@@ -77,7 +81,8 @@ async function writeWorkerCachedResponse(cacheKey: Request, response: Response) 
 async function fetchSupabaseRowsWithCount<Row>(
   path: string,
   params: Record<string, string>,
-  range?: { from: number; to: number }
+  range?: { from: number; to: number },
+  options: { useNextCache?: boolean } = {}
 ): Promise<{ rows: Row[]; total: number }> {
   const anonKey = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
@@ -92,7 +97,7 @@ async function fetchSupabaseRowsWithCount<Row>(
   });
   const cachedResponse = await readWorkerCachedResponse(cacheKey);
   const response = cachedResponse ?? await fetch(url, {
-    cache: "no-store",
+    ...(options.useNextCache ? { next: { revalidate: publicCacheSeconds } } : { cache: "no-store" as const }),
     headers: {
       apikey: anonKey,
       authorization: `Bearer ${anonKey}`,
@@ -172,16 +177,42 @@ function rowToQuote(row: QuoteRow): QuoteRecord {
   ])[0];
 }
 
+export function withPublicNoteImageUrl(note: PublicNoteRecord): PublicNoteRecord {
+  return {
+    ...note,
+    coverUrl: `/api/notes/og?slug=${encodeURIComponent(getNoteRouteKey(note))}`
+  };
+}
+
 export async function readPublishedNotesForPublicPage(): Promise<PublicNoteRecord[]> {
   try {
     const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>("learning_notes", {
-      select: noteCardSelect,
+      select: noteSummarySelect,
       status: `eq.${publishedStatus}`,
       order: "published_date.desc,id.desc",
       limit: String(publicNotesLimit)
     });
 
     return rows.map(rowToNote);
+  } catch {
+    return [];
+  }
+}
+
+export async function readPublishedNoteCardsForHomePage(): Promise<PublicNoteRecord[]> {
+  try {
+    const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>(
+      "learning_notes",
+      {
+        select: noteListSelect,
+        status: `eq.${publishedStatus}`,
+        order: "published_date.desc,id.desc",
+        limit: String(publicNotesLimit)
+      },
+      { useNextCache: true }
+    );
+
+    return rows.map(rowToNote).map(withPublicNoteImageUrl);
   } catch {
     return [];
   }
@@ -231,7 +262,7 @@ export async function readPublishedNotesPage(options: {
     );
 
     return {
-      notes: result.rows.map(rowToNote),
+      notes: result.rows.map(rowToNote).map(withPublicNoteImageUrl),
       page,
       pageSize: publicNotesPageSize,
       total: result.total
@@ -273,6 +304,33 @@ export async function readPublishedNoteByRouteKey(routeKey?: string): Promise<Pu
     });
 
     return rows[0] ? rowToNote(rows[0]) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function readPublishedNotePreviewByRouteKey(routeKey?: string): Promise<PublicNoteRecord | null> {
+  const key = routeKey?.trim();
+
+  if (!key) {
+    return null;
+  }
+
+  try {
+    const numericId = Number(key);
+    const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>("learning_notes", {
+      select: notePreviewSelect,
+      status: `eq.${publishedStatus}`,
+      ...(Number.isFinite(numericId) && String(numericId) === key ? { id: `eq.${numericId}` } : { slug: `eq.${key}` }),
+      limit: "1"
+    });
+
+    if (!rows[0]) {
+      return null;
+    }
+
+    const note = rowToNote(rows[0]);
+    return note.coverUrl.trim() ? note : readPublishedNoteByRouteKey(key);
   } catch {
     return null;
   }
@@ -487,7 +545,8 @@ export async function readWordsListingForPublicPage(options: PublicWordsPageOpti
 
 export async function readWordsForPublicPage(
   pageOrOptions: number | PublicWordsPageOptions = 1,
-  legacyPageSize = publicWordsPageSize
+  legacyPageSize = publicWordsPageSize,
+  useNextCache = false
 ): Promise<PublicWordsPageResult> {
   const options = typeof pageOrOptions === "number" ? { page: pageOrOptions, pageSize: legacyPageSize } : pageOrOptions;
   const currentPage = normalizePublicPage(options.page);
@@ -511,7 +570,8 @@ export async function readWordsForPublicPage(
     const result = await fetchSupabaseRowsWithCount<Parameters<typeof rowToWord>[0]>(
       "word_cards",
       queryParams,
-      { from, to }
+      { from, to },
+      { useNextCache }
     );
 
     const rows = result.rows;
@@ -535,7 +595,7 @@ export async function readWordsForPublicPage(
 
 export async function readWordsForHomePage(dailyKey: string): Promise<PublicWordsPageResult> {
   const dailyPoolSize = 100;
-  const countResult = await readWordsForPublicPage(1, 1);
+  const countResult = await readWordsForPublicPage(1, 1, true);
 
   if (countResult.total <= 1) {
     return countResult;
@@ -544,17 +604,21 @@ export async function readWordsForHomePage(dailyKey: string): Promise<PublicWord
   const pageCount = Math.ceil(countResult.total / dailyPoolSize);
   const dailyPage = getDailySelectionIndex(pageCount, dailyKey, "word-pool") + 1;
 
-  return readWordsForPublicPage(dailyPage, dailyPoolSize);
+  return readWordsForPublicPage(dailyPage, dailyPoolSize, true);
 }
 
-export async function readQuotesForPublicPage(): Promise<QuoteRecord[]> {
+export async function readQuotesForPublicPage(useNextCache = false): Promise<QuoteRecord[]> {
   try {
-    const rows = await fetchSupabaseRows<QuoteRow>("word_cards", {
-      select: "id,category,kana,japanese,chinese,audio_url,front_audio_url",
-      category: `eq.${quoteCategory}`,
-      order: "id.desc",
-      limit: String(publicQuotesLimit)
-    });
+    const rows = await fetchSupabaseRows<QuoteRow>(
+      "word_cards",
+      {
+        select: "id,category,kana,japanese,chinese,audio_url,front_audio_url",
+        category: `eq.${quoteCategory}`,
+        order: "id.desc",
+        limit: String(publicQuotesLimit)
+      },
+      { useNextCache }
+    );
 
     return normalizeQuotes(rows.map(rowToQuote), true);
   } catch {

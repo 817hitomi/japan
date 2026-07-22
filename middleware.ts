@@ -149,6 +149,14 @@ export async function middleware(request: NextRequest) {
   if (pathname === "/favicon.ico") {
     return finish(NextResponse.rewrite(new URL("/brand/logo_b.png", request.url)), "favicon-rewrite");
   }
+  if (pathname === "/" && request.nextUrl.searchParams.get("note")?.trim()) {
+    const noteKey = request.nextUrl.searchParams.get("note")!.trim();
+    const destination = new URL(`/notes/${encodeURIComponent(noteKey)}`, request.url);
+    request.nextUrl.searchParams.forEach((value, key) => {
+      if (key !== "note") destination.searchParams.append(key, value);
+    });
+    return finish(NextResponse.redirect(destination, 308), "legacy-note-redirect");
+  }
   if (isPublicAssetPath(pathname)) return finish(NextResponse.next(), "public-asset");
   if (isApiPath(pathname) && !isKnownApiPath(pathname)) return finish(quickApi404(), "api-404", { reason: "unknown-api-route" });
 

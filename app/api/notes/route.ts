@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
 import { requireAdminRoute } from "../../../lib/adminRouteAuth";
-import { PublicNoteRecord } from "../../notes/noteTypes";
+import { getNoteRouteKey, PublicNoteRecord } from "../../notes/noteTypes";
 import { noteToPayload, rowToNote } from "./noteMapper";
 
 export const dynamic = "force-dynamic";
 const publicNotesLimit = 120;
-const publicNoteSummarySelect = "id,category,title,status,published_date,slug,tags,summary,cover_url,blocks";
+const publicNoteSummarySelect = "id,category,title,status,published_date,slug,tags,summary";
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,7 +39,16 @@ export async function GET(request: NextRequest) {
     }
 
     const rows = (data ?? []) as unknown as Parameters<typeof rowToNote>[0][];
-    return NextResponse.json({ notes: rows.map(rowToNote) });
+    const notes = rows.map(rowToNote);
+    return NextResponse.json({
+      notes:
+        status === "published"
+          ? notes.map((note) => ({
+              ...note,
+              coverUrl: `/api/notes/og?slug=${encodeURIComponent(getNoteRouteKey(note))}`
+            }))
+          : notes
+    });
   } catch (error) {
     return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load notes") }, { status: 500 });
   }
