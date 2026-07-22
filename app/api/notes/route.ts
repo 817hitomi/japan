@@ -6,7 +6,7 @@ import { noteToPayload, rowToNote } from "./noteMapper";
 
 export const dynamic = "force-dynamic";
 const publicNotesLimit = 120;
-const publicNoteSummarySelect = "id,category,title,summary,status,published_date,slug,tags,cover_url";
+const publicNoteSummarySelect = "id,category,title,status,published_date,slug,tags,summary,cover_url,blocks";
 
 export async function GET(request: NextRequest) {
   try {

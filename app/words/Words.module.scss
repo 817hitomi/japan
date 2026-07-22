@@ -20,7 +20,10 @@
   flex-wrap: wrap;
   gap: 24px;
 
-  button {
+  button,
+  a {
+    display: grid;
+    place-items: center;
     min-width: 118px;
     height: 34px;
     border: 1px solid #9bc0a8;
@@ -30,6 +33,7 @@
     cursor: pointer;
     font-size: 16px;
     font-weight: 800;
+    text-decoration: none;
   }
 }
 
@@ -220,7 +224,8 @@
   gap: 12px;
   margin-top: -10px;
 
-  button {
+  button,
+  a {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -232,6 +237,7 @@
     color: #638f74;
     cursor: pointer;
     font-weight: 800;
+    text-decoration: none;
   }
 
   strong {

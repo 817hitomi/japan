@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createRequestTimer } from "../../../lib/requestDiagnostics";
 import HomeClient from "../../HomeClient";
-import { getNotePath, getNoteRouteKey, PublicNoteRecord } from "../noteTypes";
-import { readPublishedNoteByRouteKey, readPublishedNotesForPublicPage, readQuotesForPublicPage, readWordsForPublicPage } from "../../publicData";
+import { getNotePath, getNoteRouteKey } from "../noteTypes";
+import { readPublicArticleContext, readPublishedNoteByRouteKey, readPublishedNotesForPublicPage } from "../../publicData";
 
 export const revalidate = 300;
 export const dynamicParams = true;
@@ -90,6 +90,7 @@ export async function generateMetadata({ params, searchParams }: NotePageProps):
 export default async function NotePage({ params }: NotePageProps) {
   const { slug } = await params;
   const timer = createRequestTimer("page render", { route: "/notes/[slug]" });
+  timer.mark("route matching", { slug });
   timer.mark("database query start", { groups: "note" });
   const note = await readPublishedNoteByRouteKey(slug);
   timer.mark("database query end", { note: Boolean(note) });
@@ -99,26 +100,26 @@ export default async function NotePage({ params }: NotePageProps) {
     notFound();
   }
 
-  timer.mark("database query start", { groups: "notes,words,quotes" });
-  const [notes, wordsResult, quotes] = await Promise.all([
-    readPublishedNotesForPublicPage(),
-    readWordsForPublicPage(),
-    readQuotesForPublicPage()
-  ]);
-  timer.mark("database query end", { notes: notes.length, words: wordsResult.words.length, quotes: quotes.length });
-
-  const initialNotes = notes.some((item) => item.id === note.id)
-    ? notes.map((item) => (item.id === note.id ? note : item))
-    : [note, ...notes];
+  timer.mark("related articles start");
+  const articleContext = await readPublicArticleContext(note);
+  timer.mark("related articles end", {
+    notes: articleContext.notes.length,
+    previous: Boolean(articleContext.previousNote),
+    next: Boolean(articleContext.nextNote)
+  });
+  timer.mark("article rendering", { blocks: note.blocks.length });
+  timer.mark("waitUntil background tasks", { tasks: 0 });
 
   timer.end({ status: 200 });
   return (
     <HomeClient
-      initialNotes={initialNotes}
-      initialQuotes={quotes}
+      disableClientDataRefresh
+      disableSiteStatsWrite
+      initialNextNote={articleContext.nextNote}
+      initialNoteTotal={articleContext.total}
+      initialNotes={articleContext.notes}
+      initialPreviousNote={articleContext.previousNote}
       initialSelectedNoteSlug={note.slug || String(note.id)}
-      initialWordTotal={wordsResult.total}
-      initialWords={wordsResult.words}
     />
   );
 }

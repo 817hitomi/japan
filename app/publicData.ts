@@ -4,6 +4,7 @@ import { rowToNote } from "./api/notes/noteMapper";
 import { rowToWord } from "./api/words/wordMapper";
 import { PublicNoteRecord } from "./notes/noteTypes";
 import { defaultQuotes, normalizeQuotes, QuoteRecord } from "./quotes/quoteTypes";
+import { getKanaRowKey, kanaRows, KanaRowKey, normalizeKanaRowKey } from "./words/kanaRows";
 import { normalizeWordCards, WordCardRecord } from "./words/wordTypes";
 
 const quoteCategory = "首頁白版";
@@ -11,10 +12,14 @@ const publishedStatus = "已發布";
 
 const publicCacheSeconds = 300;
 const publicNotesLimit = 120;
+const publicArticleSidebarLimit = 12;
+export const publicNotesPageSize = 10;
 export const publicWordsPageSize = 12;
 const publicQuotesLimit = 40;
-const noteSummarySelect = "id,category,title,summary,status,published_date,slug,tags,cover_url";
-const noteFullSelect = `${noteSummarySelect},blocks`;
+const noteSummarySelect = "id,category,title,status,published_date,slug,tags";
+const noteListSelect = `${noteSummarySelect},summary,cover_url`;
+const noteCardSelect = `${noteSummarySelect},summary,cover_url,blocks`;
+const noteFullSelect = noteCardSelect;
 const wordSelect = "id,category,kana,japanese,chinese,example_japanese,example_chinese,audio_url,front_audio_url,back_audio_url";
 
 function getWorkerDefaultCache() {
@@ -86,7 +91,7 @@ async function fetchSupabaseRowsWithCount<Row>(
   });
   const cachedResponse = await readWorkerCachedResponse(cacheKey);
   const response = cachedResponse ?? await fetch(url, {
-    next: { revalidate: publicCacheSeconds },
+    cache: "no-store",
     headers: {
       apikey: anonKey,
       authorization: `Bearer ${anonKey}`,
@@ -117,6 +122,32 @@ async function fetchSupabaseRowsWithCount<Row>(
   return { rows, total };
 }
 
+async function fetchLimitedPublicNoteSummaries(params: Record<string, string>, limit: number) {
+  const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>("learning_notes", {
+    select: noteSummarySelect,
+    status: `eq.${publishedStatus}`,
+    limit: String(limit),
+    ...params
+  });
+
+  return rows.map(rowToNote);
+}
+
+async function fetchLimitedPublicNoteSummariesWithCount(params: Record<string, string>, limit: number) {
+  const { rows, total } = await fetchSupabaseRowsWithCount<Parameters<typeof rowToNote>[0]>(
+    "learning_notes",
+    {
+      select: noteSummarySelect,
+      status: `eq.${publishedStatus}`,
+      limit: String(limit),
+      ...params
+    },
+    { from: 0, to: limit - 1 }
+  );
+
+  return { notes: rows.map(rowToNote), total };
+}
+
 type QuoteRow = {
   id: number;
   category: string | null;
@@ -143,13 +174,82 @@ function rowToQuote(row: QuoteRow): QuoteRecord {
 export async function readPublishedNotesForPublicPage(): Promise<PublicNoteRecord[]> {
   try {
     const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>("learning_notes", {
-      select: noteSummarySelect,
+      select: noteCardSelect,
       status: `eq.${publishedStatus}`,
       order: "published_date.desc,id.desc",
       limit: String(publicNotesLimit)
     });
 
     return rows.map(rowToNote);
+  } catch {
+    return [];
+  }
+}
+
+export type PublicNotesPageResult = {
+  notes: PublicNoteRecord[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
+export function normalizePublicNotesPage(value?: string | number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function normalizePublicNotesSearch(value?: string) {
+  return value?.trim().replace(/[,%*()]/g, " ").replace(/\s+/g, " ").slice(0, 80) ?? "";
+}
+
+export async function readPublishedNotesPage(options: {
+  category?: string;
+  page?: string | number;
+  query?: string;
+} = {}): Promise<PublicNotesPageResult> {
+  const page = normalizePublicNotesPage(options.page);
+  const category = options.category?.trim() ?? "";
+  const query = normalizePublicNotesSearch(options.query);
+  const from = (page - 1) * publicNotesPageSize;
+
+  try {
+    const result = await fetchSupabaseRowsWithCount<Parameters<typeof rowToNote>[0]>(
+      "learning_notes",
+      {
+        select: noteListSelect,
+        status: `eq.${publishedStatus}`,
+        order: "published_date.desc,id.desc",
+        ...(category ? { category: `eq.${category}` } : {}),
+        ...(query
+          ? {
+              or: `(title.ilike.*${query}*,summary.ilike.*${query}*,category.ilike.*${query}*,tags.ilike.*${query}*)`
+            }
+          : {})
+      },
+      { from, to: from + publicNotesPageSize - 1 }
+    );
+
+    return {
+      notes: result.rows.map(rowToNote),
+      page,
+      pageSize: publicNotesPageSize,
+      total: result.total
+    };
+  } catch {
+    return { notes: [], page, pageSize: publicNotesPageSize, total: 0 };
+  }
+}
+
+export async function readPublishedNoteCategories() {
+  try {
+    const rows = await fetchSupabaseRows<{ category: string | null }>("learning_notes", {
+      select: "category",
+      status: `eq.${publishedStatus}`,
+      order: "category.asc",
+      limit: String(publicNotesLimit)
+    });
+
+    return Array.from(new Set(rows.map((row) => row.category?.trim() ?? "").filter(Boolean)));
   } catch {
     return [];
   }
@@ -177,6 +277,98 @@ export async function readPublishedNoteByRouteKey(routeKey?: string): Promise<Pu
   }
 }
 
+export type PublicArticleContext = {
+  notes: PublicNoteRecord[];
+  previousNote: PublicNoteRecord | null;
+  nextNote: PublicNoteRecord | null;
+  total: number;
+};
+
+function mergeUniqueNotes(notes: PublicNoteRecord[], limit = publicArticleSidebarLimit) {
+  const seen = new Set<number>();
+  const merged: PublicNoteRecord[] = [];
+
+  for (const note of notes) {
+    if (seen.has(note.id)) {
+      continue;
+    }
+
+    seen.add(note.id);
+    merged.push(note);
+
+    if (merged.length >= limit) {
+      break;
+    }
+  }
+
+  return merged;
+}
+
+export async function readPublicArticleContext(note: PublicNoteRecord): Promise<PublicArticleContext> {
+  const timer = createRequestTimer("related articles", { route: "/notes/[slug]", noteId: note.id });
+
+  try {
+    const category = note.category?.trim();
+    const [newerRows, olderRows, relatedRows, latestResult] = await Promise.all([
+      fetchLimitedPublicNoteSummaries(
+        {
+          published_date: `gt.${note.date}`,
+          order: "published_date.asc,id.asc"
+        },
+        1
+      ),
+      fetchLimitedPublicNoteSummaries(
+        {
+          published_date: `lt.${note.date}`,
+          order: "published_date.desc,id.desc"
+        },
+        1
+      ),
+      category
+        ? fetchLimitedPublicNoteSummaries(
+            {
+              category: `eq.${category}`,
+              id: `neq.${note.id}`,
+              order: "published_date.desc,id.desc"
+            },
+            6
+          )
+        : Promise.resolve([]),
+      fetchLimitedPublicNoteSummariesWithCount(
+        {
+          id: `neq.${note.id}`,
+          order: "published_date.desc,id.desc"
+        },
+        8
+      )
+    ]);
+    const latestRows = latestResult.notes;
+    const notes = mergeUniqueNotes([note, ...newerRows, ...olderRows, ...relatedRows, ...latestRows]);
+
+    timer.end({
+      status: "ok",
+      previous: Boolean(newerRows[0]),
+      next: Boolean(olderRows[0]),
+      related: notes.length
+    });
+
+    return {
+      notes,
+      previousNote: newerRows[0] ?? null,
+      nextNote: olderRows[0] ?? null,
+      total: Math.max(latestResult.total + 1, notes.length)
+    };
+  } catch {
+    timer.end({ status: "fallback" });
+    return {
+      notes: [note],
+      previousNote: null,
+      nextNote: null,
+      total: 1
+    };
+  }
+}
+
 export type PublicWordsPageResult = {
   page: number;
   pageSize: number;
@@ -184,30 +376,45 @@ export type PublicWordsPageResult = {
   words: WordCardRecord[];
 };
 
+export type PublicWordsFacets = {
+  categories: string[];
+  filteredTotal: number;
+  kanaCounts: Record<KanaRowKey, number>;
+  total: number;
+};
+
+export type PublicWordsPageOptions = {
+  category?: string;
+  kanaRow?: string;
+  page?: number;
+  pageSize?: number;
+};
+
 export function normalizePublicPage(value?: string | number) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
-export async function readWordsForPublicFilters(): Promise<WordCardRecord[]> {
+async function readWordFacetData(category = "", kanaRow = "") {
   const batchSize = 1000;
+  const emptyCounts = Object.fromEntries(kanaRows.map((row) => [row.key, 0])) as Record<KanaRowKey, number>;
 
   try {
     const timer = createRequestTimer("database query", {
       table: "word_cards",
       operation: "public-words-filter-source"
     });
-    const rows: Parameters<typeof rowToWord>[0][] = [];
+    const rows: Array<{ id: number; category: string | null; japanese: string | null; kana: string | null }> = [];
     let total = 0;
 
     for (let from = 0; ; from += batchSize) {
       const to = from + batchSize - 1;
-      const result = await fetchSupabaseRowsWithCount<Parameters<typeof rowToWord>[0]>(
+      const result = await fetchSupabaseRowsWithCount<{ id: number; category: string | null; japanese: string | null; kana: string | null }>(
         "word_cards",
         {
-          select: wordSelect,
+          select: "id,category,kana,japanese",
           category: `neq.${quoteCategory}`,
-          order: "category.asc,id.desc"
+          order: "id.desc"
         },
         { from, to }
       );
@@ -223,15 +430,67 @@ export async function readWordsForPublicFilters(): Promise<WordCardRecord[]> {
       }
     }
 
+    const categories = Array.from(new Set(rows.map((row) => row.category?.trim() ?? "").filter(Boolean))).sort((a, b) =>
+      a.localeCompare(b, "zh-Hant")
+    );
+    const filteredRows = category ? rows.filter((row) => row.category === category) : rows;
+    const kanaCounts = { ...emptyCounts };
+    const normalizedKanaRow = normalizeKanaRowKey(kanaRow);
+
+    filteredRows.forEach((row) => {
+      const key = getKanaRowKey({ japanese: row.japanese ?? "", kana: row.kana ?? "" });
+      if (key) {
+        kanaCounts[key] += 1;
+      }
+    });
+
+    const matchingIds = filteredRows
+      .filter((row) => !normalizedKanaRow || getKanaRowKey({ japanese: row.japanese ?? "", kana: row.kana ?? "" }) === normalizedKanaRow)
+      .map((row) => row.id);
+
     timer.end({ status: "ok", rows: rows.length, total });
-    return normalizeWordCards(rows.map(rowToWord), true);
+    return {
+      facets: { categories, filteredTotal: filteredRows.length, kanaCounts, total: total || rows.length } satisfies PublicWordsFacets,
+      matchingIds
+    };
   } catch {
-    return [];
+    return {
+      facets: { categories: [], filteredTotal: 0, kanaCounts: emptyCounts, total: 0 } satisfies PublicWordsFacets,
+      matchingIds: [] as number[]
+    };
   }
 }
 
-export async function readWordsForPublicPage(page = 1, pageSize = publicWordsPageSize): Promise<PublicWordsPageResult> {
-  const currentPage = normalizePublicPage(page);
+export async function readWordsListingForPublicPage(options: PublicWordsPageOptions = {}) {
+  const page = normalizePublicPage(options.page);
+  const pageSize = options.pageSize ?? publicWordsPageSize;
+  const { facets, matchingIds } = await readWordFacetData(options.category?.trim() ?? "", options.kanaRow ?? "");
+  const pageIds = matchingIds.slice((page - 1) * pageSize, page * pageSize);
+
+  if (pageIds.length === 0) {
+    return { facets, page: { page, pageSize, total: matchingIds.length, words: [] } satisfies PublicWordsPageResult };
+  }
+
+  try {
+    const rows = await fetchSupabaseRows<Parameters<typeof rowToWord>[0]>("word_cards", {
+      select: wordSelect,
+      id: `in.(${pageIds.join(",")})`
+    });
+    const wordsById = new Map(normalizeWordCards(rows.map(rowToWord), true).map((word) => [word.id, word]));
+    const words = pageIds.map((id) => wordsById.get(id)).filter((word): word is WordCardRecord => Boolean(word));
+    return { facets, page: { page, pageSize, total: matchingIds.length, words } satisfies PublicWordsPageResult };
+  } catch {
+    return { facets, page: { page, pageSize, total: matchingIds.length, words: [] } satisfies PublicWordsPageResult };
+  }
+}
+
+export async function readWordsForPublicPage(
+  pageOrOptions: number | PublicWordsPageOptions = 1,
+  legacyPageSize = publicWordsPageSize
+): Promise<PublicWordsPageResult> {
+  const options = typeof pageOrOptions === "number" ? { page: pageOrOptions, pageSize: legacyPageSize } : pageOrOptions;
+  const currentPage = normalizePublicPage(options.page);
+  const pageSize = options.pageSize ?? publicWordsPageSize;
   const from = (currentPage - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -242,13 +501,15 @@ export async function readWordsForPublicPage(page = 1, pageSize = publicWordsPag
       page: currentPage,
       pageSize
     });
+    const queryParams: Record<string, string> = {
+      select: wordSelect,
+      category: `neq.${quoteCategory}`,
+      order: "category.asc,id.desc"
+    };
+
     const result = await fetchSupabaseRowsWithCount<Parameters<typeof rowToWord>[0]>(
       "word_cards",
-      {
-        select: wordSelect,
-        category: `neq.${quoteCategory}`,
-        order: "category.asc,id.desc"
-      },
+      queryParams,
       { from, to }
     );
 

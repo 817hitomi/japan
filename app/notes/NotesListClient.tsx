@@ -1,13 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import AdSlot from "../ads/AdSlot";
 import SiteFooter from "../SiteFooter";
-import { readQuotesWithFallback } from "../quotes/quoteStorage";
 import { QuoteRecord } from "../quotes/quoteTypes";
 import { getDisplayTags, getNotePath, getNotePreviewImage } from "./noteTypes";
-import { PublicNoteRecord, readNotesWithFallback } from "./noteStorage";
+import { PublicNoteRecord } from "./noteStorage";
 import homeStyles from "../page.module.scss";
 import styles from "./NotesList.module.scss";
 
@@ -44,6 +43,19 @@ function getNoteExcerpt(note: PublicNoteRecord) {
 
 function getNoteImage(note: PublicNoteRecord) {
   return getNotePreviewImage(note);
+}
+
+function getNotesPageHref(page: number, category: string, query: string) {
+  const params = new URLSearchParams();
+  const normalizedCategory = category.trim();
+  const normalizedQuery = query.trim();
+
+  if (normalizedCategory) params.set("category", normalizedCategory);
+  if (normalizedQuery) params.set("q", normalizedQuery);
+  if (page > 1) params.set("page", String(page));
+
+  const search = params.toString();
+  return search ? `/notes?${search}` : "/notes";
 }
 
 function ParallaxBackground() {
@@ -85,74 +97,47 @@ function ParallaxBackground() {
 }
 
 export default function NotesListClient({
+  categories = [],
   initialBoardItems = [],
   initialCategory = "",
-  initialNotes = []
+  initialNotes = [],
+  initialPage = 1,
+  initialQuery = "",
+  pageSize = 10,
+  total = 0
 }: {
+  categories?: string[];
   initialBoardItems?: QuoteRecord[];
   initialCategory?: string;
   initialNotes?: PublicNoteRecord[];
+  initialPage?: number;
+  initialQuery?: string;
+  pageSize?: number;
+  total?: number;
 }) {
-  const [notes, setNotes] = useState<PublicNoteRecord[]>(initialNotes);
-  const [boardItems, setBoardItems] = useState<QuoteRecord[]>(initialBoardItems);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadNotesPageData() {
-      const [nextNotes, nextBoardItems] = await Promise.all([
-        readNotesWithFallback("published"),
-        readQuotesWithFallback()
-      ]);
-
-      if (active) {
-        setNotes(nextNotes.length > 0 || initialNotes.length === 0 ? nextNotes : initialNotes);
-        setBoardItems(nextBoardItems.length > 0 || initialBoardItems.length === 0 ? nextBoardItems : initialBoardItems);
-      }
-    }
-
-    loadNotesPageData();
-    setSelectedCategory(new URLSearchParams(window.location.search).get("category") ?? initialCategory);
-
-    return () => {
-      active = false;
-    };
-  }, [initialBoardItems, initialCategory, initialNotes]);
-
-  const categories = useMemo(() => {
-    const names = notes
-      .filter((note) => note.status === "已發布")
-      .map((note) => note.category.trim())
-      .filter(Boolean);
-
-    return Array.from(new Set(names)).sort((first, second) => first.localeCompare(second, "zh-Hant"));
-  }, [notes]);
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
 
   const publishedNotes = useMemo(() => {
-    const keyword = searchQuery.trim().toLowerCase();
-
-    return notes
+    return initialNotes
       .filter((note) => note.status === "已發布")
-      .filter((note) => !selectedCategory || note.category === selectedCategory)
-      .filter((note) => {
-        if (!keyword) {
-          return true;
-        }
-
-        return [note.title, note.summary, note.category, note.tags].some((value) => value.toLowerCase().includes(keyword));
-      })
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [notes, searchQuery, selectedCategory]);
+  }, [initialNotes]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  function applyFilters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    window.location.href = getNotesPageHref(1, selectedCategory, searchQuery);
+  }
 
   const statItems = useMemo(
     () => [
-      [boardItems.length.toLocaleString("en-US"), "學習例句"],
-      [publishedNotes.length.toLocaleString("en-US"), "已收錄文章"],
+      [initialBoardItems.length.toLocaleString("en-US"), "學習例句"],
+      [total.toLocaleString("en-US"), "已收錄文章"],
       ["N5", "目前等級"]
     ],
-    [boardItems.length, publishedNotes.length]
+    [initialBoardItems.length, total]
   );
 
   return (
@@ -213,7 +198,7 @@ export default function NotesListClient({
       <AdSlot slot="top-banner" className={homeStyles.adWide} />
 
       <div className={styles.notesLayout}>
-        <section className={styles.filterBar} aria-label="文章篩選">
+        <form className={styles.filterBar} aria-label="文章篩選" onSubmit={applyFilters}>
           <label>
             <span>搜尋文章</span>
             <input
@@ -234,7 +219,8 @@ export default function NotesListClient({
               ))}
             </select>
           </label>
-        </section>
+          <button type="submit">搜尋</button>
+        </form>
 
         <section className={styles.grid} aria-label="已發布文章">
           {publishedNotes.map((note) => {
@@ -263,6 +249,40 @@ export default function NotesListClient({
         </section>
 
         {publishedNotes.length === 0 && <p className={styles.empty}>目前沒有已發布文章。</p>}
+
+        {totalPages > 1 ? (
+          <nav className={styles.pagination} aria-label="部落格分頁">
+            {initialPage > 1 ? (
+              <a aria-label="上一頁" href={getNotesPageHref(initialPage - 1, initialCategory, initialQuery)}>
+                ‹
+              </a>
+            ) : (
+              <span aria-label="上一頁" aria-disabled="true">
+                ‹
+              </span>
+            )}
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) =>
+              page === initialPage ? (
+                <strong aria-current="page" key={page}>
+                  {page}
+                </strong>
+              ) : (
+                <a href={getNotesPageHref(page, initialCategory, initialQuery)} key={page}>
+                  {page}
+                </a>
+              )
+            )}
+            {initialPage < totalPages ? (
+              <a aria-label="下一頁" href={getNotesPageHref(initialPage + 1, initialCategory, initialQuery)}>
+                ›
+              </a>
+            ) : (
+              <span aria-label="下一頁" aria-disabled="true">
+                ›
+              </span>
+            )}
+          </nav>
+        ) : null}
       </div>
 
       <SiteFooter />

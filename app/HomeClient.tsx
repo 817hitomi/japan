@@ -369,16 +369,26 @@ function ArticleShareList({ note, summary, title }: { note?: PublicNoteRecord | 
 }
 
 export default function Home({
+  disableClientDataRefresh = false,
+  disableSiteStatsWrite = false,
   initialLearningStats,
+  initialNoteTotal,
   initialNotes = [],
+  initialNextNote,
+  initialPreviousNote,
   initialQuotes = defaultQuotes,
   initialSelectedNoteId,
   initialSelectedNoteSlug,
   initialWordTotal,
   initialWords = []
 }: {
+  disableClientDataRefresh?: boolean;
+  disableSiteStatsWrite?: boolean;
   initialLearningStats?: HomeLearningStats;
+  initialNoteTotal?: number;
+  initialNextNote?: PublicNoteRecord | null;
   initialNotes?: PublicNoteRecord[];
+  initialPreviousNote?: PublicNoteRecord | null;
   initialQuotes?: QuoteRecord[];
   initialSelectedNoteId?: string;
   initialSelectedNoteSlug?: string;
@@ -409,6 +419,10 @@ export default function Home({
   const [sidebarBox, setSidebarBox] = useState({ height: 0, left: 0, top: 88, width: 0 });
 
   useEffect(() => {
+    if (disableClientDataRefresh) {
+      return;
+    }
+
     let active = true;
 
     async function loadHomeData() {
@@ -446,9 +460,13 @@ export default function Home({
     return () => {
       active = false;
     };
-  }, [initialNotes, initialSelectedNote, initialSelectedNoteSlug, initialWordTotal, initialWords]);
+  }, [disableClientDataRefresh, initialNotes, initialSelectedNote, initialSelectedNoteSlug, initialWordTotal, initialWords]);
 
   useEffect(() => {
+    if (disableClientDataRefresh) {
+      return;
+    }
+
     let active = true;
 
     async function loadLearningStats() {
@@ -486,9 +504,13 @@ export default function Home({
     return () => {
       active = false;
     };
-  }, [initialWordTotal, notes, words]);
+  }, [disableClientDataRefresh, initialWordTotal, notes, words]);
 
   useEffect(() => {
+    if (disableSiteStatsWrite) {
+      return;
+    }
+
     let active = true;
 
     async function recordSiteVisit() {
@@ -517,7 +539,7 @@ export default function Home({
     return () => {
       active = false;
     };
-  }, []);
+  }, [disableSiteStatsWrite]);
 
   const publishedNotes = useMemo(
     () =>
@@ -528,14 +550,19 @@ export default function Home({
   );
 
   const displayedWordCount = Math.max(words.length, learningStats.wordCount, initialWordTotal ?? 0);
+  const isArticlePage = Boolean(initialSelectedNoteId || initialSelectedNoteSlug);
+  const displayedNoteCount = Math.max(publishedNotes.length, initialNoteTotal ?? 0);
 
   const statItems = useMemo(
     () => [
-      [displayedWordCount.toLocaleString("en-US"), "已收錄單字"],
+      [
+        (isArticlePage ? displayedNoteCount : displayedWordCount).toLocaleString("en-US"),
+        isArticlePage ? "部落格篇數" : "已收錄單字"
+      ],
       [learningStats.learningDays.toLocaleString("en-US"), "已經學習天數"],
       [learningStats.currentLevel, "目前程度"]
     ],
-    [displayedWordCount, learningStats]
+    [displayedNoteCount, displayedWordCount, isArticlePage, learningStats]
   );
 
   const categories = useMemo(() => {
@@ -843,6 +870,25 @@ export default function Home({
                 <p className={styles.emptySidebarText}>尚無分類</p>
               )}
             </section>
+            {initialPreviousNote || initialNextNote ? (
+              <section>
+                <h2>上一篇／下一篇</h2>
+                <div className={styles.sidebarLinkList}>
+                  {initialPreviousNote ? (
+                    <a href={getNotePath(initialPreviousNote)}>
+                      <strong>{initialPreviousNote.title}</strong>
+                      <span>{initialPreviousNote.category}　{initialPreviousNote.date}</span>
+                    </a>
+                  ) : null}
+                  {initialNextNote ? (
+                    <a href={getNotePath(initialNextNote)}>
+                      <strong>{initialNextNote.title}</strong>
+                      <span>{initialNextNote.category}　{initialNextNote.date}</span>
+                    </a>
+                  ) : null}
+                </div>
+              </section>
+            ) : null}
             <section>
               <h2>熱門文章</h2>
               {popularNotes.length > 0 ? (

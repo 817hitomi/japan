@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import AdSlot from "../ads/AdSlot";
 import SiteFooter from "../SiteFooter";
-import { readingsToSpeechText, renderInlineRuby, renderWordRuby, shouldShowStandaloneKana, splitStandaloneReading, stripInlineReadings } from "../../lib/japaneseText";
+import { readingsToSpeechText, renderInlineRuby, renderWordRuby, shouldShowStandaloneKana, splitStandaloneReading } from "../../lib/japaneseText";
 import homeStyles from "../page.module.scss";
+import { kanaRows, KanaRowKey } from "./kanaRows";
 import { WordCardRecord } from "./wordTypes";
 import styles from "./Words.module.scss";
 
@@ -20,19 +21,6 @@ const japaneseSpeechRate = 0.8;
 const preferredJapaneseVoiceName = "Google 日本語";
 const adInsertAfterCards = 6;
 const maxVisiblePageButtons = 10;
-
-const kanaRows = [
-  { key: "a", label: "あ", kana: ["あ", "い", "う", "え", "お"] },
-  { key: "ka", label: "か", kana: ["か", "き", "く", "け", "こ", "が", "ぎ", "ぐ", "げ", "ご"] },
-  { key: "sa", label: "さ", kana: ["さ", "し", "す", "せ", "そ", "ざ", "じ", "ず", "ぜ", "ぞ"] },
-  { key: "ta", label: "た", kana: ["た", "ち", "つ", "て", "と", "だ", "ぢ", "づ", "で", "ど"] },
-  { key: "na", label: "な", kana: ["な", "に", "ぬ", "ね", "の"] },
-  { key: "ha", label: "は", kana: ["は", "ひ", "ふ", "へ", "ほ", "ば", "び", "ぶ", "べ", "ぼ", "ぱ", "ぴ", "ぷ", "ぺ", "ぽ"] },
-  { key: "ma", label: "ま", kana: ["ま", "み", "む", "め", "も"] },
-  { key: "ya", label: "や", kana: ["や", "ゆ", "よ", "ゃ", "ゅ", "ょ"] },
-  { key: "ra", label: "ら", kana: ["ら", "り", "る", "れ", "ろ"] },
-  { key: "wa", label: "わ", kana: ["わ", "を", "ん"] }
-];
 
 const parallaxBalls = [
   { className: homeStyles.ballTopLeft, y: -0.1, x: 0.035 },
@@ -106,15 +94,6 @@ function getSpeechText(word: WordCardRecord, mode: "word" | "example") {
 
   const standaloneReading = splitStandaloneReading(word.japanese);
   return word.kana.trim() || standaloneReading?.kana || readingsToSpeechText(word.japanese);
-}
-
-function toHiragana(text: string) {
-  return text.replace(/[\u30a1-\u30f6]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0x60));
-}
-
-function getFirstKana(text: string) {
-  const normalized = toHiragana(text);
-  return normalized.match(/[ぁ-ん]/)?.[0] ?? "";
 }
 
 function getJapaneseVoice() {
@@ -192,26 +171,6 @@ function WordCard({ compact = false, word }: { compact?: boolean; word: WordCard
   );
 }
 
-function getWordListKana(word: WordCardRecord) {
-  const kana = getFirstKana(word.kana.trim());
-  if (kana) {
-    return kana;
-  }
-
-  const standaloneReading = splitStandaloneReading(word.japanese);
-  const standaloneKana = getFirstKana(standaloneReading?.kana ?? "");
-  if (standaloneKana) {
-    return standaloneKana;
-  }
-
-  return getFirstKana(word.japanese);
-}
-
-function getKanaRowKey(word: WordCardRecord) {
-  const firstKana = getWordListKana(word);
-  return kanaRows.find((row) => row.kana.includes(firstKana))?.key ?? "";
-}
-
 function getVisiblePageNumbers(currentPage: number, totalPages: number) {
   if (totalPages <= maxVisiblePageButtons) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -225,68 +184,56 @@ function getVisiblePageNumbers(currentPage: number, totalPages: number) {
 }
 
 type WordsClientProps = {
-  initialFilterWords?: WordCardRecord[];
+  initialCategories?: string[];
+  initialCategory?: string;
+  initialFilteredTotal?: number;
+  initialKanaCounts?: Record<KanaRowKey, number>;
+  initialKanaRow?: KanaRowKey | "";
   initialPage?: number;
   initialPageSize?: number;
+  initialSiteTotal?: number;
   initialTotal?: number;
   initialWords?: WordCardRecord[];
 };
 
-function getWordsPageHref(page: number) {
-  return page <= 1 ? "/words" : `/words/${page}`;
+function getWordsPageHref(page: number, category = "", kanaRow = "") {
+  const pathname = page <= 1 ? "/words" : `/words/${page}`;
+  const params = new URLSearchParams();
+  if (category) {
+    params.set("category", category);
+  }
+  if (kanaRow) {
+    params.set("kana", kanaRow);
+  }
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
 }
 
 export default function WordsClient({
-  initialFilterWords = [],
+  initialCategories = [],
+  initialCategory = "",
+  initialFilteredTotal = 0,
+  initialKanaCounts,
+  initialKanaRow = "",
   initialPage = 1,
   initialPageSize = 12,
+  initialSiteTotal,
   initialTotal,
   initialWords = []
 }: WordsClientProps) {
-  const [words, setWords] = useState<WordCardRecord[]>(initialWords);
-  const filterWords = initialFilterWords.length > 0 ? initialFilterWords : words;
+  const words = initialWords;
   const [activeIndex, setActiveIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedKanaRow, setSelectedKanaRow] = useState("");
-  const [wordListPage, setWordListPage] = useState(1);
-
-  const categories = useMemo(
-    () => Array.from(new Set(filterWords.map((word) => word.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "zh-Hant")),
-    [filterWords]
-  );
-
-  const filteredWords = useMemo(
-    () => filterWords.filter((word) => !selectedCategory || word.category === selectedCategory),
-    [filterWords, selectedCategory]
-  );
-
-  const wordListCounts = useMemo(
-    () =>
-      kanaRows.map((row) => ({
-        ...row,
-        count: filteredWords.filter((word) => getKanaRowKey(word) === row.key).length
-      })),
-    [filteredWords]
-  );
-
-  const selectedRowWords = useMemo(
-    () => (selectedKanaRow ? filteredWords.filter((word) => getKanaRowKey(word) === selectedKanaRow) : filteredWords),
-    [filteredWords, selectedKanaRow]
-  );
-
-  const isFilteredList = Boolean(selectedCategory || selectedKanaRow);
-  const displayPage = isFilteredList ? wordListPage : initialPage;
-  const totalWordListItems = isFilteredList ? selectedRowWords.length : initialTotal ?? selectedRowWords.length;
+  const categories = initialCategories;
+  const displayPage = initialPage;
+  const totalWordListItems = initialTotal ?? words.length;
   const totalWordListPages = Math.max(1, Math.ceil(totalWordListItems / initialPageSize));
   const visibleWordListPages = getVisiblePageNumbers(displayPage, totalWordListPages);
-  const pagedWordList = isFilteredList
-    ? selectedRowWords.slice((displayPage - 1) * initialPageSize, displayPage * initialPageSize)
-    : words;
-  const wordListBeforeAd = pagedWordList.slice(0, adInsertAfterCards);
-  const wordListAfterAd = pagedWordList.slice(adInsertAfterCards);
+  const wordListBeforeAd = words.slice(0, adInsertAfterCards);
+  const wordListAfterAd = words.slice(adInsertAfterCards);
+  const wordListCounts = kanaRows.map((row) => ({ ...row, count: initialKanaCounts?.[row.key] ?? 0 }));
 
-  const activeWord = filteredWords[activeIndex] ?? filteredWords[0] ?? words[0];
+  const activeWord = words[activeIndex] ?? words[0];
 
   function showRandomCardFromWords(nextWords: WordCardRecord[]) {
     if (nextWords.length === 0) {
@@ -300,26 +247,17 @@ export default function WordsClient({
   }
 
   function showRandomCard() {
-    if (filteredWords.length === 0) {
+    if (words.length === 0) {
       return;
     }
 
-    setActiveIndex((current) => getRandomIndex(filteredWords.length, current));
+    setActiveIndex((current) => getRandomIndex(words.length, current));
     setFlipped(false);
   }
 
   useEffect(() => {
-    showRandomCardFromWords(filteredWords);
-    setSelectedKanaRow("");
-  }, [filteredWords, selectedCategory]);
-
-  useEffect(() => {
-    setWordListPage(1);
-  }, [selectedCategory, selectedKanaRow]);
-
-  useEffect(() => {
-    setWordListPage((current) => Math.min(current, totalWordListPages));
-  }, [totalWordListPages]);
+    showRandomCardFromWords(words);
+  }, [initialPage, initialCategory, initialKanaRow]);
 
   return (
     <main className={homeStyles.page}>
@@ -361,7 +299,7 @@ export default function WordsClient({
             <p className={homeStyles.heroLead}>點卡片翻面，左右鍵隨機換一張</p>
             <div className={`${homeStyles.stats} ${styles.wordStats}`} aria-label="單字卡統計">
               <div>
-                <strong>{(initialTotal ?? words.length).toLocaleString("en-US")}</strong>
+                <strong>{(initialSiteTotal ?? initialTotal ?? words.length).toLocaleString("en-US")}</strong>
                 <span>已收錄單字</span>
               </div>
               <div>
@@ -377,7 +315,7 @@ export default function WordsClient({
           <div className={homeStyles.heroArt}>
             <div className={homeStyles.dotGrid} aria-hidden="true" />
             <Image src="/brand/01.png" alt="單字卡插圖" width={420} height={420} priority />
-            <div className={homeStyles.speech}>有 {(initialTotal ?? words.length).toLocaleString("en-US")} 個單字了喔</div>
+            <div className={homeStyles.speech}>有 {(initialSiteTotal ?? initialTotal ?? words.length).toLocaleString("en-US")} 個單字了喔</div>
           </div>
         </div>
       </section>
@@ -386,18 +324,17 @@ export default function WordsClient({
 
       <section className={styles.flashSection} aria-label="單字卡翻面練習">
         <div className={styles.filterPills}>
-          <button className={!selectedCategory ? styles.activePill : ""} type="button" onClick={() => setSelectedCategory("")}>
+          <a className={!initialCategory ? styles.activePill : ""} href={getWordsPageHref(1, "", initialKanaRow)}>
             全部
-          </button>
+          </a>
           {categories.map((category) => (
-            <button
+            <a
               key={category}
-              className={selectedCategory === category ? styles.activePill : ""}
-              type="button"
-              onClick={() => setSelectedCategory(category)}
+              className={initialCategory === category ? styles.activePill : ""}
+              href={getWordsPageHref(1, category, initialKanaRow)}
             >
               {category}
-            </button>
+            </a>
           ))}
         </div>
 
@@ -429,24 +366,22 @@ export default function WordsClient({
       <section className={styles.wordListSection}>
         <h2>單字卡</h2>
         <div className={styles.kanaRowTabs} aria-label="單字行分類">
-          <button
-            className={!selectedKanaRow ? styles.activeKanaRow : ""}
-            type="button"
-            onClick={() => setSelectedKanaRow("")}
+          <a
+            className={!initialKanaRow ? styles.activeKanaRow : ""}
+            href={getWordsPageHref(1, initialCategory)}
           >
             <strong>全部</strong>
-            <span>{filteredWords.length}</span>
-          </button>
+            <span>{initialFilteredTotal}</span>
+          </a>
           {wordListCounts.map((row) => (
-            <button
+            <a
               key={row.key}
-              className={selectedKanaRow === row.key ? styles.activeKanaRow : ""}
-              type="button"
-              onClick={() => setSelectedKanaRow(row.key)}
+              className={initialKanaRow === row.key ? styles.activeKanaRow : ""}
+              href={getWordsPageHref(1, initialCategory, row.key)}
             >
               <strong>{row.label}</strong>
               <span>{row.count}</span>
-            </button>
+            </a>
           ))}
         </div>
         <div className={styles.cardGrid}>
@@ -458,72 +393,37 @@ export default function WordsClient({
             <WordCard compact key={word.id} word={word} />
           ))}
         </div>
-        {selectedRowWords.length === 0 ? <p className={styles.emptyText}>目前沒有這一行的單字。</p> : null}
+        {words.length === 0 ? <p className={styles.emptyText}>目前沒有這一行的單字。</p> : null}
         {totalWordListPages > 1 ? (
           <nav className={styles.pagination} aria-label="單字列表頁碼">
             {totalWordListPages > maxVisiblePageButtons ? (
-              isFilteredList ? (
-                <button
-                  className={styles.pageArrow}
-                  type="button"
-                  onClick={() => setWordListPage((current) => Math.max(1, current - 1))}
-                  disabled={displayPage === 1}
-                  aria-label="上一頁"
-                >
-                  ‹
-                </button>
-              ) : (
-                <a
-                  className={styles.pageArrow}
-                  href={getWordsPageHref(Math.max(1, displayPage - 1))}
-                  aria-disabled={displayPage === 1}
-                  aria-label="上一頁"
-                >
-                  ‹
-                </a>
-              )
+              <a
+                className={styles.pageArrow}
+                href={getWordsPageHref(Math.max(1, displayPage - 1), initialCategory, initialKanaRow)}
+                aria-disabled={displayPage === 1}
+                aria-label="上一頁"
+              >
+                ‹
+              </a>
             ) : null}
             {visibleWordListPages.map((page) => (
-              isFilteredList ? (
-                <button
-                  key={page}
-                  className={displayPage === page ? styles.activePage : ""}
-                  type="button"
-                  onClick={() => setWordListPage(page)}
-                >
-                  {page}
-                </button>
-              ) : (
-                <a
-                  key={page}
-                  className={displayPage === page ? styles.activePage : ""}
-                  href={getWordsPageHref(page)}
-                >
-                  {page}
-                </a>
-              )
+              <a
+                key={page}
+                className={displayPage === page ? styles.activePage : ""}
+                href={getWordsPageHref(page, initialCategory, initialKanaRow)}
+              >
+                {page}
+              </a>
             ))}
             {totalWordListPages > maxVisiblePageButtons ? (
-              isFilteredList ? (
-                <button
-                  className={styles.pageArrow}
-                  type="button"
-                  onClick={() => setWordListPage((current) => Math.min(totalWordListPages, current + 1))}
-                  disabled={displayPage === totalWordListPages}
-                  aria-label="下一頁"
-                >
-                  ›
-                </button>
-              ) : (
-                <a
-                  className={styles.pageArrow}
-                  href={getWordsPageHref(Math.min(totalWordListPages, displayPage + 1))}
-                  aria-disabled={displayPage === totalWordListPages}
-                  aria-label="下一頁"
-                >
-                  ›
-                </a>
-              )
+              <a
+                className={styles.pageArrow}
+                href={getWordsPageHref(Math.min(totalWordListPages, displayPage + 1), initialCategory, initialKanaRow)}
+                aria-disabled={displayPage === totalWordListPages}
+                aria-label="下一頁"
+              >
+                ›
+              </a>
             ) : null}
           </nav>
         ) : null}
