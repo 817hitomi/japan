@@ -10,6 +10,7 @@ import { getKanaRowKey, kanaRows, KanaRowKey, normalizeKanaRowKey } from "./word
 import { normalizeWordCards, WordCardRecord } from "./words/wordTypes";
 
 const quoteCategory = "首頁白版";
+const randomPoolMarker = "__japannote_homepage_random__";
 const publishedStatus = "已發布";
 
 const publicCacheSeconds = 300;
@@ -17,7 +18,7 @@ const publicNotesLimit = 120;
 const publicArticleSidebarLimit = 12;
 export const publicNotesPageSize = 10;
 export const publicWordsPageSize = 12;
-const publicQuotesLimit = 40;
+const publicQuotesLimit = 10;
 const noteSummarySelect = "id,category,title,status,published_date,slug,tags";
 const noteListSelect = `${noteSummarySelect},summary`;
 const notePreviewSelect = `${noteListSelect},cover_url`;
@@ -163,6 +164,7 @@ type QuoteRow = {
   chinese: string | null;
   audio_url: string | null;
   front_audio_url: string | null;
+  example_japanese: string | null;
 };
 
 function rowToQuote(row: QuoteRow): QuoteRecord {
@@ -173,7 +175,8 @@ function rowToQuote(row: QuoteRow): QuoteRecord {
       japanese: row.japanese ?? "",
       kana: row.kana ?? "",
       chinese: row.chinese ?? "",
-      frontAudioUrl: row.front_audio_url ?? row.audio_url ?? ""
+      frontAudioUrl: row.front_audio_url ?? row.audio_url ?? "",
+      isRandomPool: row.example_japanese === randomPoolMarker
     }
   ])[0];
 }
@@ -615,15 +618,31 @@ export async function readQuotesForPublicPage(useNextCache = false): Promise<Quo
     const rows = await fetchSupabaseRows<QuoteRow>(
       "word_cards",
       {
-        select: "id,category,kana,japanese,chinese,audio_url,front_audio_url",
+        select: "id,category,kana,japanese,chinese,audio_url,front_audio_url,example_japanese",
         category: `eq.${quoteCategory}`,
+        example_japanese: `eq.${randomPoolMarker}`,
         order: "id.desc",
         limit: String(publicQuotesLimit)
       },
       { useNextCache }
     );
 
-    return normalizeQuotes(rows.map(rowToQuote), true);
+    if (rows.length > 0) {
+      return normalizeQuotes(rows.map(rowToQuote), true);
+    }
+
+    const fallbackRows = await fetchSupabaseRows<QuoteRow>(
+        "word_cards",
+        {
+          select: "id,category,kana,japanese,chinese,audio_url,front_audio_url,example_japanese",
+          category: `eq.${quoteCategory}`,
+          order: "id.desc",
+          limit: String(publicQuotesLimit)
+        },
+        { useNextCache }
+      );
+
+    return normalizeQuotes(fallbackRows.map(rowToQuote), true);
   } catch {
     return defaultQuotes;
   }

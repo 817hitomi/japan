@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { getGlobalHeadAdHtml } from "./ads/serverAdSettings";
 import { FrontendInteractionGuard } from "./FrontendInteractionGuard";
 import { SiteAnalyticsTracker } from "./SiteAnalyticsTracker";
@@ -23,8 +24,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const timer = createRequestTimer("layout", { route: "root" });
-  const globalHeadAdHtml = await getGlobalHeadAdHtml();
-  timer.end({ globalHeadAd: Boolean(globalHeadAdHtml) });
+  const pathname = (await headers()).get("x-japannote-pathname") ?? "";
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  const globalHeadAdHtml = isAdminRoute ? "" : await getGlobalHeadAdHtml();
+  timer.end({ globalHeadAd: Boolean(globalHeadAdHtml), skippedForAdmin: isAdminRoute });
 
   return (
     <html lang="zh-Hant">

@@ -11,6 +11,27 @@ type AffiliateRouteParams = {
 
 export const dynamic = "force-dynamic";
 
+export async function GET(_request: NextRequest, { params }: AffiliateRouteParams) {
+  const authError = await requireAdminRoute();
+  if (authError) return authError;
+
+  try {
+    const { id } = await params;
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("affiliates")
+      .select("id,category,title,summary,status,published_date,slug,tags,image_url,link_url,html")
+      .eq("id", Number(id))
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return NextResponse.json({ error: "Affiliate not found" }, { status: 404 });
+    return NextResponse.json({ affiliate: rowToAffiliate(data) });
+  } catch (error) {
+    return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load affiliate") }, { status: 500 });
+  }
+}
+
 export async function PUT(request: NextRequest, { params }: AffiliateRouteParams) {
   const authError = await requireAdminRoute();
   if (authError) return authError;

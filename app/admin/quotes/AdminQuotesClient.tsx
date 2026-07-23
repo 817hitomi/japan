@@ -1,10 +1,10 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { deleteQuotes, readQuotesWithSource, saveQuote } from "../../quotes/quoteStorage";
+import { deleteQuotes, readQuotesWithSource, saveQuote, saveRandomQuotePool } from "../../quotes/quoteStorage";
 import { QuoteRecord } from "../../quotes/quoteTypes";
 import { uploadMediaFile } from "../../notes/noteStorage";
-import { AdminShell } from "../notes/AdminNotesClient";
+import { AdminShell } from "../AdminShell";
 import styles from "../notes/AdminNotes.module.scss";
 
 const emptyBoardItem: QuoteRecord = {
@@ -13,7 +13,8 @@ const emptyBoardItem: QuoteRecord = {
   japanese: "",
   kana: "",
   chinese: "",
-  frontAudioUrl: ""
+  frontAudioUrl: "",
+  isRandomPool: false
 };
 
 export default function AdminQuotesClient() {
@@ -23,17 +24,22 @@ export default function AdminQuotesClient() {
   const [showEditor, setShowEditor] = useState(false);
   const [message, setMessage] = useState("首頁白版會儲存在資料庫。");
   const [storageSource, setStorageSource] = useState<"database" | "local">("database");
+  const [savingPool, setSavingPool] = useState(false);
+  const [randomPoolAvailable, setRandomPoolAvailable] = useState(true);
 
   const selectedItem = useMemo(() => items.find((item) => item.id === selectedId) ?? null, [items, selectedId]);
 
   useEffect(() => {
-    readQuotesWithSource()
+    readQuotesWithSource(true)
       .then((result) => {
         setItems(result.quotes);
         setStorageSource(result.source);
+        setRandomPoolAvailable(result.randomPoolAvailable);
         setMessage(
           result.source === "database"
-            ? "已載入資料庫首頁白版資料。"
+            ? result.randomPoolAvailable
+              ? "已載入資料庫首頁白版資料。"
+              : "資料仍在，已用相容模式載入。套用 migration 後即可勾選首頁隨機池。"
             : `資料庫無法同步：${result.error ?? "請先確認 word_cards 資料表。"}`
         );
       })
@@ -48,10 +54,11 @@ export default function AdminQuotesClient() {
     setMessage(nextMessage);
   }
 
-  function selectItem(item: QuoteRecord) {
+  function openItemEditor(item: QuoteRecord) {
     setSelectedId(item.id);
     setDraft(item);
-    setMessage(`已選取「${item.japanese || item.chinese}」。`);
+    setShowEditor(true);
+    setMessage(`正在編輯「${item.japanese || item.chinese}」。`);
   }
 
   function resetDraft() {
@@ -59,17 +66,6 @@ export default function AdminQuotesClient() {
     setDraft({ ...emptyBoardItem, id: Date.now() });
     setShowEditor(true);
     setMessage("正在新增首頁白版資料。");
-  }
-
-  function editSelected() {
-    if (!selectedItem) {
-      setMessage("請先選取一筆首頁白版資料。");
-      return;
-    }
-
-    setDraft(selectedItem);
-    setShowEditor(true);
-    setMessage("正在編輯首頁白版資料。");
   }
 
   async function uploadAudio(event: ChangeEvent<HTMLInputElement>) {
@@ -156,6 +152,38 @@ export default function AdminQuotesClient() {
     }
   }
 
+  async function toggleRandomPool(item: QuoteRecord) {
+    if (savingPool || storageSource === "local") {
+      return;
+    }
+
+    if (!randomPoolAvailable) {
+      setMessage("資料仍在，但資料庫尚未套用首頁隨機池 migration，目前不能儲存勾選。");
+      return;
+    }
+
+    const selectedIds = items.filter((entry) => entry.isRandomPool).map((entry) => entry.id);
+    const nextIds = item.isRandomPool ? selectedIds.filter((id) => id !== item.id) : [...selectedIds, item.id];
+
+    if (nextIds.length > 10) {
+      setMessage("首頁隨機池最多只能勾選 10 筆。");
+      return;
+    }
+
+    setSavingPool(true);
+    setMessage("正在更新首頁隨機池……");
+
+    try {
+      const nextItems = await saveRandomQuotePool(nextIds);
+      setItems(nextItems);
+      setMessage(`已儲存首頁隨機池，目前勾選 ${nextIds.length}／10 筆。`);
+    } catch (error) {
+      setMessage(`首頁隨機池儲存失敗：${error instanceof Error ? error.message : "請確認資料庫 migration 已套用。"}`);
+    } finally {
+      setSavingPool(false);
+    }
+  }
+
   return (
     <AdminShell>
       <div className={styles.listTools}>
@@ -164,17 +192,9 @@ export default function AdminQuotesClient() {
             回列表
           </button>
         ) : (
-          <>
-            <button className={styles.ghostButton} type="button" onClick={editSelected}>
-              編輯
-            </button>
-            <button className={styles.ghostButton} type="button" onClick={deleteSelected}>
-              刪除
-            </button>
-            <button type="button" onClick={resetDraft}>
-              新增白版
-            </button>
-          </>
+          <button type="button" onClick={resetDraft}>
+            新增白版
+          </button>
         )}
         <div className={styles.toolSpacer} />
         <a className={styles.primaryLink} href="/" target="_blank" rel="noreferrer">
@@ -183,6 +203,13 @@ export default function AdminQuotesClient() {
       </div>
 
       <p className={styles.statusMessage}>{message}</p>
+      {!showEditor ? (
+        <p className={styles.statusMessage}>
+          {randomPoolAvailable
+            ? `首頁只會讀取下方勾選的資料，再隨機顯示其中 1 筆。目前已勾選 ${items.filter((item) => item.isRandomPool).length}／10 筆。`
+            : "目前使用相容模式：首頁暫時只讀最新 10 筆。套用 migration 後即可自行勾選隨機池。"}
+        </p>
+      ) : null}
 
       {showEditor ? (
         <form className={`${styles.editorForm} ${styles.wordEditorForm}`} onSubmit={saveBoardItem}>
@@ -195,21 +222,13 @@ export default function AdminQuotesClient() {
 
           <section className={styles.wordSidePanel}>
             <h2>正面</h2>
-            <div className={styles.wordFrontRow}>
+            <div className={`${styles.wordFrontRow} ${styles.quoteFrontRow}`}>
               <label>
                 <span>日文</span>
                 <textarea
                   value={draft.japanese}
                   placeholder="例：今日"
                   onChange={(event) => setDraft((current) => ({ ...current, japanese: event.target.value }))}
-                />
-              </label>
-              <label>
-                <span>假名</span>
-                <input
-                  value={draft.kana}
-                  placeholder="例：きょう"
-                  onChange={(event) => setDraft((current) => ({ ...current, kana: event.target.value }))}
                 />
               </label>
               <label>
@@ -234,6 +253,11 @@ export default function AdminQuotesClient() {
           </section>
 
           <div className={styles.formActions}>
+            {selectedId ? (
+              <button className={styles.ghostButton} type="button" onClick={deleteSelected}>
+                刪除
+              </button>
+            ) : null}
             <button className={styles.ghostButton} type="button" onClick={() => setShowEditor(false)}>
               取消
             </button>
@@ -245,7 +269,7 @@ export default function AdminQuotesClient() {
           <table className={styles.noteTable}>
             <thead>
               <tr>
-                <th aria-label="選取" />
+                <th>首頁隨機（最多 10 筆）</th>
                 <th>分類名稱</th>
                 <th>日文</th>
                 <th>中譯</th>
@@ -253,9 +277,20 @@ export default function AdminQuotesClient() {
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className={selectedId === item.id ? styles.selectedRow : undefined} onClick={() => selectItem(item)}>
+                <tr
+                  key={item.id}
+                  className={selectedId === item.id ? styles.selectedRow : undefined}
+                  onClick={() => openItemEditor(item)}
+                >
                   <td>
-                    <input checked={selectedId === item.id} readOnly type="checkbox" aria-label={`選取 ${item.japanese || item.chinese}`} />
+                    <input
+                      checked={item.isRandomPool}
+                      disabled={savingPool || !randomPoolAvailable}
+                      type="checkbox"
+                      aria-label={`加入首頁隨機池 ${item.japanese || item.chinese}`}
+                      onChange={() => toggleRandomPool(item)}
+                      onClick={(event) => event.stopPropagation()}
+                    />
                   </td>
                   <td>{item.category}</td>
                   <td>{item.japanese}</td>

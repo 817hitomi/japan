@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
-import { AdminShell } from "../notes/AdminNotesClient";
+import { AdminShell } from "../AdminShell";
 import {
   deleteQuizQuestions,
   readQuizCategoriesWithFallback,

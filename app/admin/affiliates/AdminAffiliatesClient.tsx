@@ -1,9 +1,17 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { AdminShell } from "../notes/AdminNotesClient";
-import { deleteAffiliates, readAffiliatesWithSource, saveAffiliate, writeStoredAffiliates } from "../../affiliates/affiliateStorage";
-import { AffiliateRecord, affiliateStatusLabels, defaultAffiliateCategories, normalizeAffiliate } from "../../affiliates/affiliateTypes";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { AdminShell } from "../AdminShell";
+import { deleteAffiliates, fetchAffiliate, saveAffiliate } from "../../affiliates/affiliateStorage";
+import {
+  AffiliateListItem,
+  AffiliateRecord,
+  affiliateStatusLabels,
+  defaultAffiliateCategories,
+  normalizeAffiliate
+} from "../../affiliates/affiliateTypes";
 import styles from "../notes/AdminNotes.module.scss";
 
 const emptyAffiliate = normalizeAffiliate({
@@ -32,37 +40,59 @@ function readFileAsDataUrl(event: ChangeEvent<HTMLInputElement>, callback: (url:
   event.target.value = "";
 }
 
-export default function AdminAffiliatesClient() {
-  const [affiliates, setAffiliates] = useState<AffiliateRecord[]>([]);
+type AdminAffiliatesClientProps = {
+  affiliates: AffiliateListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  filters: {
+    q: string;
+    category: string;
+    status: "" | "published" | "draft";
+  };
+};
+
+function buildPageHref(
+  filters: AdminAffiliatesClientProps["filters"],
+  page: number,
+  patch: Partial<AdminAffiliatesClientProps["filters"]> = {}
+) {
+  const next = { ...filters, ...patch };
+  const params = new URLSearchParams();
+  if (page > 1) params.set("page", String(page));
+  if (next.q) params.set("q", next.q);
+  if (next.category) params.set("category", next.category);
+  if (next.status) params.set("status", next.status);
+  const query = params.toString();
+  return query ? `/admin/affiliates?${query}` : "/admin/affiliates";
+}
+
+export default function AdminAffiliatesClient({
+  affiliates: initialAffiliates,
+  total,
+  page,
+  pageSize,
+  filters
+}: AdminAffiliatesClientProps) {
+  const router = useRouter();
+  const [affiliates, setAffiliates] = useState<AffiliateListItem[]>(initialAffiliates);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [category, setCategory] = useState("全部分類");
+  const [search, setSearch] = useState(filters.q);
   const [editing, setEditing] = useState<AffiliateRecord | null>(null);
-  const [message, setMessage] = useState("正在載入聯盟行銷列表。");
+  const [message, setMessage] = useState(`已載入 ${initialAffiliates.length} 筆，本次查詢共 ${total} 筆。`);
 
   useEffect(() => {
-    let active = true;
+    setAffiliates(initialAffiliates);
+    setSearch(filters.q);
+    setSelectedIds([]);
+    setMessage(`已載入 ${initialAffiliates.length} 筆，本次查詢共 ${total} 筆。`);
+  }, [filters.q, initialAffiliates, total]);
 
-    async function loadAffiliates() {
-      const result = await readAffiliatesWithSource("all");
-      if (!active) {
-        return;
-      }
-
-      setAffiliates(result.affiliates);
-      setMessage(result.source === "database" ? `已載入 ${result.affiliates.length} 筆聯盟行銷內容。` : `資料庫暫時無法讀取，已改用本機暫存。${result.error ?? ""}`);
-    }
-
-    loadAffiliates();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const categories = useMemo(
-    () => ["全部分類", ...Array.from(new Set([...defaultAffiliateCategories, ...affiliates.map((item) => item.category).filter(Boolean)]))],
-    [affiliates]
-  );
-  const visibleAffiliates = category === "全部分類" ? affiliates : affiliates.filter((item) => item.category === category);
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const categoryOptions =
+    filters.category && !defaultAffiliateCategories.includes(filters.category)
+      ? [filters.category, ...defaultAffiliateCategories]
+      : defaultAffiliateCategories;
 
   function toggleSelected(id: number) {
     setSelectedIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
@@ -73,16 +103,22 @@ export default function AdminAffiliatesClient() {
     setMessage("正在新增聯盟行銷 LP。");
   }
 
-  function openEdit() {
+  async function openEdit() {
     if (selectedIds.length !== 1) {
       setMessage("請先勾選一筆內容再編輯。");
       return;
     }
 
     const target = affiliates.find((item) => item.id === selectedIds[0]);
-    if (target) {
-      setEditing(target);
-      setMessage(`正在編輯「${target.title}」。`);
+    if (!target) return;
+
+    setMessage(`正在讀取「${target.title}」的完整內容。`);
+    try {
+      const fullAffiliate = await fetchAffiliate(target.id);
+      setEditing(fullAffiliate);
+      setMessage(`正在編輯「${fullAffiliate.title}」。`);
+    } catch (error) {
+      setMessage(`讀取完整內容失敗。${error instanceof Error ? error.message : ""}`);
     }
   }
 
@@ -100,9 +136,10 @@ export default function AdminAffiliatesClient() {
     try {
       await deleteAffiliates(selectedIds);
       setMessage(`已刪除 ${selectedIds.length} 筆聯盟行銷內容。`);
+      router.refresh();
     } catch (error) {
-      writeStoredAffiliates(nextAffiliates);
-      setMessage(`資料庫刪除失敗，已先更新本機暫存。${error instanceof Error ? error.message : ""}`);
+      setAffiliates(initialAffiliates);
+      setMessage(`資料庫刪除失敗。${error instanceof Error ? error.message : ""}`);
     }
   }
 
@@ -128,9 +165,10 @@ export default function AdminAffiliatesClient() {
       setSelectedIds([saved.id]);
       setEditing(saved);
       setMessage(`已儲存「${saved.title}」。`);
+      router.refresh();
     } catch (error) {
-      writeStoredAffiliates(optimisticList);
-      setMessage(`資料庫儲存失敗，已先寫入本機暫存。${error instanceof Error ? error.message : ""}`);
+      setAffiliates(initialAffiliates);
+      setMessage(`資料庫儲存失敗。${error instanceof Error ? error.message : ""}`);
     }
   }
 
@@ -140,12 +178,48 @@ export default function AdminAffiliatesClient() {
 
   return (
     <AdminShell>
-      <div className={styles.listTools}>
-        <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="分類篩選">
-          {categories.map((item) => (
-            <option key={item}>{item}</option>
+      <form
+        className={styles.listTools}
+        onSubmit={(event) => {
+          event.preventDefault();
+          router.push(buildPageHref(filters, 1, { q: search }));
+        }}
+      >
+        <input
+          value={search}
+          maxLength={100}
+          placeholder="搜尋標題"
+          aria-label="搜尋聯盟標題"
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        <select
+          value={filters.category}
+          onChange={(event) => router.push(buildPageHref(filters, 1, { category: event.target.value }))}
+          aria-label="分類篩選"
+        >
+          <option value="">全部分類</option>
+          {categoryOptions.map((item) => (
+            <option key={item} value={item}>{item}</option>
           ))}
         </select>
+        <select
+          value={filters.status}
+          onChange={(event) =>
+            router.push(
+              buildPageHref(filters, 1, {
+                status: event.target.value === "published" || event.target.value === "draft" ? event.target.value : ""
+              })
+            )
+          }
+          aria-label="狀態篩選"
+        >
+          <option value="">全部狀態</option>
+          <option value="published">已發布</option>
+          <option value="draft">草稿</option>
+        </select>
+        <button className={styles.ghostButton} type="submit">
+          搜尋
+        </button>
         <button className={styles.ghostButton} type="button" onClick={openEdit}>
           編輯
         </button>
@@ -156,7 +230,7 @@ export default function AdminAffiliatesClient() {
         <button type="button" onClick={openNew}>
           新增產品
         </button>
-      </div>
+      </form>
 
       <p className={styles.statusMessage}>{message}</p>
 
@@ -172,7 +246,7 @@ export default function AdminAffiliatesClient() {
             </tr>
           </thead>
           <tbody>
-            {visibleAffiliates.map((affiliate) => (
+            {affiliates.map((affiliate) => (
               <tr key={affiliate.id} className={selectedIds.includes(affiliate.id) ? styles.selectedRow : undefined}>
                 <td>
                   <input checked={selectedIds.includes(affiliate.id)} type="checkbox" onChange={() => toggleSelected(affiliate.id)} aria-label={`選取 ${affiliate.title}`} />
@@ -186,6 +260,22 @@ export default function AdminAffiliatesClient() {
           </tbody>
         </table>
       </div>
+
+      <nav className={styles.pagination} aria-label="聯盟內容分頁">
+        {page > 1 ? (
+          <Link href={buildPageHref(filters, page - 1)} prefetch={false}>
+            上一頁
+          </Link>
+        ) : null}
+        <span>
+          第 {page}／{pageCount} 頁
+        </span>
+        {page < pageCount ? (
+          <Link href={buildPageHref(filters, page + 1)} prefetch={false}>
+            下一頁
+          </Link>
+        ) : null}
+      </nav>
 
       {editing ? (
         <form className={styles.editorForm} onSubmit={submitAffiliate}>

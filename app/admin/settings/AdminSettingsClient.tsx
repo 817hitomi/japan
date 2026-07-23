@@ -3,7 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { AdSetting, AdSlotId, defaultAdSettings } from "../../ads/adTypes";
 import { readAdsWithSource, saveAdSettings, writeStoredAds } from "../../ads/adStorage";
-import { AdminShell } from "../notes/AdminNotesClient";
+import { AdminShell } from "../AdminShell";
 import styles from "../notes/AdminNotes.module.scss";
 
 function readFileAsDataUrl(event: ChangeEvent<HTMLInputElement>, callback: (url: string) => void) {

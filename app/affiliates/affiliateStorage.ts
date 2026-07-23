@@ -49,6 +49,19 @@ export async function fetchAffiliates(status: "published" | "all" = "all") {
   return parseAffiliatesResponse(response);
 }
 
+export async function fetchAffiliate(id: number) {
+  const response = await fetch(`/api/affiliates/${id}`, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(await readApiError(response, `Affiliate API failed: ${response.status}`));
+  }
+
+  const payload = (await response.json()) as { affiliate?: AffiliateRecord };
+  if (!payload.affiliate) {
+    throw new Error("Affiliate response missing affiliate");
+  }
+  return normalizeAffiliate(payload.affiliate);
+}
+
 export async function readAffiliatesWithSource(status: "published" | "all" = "all"): Promise<AffiliatesReadResult> {
   try {
     const affiliates = await fetchAffiliates(status);

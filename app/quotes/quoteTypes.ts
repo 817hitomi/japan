@@ -5,6 +5,7 @@ export type QuoteRecord = {
   kana: string;
   chinese: string;
   frontAudioUrl: string;
+  isRandomPool: boolean;
 };
 
 export const defaultQuotes: QuoteRecord[] = [
@@ -14,7 +15,8 @@ export const defaultQuotes: QuoteRecord[] = [
     japanese: "今日",
     kana: "きょう",
     chinese: "今天",
-    frontAudioUrl: ""
+    frontAudioUrl: "",
+    isRandomPool: true
   },
   {
     id: 2,
@@ -22,7 +24,8 @@ export const defaultQuotes: QuoteRecord[] = [
     japanese: "一つ",
     kana: "ひとつ",
     chinese: "一個",
-    frontAudioUrl: ""
+    frontAudioUrl: "",
+    isRandomPool: true
   },
   {
     id: 3,
@@ -30,7 +33,8 @@ export const defaultQuotes: QuoteRecord[] = [
     japanese: "覚える",
     kana: "おぼえる",
     chinese: "記住",
-    frontAudioUrl: ""
+    frontAudioUrl: "",
+    isRandomPool: true
   }
 ];
 
@@ -61,7 +65,8 @@ export function normalizeQuotes(quotes: unknown, allowEmpty = false): QuoteRecor
         japanese: fallbackText.trim(),
         kana: source.kana?.trim() || defaultReading?.kana || "",
         chinese: source.chinese?.trim() || defaultReading?.chinese || "",
-        frontAudioUrl: (source.frontAudioUrl || source.front_audio_url || "").trim()
+        frontAudioUrl: (source.frontAudioUrl || source.front_audio_url || "").trim(),
+        isRandomPool: source.isRandomPool === true
       };
     })
     .filter((quote) => quote.japanese || quote.chinese);

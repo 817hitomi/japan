@@ -14,6 +14,8 @@ export type AffiliateRecord = {
   html: string;
 };
 
+export type AffiliateListItem = Pick<AffiliateRecord, "id" | "category" | "title" | "status" | "date">;
+
 export const affiliateStatusLabels: Record<AffiliateStatus, string> = {
   published: "已發布",
   draft: "草稿"

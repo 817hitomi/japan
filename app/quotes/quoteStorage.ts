@@ -8,6 +8,7 @@ const quoteStorageKey = "japannote-hero-board-cards";
 export type QuotesReadResult = {
   source: "database" | "local";
   quotes: QuoteRecord[];
+  randomPoolAvailable: boolean;
   error?: string;
 };
 
@@ -47,7 +48,7 @@ async function parseQuotesResponse(response: Response) {
           }
         })()
       : {}
-  ) as { quotes?: QuoteRecord[]; quote?: QuoteRecord; error?: string };
+  ) as { quotes?: QuoteRecord[]; quote?: QuoteRecord; randomPoolAvailable?: boolean; error?: string };
 
   if (!response.ok) {
     throw new Error(payload.error || responseText || `Homepage board API failed: ${response.status}`);
@@ -60,10 +61,13 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unknown homepage board API error";
 }
 
-export async function fetchQuotes() {
-  const response = await fetch("/api/quotes", { cache: "no-store" });
+export async function fetchQuotes(includeAll = false) {
+  const response = await fetch(includeAll ? "/api/quotes?scope=admin" : "/api/quotes", { cache: "no-store" });
   const payload = await parseQuotesResponse(response);
-  return normalizeQuotes(payload.quotes, true);
+  return {
+    quotes: normalizeQuotes(payload.quotes, true),
+    randomPoolAvailable: payload.randomPoolAvailable !== false
+  };
 }
 
 export async function readQuotesWithFallback() {
@@ -71,14 +75,15 @@ export async function readQuotesWithFallback() {
   return result.quotes;
 }
 
-export async function readQuotesWithSource(): Promise<QuotesReadResult> {
+export async function readQuotesWithSource(includeAll = false): Promise<QuotesReadResult> {
   try {
-    const remoteQuotes = await fetchQuotes();
-    return { source: "database", quotes: remoteQuotes };
+    const remote = await fetchQuotes(includeAll);
+    return { source: "database", quotes: remote.quotes, randomPoolAvailable: remote.randomPoolAvailable };
   } catch (error) {
     return {
       source: "local",
       quotes: [],
+      randomPoolAvailable: false,
       error: getErrorMessage(error)
     };
   }
@@ -107,4 +112,14 @@ export async function deleteQuotes(ids: number[]) {
   });
 
   await parseQuotesResponse(response);
+}
+
+export async function saveRandomQuotePool(ids: number[]) {
+  const response = await fetch("/api/quotes", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids })
+  });
+  const payload = await parseQuotesResponse(response);
+  return normalizeQuotes(payload.quotes, true);
 }

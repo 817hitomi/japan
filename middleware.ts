@@ -93,7 +93,6 @@ export function isProtectedRequest(request: NextRequest) {
   if (pathname === "/api/content-reports") return request.method !== "POST";
   if (protectedApiPrefixes.some((prefix) => pathname.startsWith(prefix))) return true;
   if (pathname === "/api/affiliates" && request.method === "GET") return searchParams.get("status") !== "published";
-  if (pathname === "/api/affiliates" && request.method === "GET") return searchParams.get("status") !== "published";
   if (adminWriteApiPrefixes.some((prefix) => pathname.startsWith(prefix))) return request.method !== "GET";
   if (pathname === "/api/notes") return request.method !== "GET" || searchParams.get("status") !== "published";
   if (pathname === "/api/notes/og") return request.method !== "GET";
@@ -123,6 +122,7 @@ function deniedResponse(request: NextRequest, status: 401 | 403 | 503, authRespo
 export async function middleware(request: NextRequest) {
   const pathname = normalizePathname(request.nextUrl.pathname);
   const startedAt = performance.now();
+  request.headers.set("x-japannote-pathname", pathname);
 
   // Security checks must run before assets, routing, auth, Supabase, rewrites, or rendering.
   const securityPathname = normalizeSecurityPathname(pathname);
@@ -157,13 +157,13 @@ export async function middleware(request: NextRequest) {
     });
     return finish(NextResponse.redirect(destination, 308), "legacy-note-redirect");
   }
-  if (isPublicAssetPath(pathname)) return finish(NextResponse.next(), "public-asset");
+  if (isPublicAssetPath(pathname)) return finish(NextResponse.next({ request }), "public-asset");
   if (isApiPath(pathname) && !isKnownApiPath(pathname)) return finish(quickApi404(), "api-404", { reason: "unknown-api-route" });
 
   if (!isProtectedRequest(request)) {
     const fast404Reason = shouldFast404(pathname);
     if (fast404Reason) return finish(quick404(), "fast-404", { reason: fast404Reason });
-    return finish(NextResponse.next(), "next");
+    return finish(NextResponse.next({ request }), "next");
   }
 
   const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL", request.headers);
@@ -186,7 +186,20 @@ export async function middleware(request: NextRequest) {
     }
   });
 
+  const authTimer = createRequestTimer("auth/session", {
+    method: request.method,
+    path: pathname,
+    requestKind:
+      request.headers.get("next-router-prefetch") === "1" || request.headers.get("purpose") === "prefetch"
+        ? "prefetch"
+        : request.headers.get("rsc") === "1" ||
+            Boolean(request.headers.get("next-router-state-tree")) ||
+            request.nextUrl.searchParams.has("_rsc")
+          ? "rsc"
+          : "document"
+  });
   const { data, error } = await supabase.auth.getUser();
+  authTimer.end({ authenticated: Boolean(data.user), error: Boolean(error) });
   const access = evaluateAdminAccess(error ? null : data.user, getRuntimeEnv("ADMIN_EMAIL", request.headers));
 
   if (access.status !== 200) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { AdminShell } from "../notes/AdminNotesClient";
+import { AdminShell } from "../AdminShell";
 import { uploadMediaFile } from "../../notes/noteStorage";
 import { deleteWordCards, readWordCardsWithSource, saveWordCard, writeStoredWordCards } from "../../words/wordStorage";
 import { WordCardRecord } from "../../words/wordTypes";

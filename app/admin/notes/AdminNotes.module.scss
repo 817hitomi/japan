@@ -584,6 +584,10 @@
   }
 }
 
+.quoteFrontRow {
+  grid-template-columns: 1fr 1fr;
+}
+
 .wordSidePanel {
   display: grid;
   gap: 18px;

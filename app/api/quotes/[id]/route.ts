@@ -7,6 +7,7 @@ import { normalizeQuotes, QuoteRecord } from "../../../quotes/quoteTypes";
 export const dynamic = "force-dynamic";
 
 const quoteCategory = "首頁白版";
+const randomPoolMarker = "__japannote_homepage_random__";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -20,6 +21,7 @@ type WordCardQuoteRow = {
   chinese: string | null;
   audio_url: string | null;
   front_audio_url: string | null;
+  example_japanese: string | null;
 };
 
 function isUniqueViolation(error: unknown) {
@@ -34,7 +36,8 @@ function rowToQuote(row: WordCardQuoteRow): QuoteRecord {
       japanese: row.japanese ?? "",
       kana: row.kana ?? "",
       chinese: row.chinese ?? "",
-      frontAudioUrl: row.front_audio_url ?? row.audio_url ?? ""
+      frontAudioUrl: row.front_audio_url ?? row.audio_url ?? "",
+      isRandomPool: row.example_japanese === randomPoolMarker
     }
   ])[0];
 }
@@ -47,7 +50,7 @@ function quoteToPayload(quote: QuoteRecord) {
     kana: normalized.kana.trim(),
     japanese: normalized.japanese.trim(),
     chinese: normalized.chinese.trim(),
-    example_japanese: "",
+    example_japanese: normalized.isRandomPool ? randomPoolMarker : "",
     example_chinese: "",
     audio_url: "",
     front_audio_url: normalized.frontAudioUrl.trim(),
@@ -74,7 +77,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       .update(payload)
       .eq("id", Number(id))
       .eq("category", quoteCategory)
-      .select("id,category,kana,japanese,chinese,audio_url,front_audio_url")
+      .select("id,category,kana,japanese,chinese,audio_url,front_audio_url,example_japanese")
       .single();
 
     if (error) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AdminShell } from "./notes/AdminNotesClient";
+import { AdminShell } from "./AdminShell";
 import styles from "./notes/AdminNotes.module.scss";
 
 type SiteAnalyticsHour = {
