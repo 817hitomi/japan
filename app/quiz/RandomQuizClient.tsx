@@ -70,6 +70,16 @@ function shuffle<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
+function splitAnswerNote(note: string) {
+  return note
+    .replace(/<br\b[^>]*>/gi, "\n")
+    .replace(/<\/(?:div|p|li|section|article|h[1-6])\s*>/gi, "\n")
+    .replace(/<(?:div|p|li|section|article|h[1-6])\b[^>]*>/gi, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 function getCurrentLevel(words: WordCardRecord[], questions: QuizQuestionRecord[]) {
   const wordLevel = words.map((word) => word.category).find((category) => /\bN[1-5]\b/i.test(category));
   const questionLevel = questions.find((question) => /\bN[1-5]\b/i.test(question.level))?.level;
@@ -269,6 +279,7 @@ export default function RandomQuizClient({
                 const selected = answers[question.id];
                 const isCorrect = getQuestionResult(question, selected);
                 const resultClass = isSubmitted ? (isCorrect ? styles.correctQuestion : styles.wrongQuestion) : "";
+                const answerNoteLines = splitAnswerNote(question.note);
 
                 return (
                   <article className={`${styles.listQuestion} ${resultClass}`} key={question.id}>
@@ -310,7 +321,15 @@ export default function RandomQuizClient({
 
                       {isSubmitted && !isCorrect && question.note ? (
                         <div className={styles.answerNote}>
-                          <p dangerouslySetInnerHTML={{ __html: renderInlineRuby(question.note).replace(/\n/g, "<br />") }} />
+                          <p>
+                            {answerNoteLines.map((line, lineIndex) => (
+                              <span
+                                className={lineIndex > 0 ? styles.answerTranslation : undefined}
+                                dangerouslySetInnerHTML={{ __html: renderInlineRuby(line) }}
+                                key={`${question.id}-${lineIndex}`}
+                              />
+                            ))}
+                          </p>
                         </div>
                       ) : null}
                     </div>

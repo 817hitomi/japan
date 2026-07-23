@@ -128,8 +128,8 @@
     align-self: center;
     margin: 0;
     color: #7d7d7d;
-    font-size: 30px;
-    font-weight: 900;
+    font-size: 24px;
+    font-weight: 700;
     line-height: 1.25;
 
     b,
@@ -208,10 +208,18 @@
 
   p {
     margin: 0;
-    font-size: 24px;
-    font-weight: 500;
+    font-size: 20px;
+    // font-weight: 500;
     line-height: 2;
+
+    > span {
+      display: block;
+    }
   }
+}
+
+.answerTranslation {
+  font-size: 16px;
 }
 
 .submitRow {
