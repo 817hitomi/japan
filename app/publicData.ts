@@ -203,6 +203,36 @@ export async function readPublishedNotesForPublicPage(): Promise<PublicNoteRecor
   }
 }
 
+export type PublicLearningOverview = {
+  currentLevel: string;
+  learningDays: number;
+};
+
+export async function readLearningOverviewForPublicPage(): Promise<PublicLearningOverview> {
+  const notes = await readPublishedNotesForPublicPage();
+  const firstDate = notes.map((note) => note.date).filter(Boolean).sort()[0];
+  let learningDays = 0;
+
+  if (firstDate) {
+    const [year, month, day] = firstDate.slice(0, 10).split("-").map(Number);
+
+    if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+      const start = Date.UTC(year, month - 1, day);
+      const now = new Date();
+      const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      learningDays = Math.max(Math.floor((today - start) / 86_400_000) + 1, 1);
+    }
+  }
+
+  const currentLevel =
+    notes
+      .map((note) => `${note.category} ${note.tags} ${note.title}`.match(/\bN[1-5]\b/i)?.[0])
+      .find(Boolean)
+      ?.toUpperCase() ?? "-";
+
+  return { currentLevel, learningDays };
+}
+
 export async function readPublishedNoteCardsForHomePage(): Promise<PublicNoteRecord[]> {
   try {
     const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>(

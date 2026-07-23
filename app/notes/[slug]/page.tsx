@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import { createRequestTimer } from "../../../lib/requestDiagnostics";
 import HomeClient from "../../HomeClient";
 import { getNotePath, getNoteRouteKey } from "../noteTypes";
-import { readPublicArticleContext, readPublishedNoteByRouteKey, readPublishedNotesForPublicPage } from "../../publicData";
+import {
+  readLearningOverviewForPublicPage,
+  readPublicArticleContext,
+  readPublishedNoteByRouteKey,
+  readPublishedNotesForPublicPage
+} from "../../publicData";
 
 export const revalidate = 300;
 export const dynamicParams = true;
@@ -101,7 +106,10 @@ export default async function NotePage({ params }: NotePageProps) {
   }
 
   timer.mark("related articles start");
-  const articleContext = await readPublicArticleContext(note);
+  const [articleContext, learningOverview] = await Promise.all([
+    readPublicArticleContext(note),
+    readLearningOverviewForPublicPage()
+  ]);
   timer.mark("related articles end", {
     notes: articleContext.notes.length,
     previous: Boolean(articleContext.previousNote),
@@ -115,6 +123,11 @@ export default async function NotePage({ params }: NotePageProps) {
     <HomeClient
       disableClientDataRefresh
       disableSiteStatsWrite
+      initialLearningStats={{
+        currentLevel: learningOverview.currentLevel,
+        learningDays: learningOverview.learningDays,
+        wordCount: 0
+      }}
       initialNextNote={articleContext.nextNote}
       initialNoteTotal={articleContext.total}
       initialNotes={articleContext.notes}

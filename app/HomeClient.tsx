@@ -557,9 +557,9 @@ export default function Home({
     () => [
       [
         (isArticlePage ? displayedNoteCount : displayedWordCount).toLocaleString("en-US"),
-        isArticlePage ? "部落格篇數" : "已收錄單字"
+        isArticlePage ? "文章篇數" : "已收錄單字"
       ],
-      [learningStats.learningDays.toLocaleString("en-US"), "已經學習天數"],
+      [learningStats.learningDays.toLocaleString("en-US"), isArticlePage ? "已學習天數" : "已經學習天數"],
       [learningStats.currentLevel, "目前程度"]
     ],
     [displayedNoteCount, displayedWordCount, isArticlePage, learningStats]

@@ -4,7 +4,6 @@ import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import AdSlot from "../ads/AdSlot";
 import SiteFooter from "../SiteFooter";
-import { QuoteRecord } from "../quotes/quoteTypes";
 import { getDisplayTags, getNotePath, getNotePreviewImage } from "./noteTypes";
 import { PublicNoteRecord } from "./noteStorage";
 import homeStyles from "../page.module.scss";
@@ -98,20 +97,22 @@ function ParallaxBackground() {
 
 export default function NotesListClient({
   categories = [],
-  initialBoardItems = [],
+  currentLevel = "-",
   initialCategory = "",
   initialNotes = [],
   initialPage = 1,
   initialQuery = "",
+  learningDays = 0,
   pageSize = 10,
   total = 0
 }: {
   categories?: string[];
-  initialBoardItems?: QuoteRecord[];
+  currentLevel?: string;
   initialCategory?: string;
   initialNotes?: PublicNoteRecord[];
   initialPage?: number;
   initialQuery?: string;
+  learningDays?: number;
   pageSize?: number;
   total?: number;
 }) {
@@ -133,11 +134,11 @@ export default function NotesListClient({
 
   const statItems = useMemo(
     () => [
-      [initialBoardItems.length.toLocaleString("en-US"), "學習例句"],
-      [total.toLocaleString("en-US"), "已收錄文章"],
-      ["N5", "目前等級"]
+      [total.toLocaleString("en-US"), "文章篇數"],
+      [learningDays.toLocaleString("en-US"), "已學習天數"],
+      [currentLevel, "目前程度"]
     ],
-    [initialBoardItems.length, total]
+    [currentLevel, learningDays, total]
   );
 
   return (

@@ -1,6 +1,11 @@
 import { redirect } from "next/navigation";
 import NotesListClient from "./NotesListClient";
-import { normalizePublicNotesPage, readPublishedNoteCategories, readPublishedNotesPage, readQuotesForPublicPage } from "../publicData";
+import {
+  normalizePublicNotesPage,
+  readLearningOverviewForPublicPage,
+  readPublishedNoteCategories,
+  readPublishedNotesPage
+} from "../publicData";
 
 export const revalidate = 300;
 
@@ -11,10 +16,10 @@ type NotesPageProps = {
 export default async function NotesPage({ searchParams }: NotesPageProps) {
   const { category = "", page: pageParam, q = "" } = await searchParams;
   const requestedPage = normalizePublicNotesPage(pageParam);
-  const [notesResult, categories, quotes] = await Promise.all([
+  const [notesResult, categories, learningOverview] = await Promise.all([
     readPublishedNotesPage({ category, page: requestedPage, query: q }),
     readPublishedNoteCategories(),
-    readQuotesForPublicPage()
+    readLearningOverviewForPublicPage()
   ]);
   const totalPages = Math.max(1, Math.ceil(notesResult.total / notesResult.pageSize));
 
@@ -29,11 +34,12 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
   return (
     <NotesListClient
       categories={categories}
-      initialBoardItems={quotes}
       initialCategory={category}
       initialNotes={notesResult.notes}
       initialPage={notesResult.page}
       initialQuery={q}
+      currentLevel={learningOverview.currentLevel}
+      learningDays={learningOverview.learningDays}
       pageSize={notesResult.pageSize}
       total={notesResult.total}
     />
