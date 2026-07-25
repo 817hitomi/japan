@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
+import { handleNoteOgRequest, noteOgPositiveCacheControl } from "../../../../lib/noteOgRequest";
 import { getRuntimeEnv } from "../../../../lib/runtimeEnv";
+import type { PublicNoteRecord } from "../../../notes/noteTypes";
 import { getNotePreviewImage } from "../../../notes/noteTypes";
 import { readPublishedNotePreviewByRouteKey } from "../../../publicData";
 
@@ -25,7 +27,7 @@ function dataUrlToResponse(dataUrl: string) {
 
   return new Response(Buffer.from(match[2], "base64"), {
     headers: {
-      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+      "Cache-Control": noteOgPositiveCacheControl,
       "Content-Type": match[1]
     }
   });
@@ -55,7 +57,7 @@ async function supabaseStorageImageToResponse(imageUrl: string) {
 
     return new Response(response.body, {
       headers: {
-        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+        "Cache-Control": noteOgPositiveCacheControl,
         "Content-Type": contentType
       }
     });
@@ -73,10 +75,8 @@ function sanitizeImageText(text: string) {
     .trim();
 }
 
-export async function GET(request: NextRequest) {
-  const routeKey = request.nextUrl.searchParams.get("slug") ?? "";
-  const note = await readPublishedNotePreviewByRouteKey(routeKey);
-  const imageUrl = note ? getNotePreviewImage(note, "/brand/logo_b.png") : "/brand/logo_b.png";
+async function renderNoteOg(note: PublicNoteRecord) {
+  const imageUrl = getNotePreviewImage(note, "/brand/logo_b.png");
   const embeddedImageResponse = dataUrlToResponse(imageUrl);
 
   if (embeddedImageResponse) {
@@ -89,9 +89,9 @@ export async function GET(request: NextRequest) {
     return storageImageResponse;
   }
 
-  const title = clampText(sanitizeImageText(note?.title || "") || "日文學習筆記", 44);
-  const summary = clampText(sanitizeImageText(note?.summary || "") || "自學日文筆記", 88);
-  const category = note?.category || "JapanNote";
+  const title = clampText(sanitizeImageText(note.title || "") || "日文學習筆記", 44);
+  const summary = clampText(sanitizeImageText(note.summary || "") || "自學日文筆記", 88);
+  const category = note.category || "JapanNote";
 
   return new ImageResponse(
     (
@@ -166,4 +166,11 @@ export async function GET(request: NextRequest) {
     ),
     imageSize
   );
+}
+
+export async function GET(request: NextRequest) {
+  return handleNoteOgRequest(request, {
+    findNote: readPublishedNotePreviewByRouteKey,
+    renderNote: renderNoteOg
+  });
 }

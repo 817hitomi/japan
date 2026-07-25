@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { getRuntimeEnv } from "../lib/runtimeEnv";
 import { createRequestTimer } from "../lib/requestDiagnostics";
+import { createSupabaseReadClient } from "../lib/supabase/server";
 import { rowToNote } from "./api/notes/noteMapper";
 import { rowToWord } from "./api/words/wordMapper";
 import { getDailySelectionIndex } from "./dailySelection";
@@ -332,14 +333,24 @@ export const readPublishedNoteByRouteKey = cache(async function readPublishedNot
 
   try {
     const numericId = Number(key);
-    const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>("learning_notes", {
-      select: noteFullSelect,
-      status: `eq.${publishedStatus}`,
-      ...(Number.isFinite(numericId) && String(numericId) === key ? { id: `eq.${numericId}` } : { slug: `eq.${key}` }),
-      limit: "1"
-    });
+    const supabase = createSupabaseReadClient();
+    let query = supabase
+      .from("learning_notes")
+      .select(noteFullSelect)
+      .eq("status", publishedStatus);
 
-    return rows[0] ? rowToNote(rows[0]) : null;
+    query =
+      Number.isFinite(numericId) && String(numericId) === key
+        ? query.eq("id", numericId)
+        : query.eq("slug", key);
+
+    const { data, error } = await query.limit(1).maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data ? rowToNote(data as unknown as Parameters<typeof rowToNote>[0]) : null;
   } catch {
     return null;
   }
@@ -354,19 +365,28 @@ export async function readPublishedNotePreviewByRouteKey(routeKey?: string): Pro
 
   try {
     const numericId = Number(key);
-    const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>("learning_notes", {
-      select: notePreviewSelect,
-      status: `eq.${publishedStatus}`,
-      ...(Number.isFinite(numericId) && String(numericId) === key ? { id: `eq.${numericId}` } : { slug: `eq.${key}` }),
-      limit: "1"
-    });
+    const supabase = createSupabaseReadClient();
+    let query = supabase
+      .from("learning_notes")
+      .select(notePreviewSelect)
+      .eq("status", publishedStatus);
 
-    if (!rows[0]) {
+    query =
+      Number.isFinite(numericId) && String(numericId) === key
+        ? query.eq("id", numericId)
+        : query.eq("slug", key);
+
+    const { data, error } = await query.limit(1).maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data) {
       return null;
     }
 
-    const note = rowToNote(rows[0]);
-    return note.coverUrl.trim() ? note : readPublishedNoteByRouteKey(key);
+    return rowToNote(data as unknown as Parameters<typeof rowToNote>[0]);
   } catch {
     return null;
   }
