@@ -14,6 +14,49 @@ const sensitiveEnvironmentFilePattern = /^\.env(?:\..+)?$/i;
 type SecurityStage = "middleware-route" | "worker-route";
 type SecurityLogger = (message: string) => void;
 
+const allowedProductionHosts = new Set(["japan-note.com", "www.japan-note.com"]);
+const localDevelopmentHostnames = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+export function isDisallowedProductionHost(request: Pick<Request, "url">) {
+  const url = new URL(request.url);
+  const hostname = url.hostname.toLowerCase();
+
+  if (localDevelopmentHostnames.has(hostname)) return false;
+
+  return !allowedProductionHosts.has(url.host.toLowerCase());
+}
+
+export function createDisallowedHostResponse(
+  request: Pick<Request, "method" | "url">,
+  stage: SecurityStage,
+  startedAt = performance.now(),
+  logger: SecurityLogger = console.log
+) {
+  const url = new URL(request.url);
+  const response = new Response("Not Found", {
+    status: 404,
+    headers: {
+      "Cache-Control": "public, max-age=86400",
+      "Content-Length": "9",
+      "Content-Type": "text/plain; charset=utf-8"
+    }
+  });
+
+  logger(JSON.stringify({
+    source: "japannote",
+    stage,
+    hostname: url.hostname.toLowerCase(),
+    port: url.port,
+    method: request.method,
+    branch: "fast-404",
+    reason: "disallowed-production-host",
+    status: 404,
+    elapsedMs: Math.round(performance.now() - startedAt)
+  }));
+
+  return response;
+}
+
 function decodePathname(pathname: string) {
   let decoded = pathname;
 
@@ -97,6 +140,11 @@ export function createSecurityFirstFetchHandler<Environment, Context>(
 ) {
   return async (request: Request, env: Environment, context: Context) => {
     const startedAt = performance.now();
+
+    if (isDisallowedProductionHost(request)) {
+      return createDisallowedHostResponse(request, "worker-route", startedAt, logger);
+    }
+
     const pathname = normalizeSecurityPathname(new URL(request.url).pathname);
 
     if (isBlockedSensitivePath(pathname)) {

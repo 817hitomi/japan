@@ -5,12 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "lint": "eslint .",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:admin-auth && npm run test:security-routes && npm run test:affiliate-performance",
+    "test": "npm run test:admin-auth && npm run test:security-routes && npm run test:affiliate-performance && npm run test:article-isr",
     "test:admin-auth": "node --experimental-strip-types tests/adminAuth.assertions.ts",
     "test:security-routes": "node --experimental-strip-types tests/securityRoutes.assertions.ts",
     "test:affiliate-performance": "node --experimental-strip-types tests/affiliatePerformance.assertions.ts",
+    "test:article-isr": "node --experimental-strip-types tests/articleIsr.assertions.ts",
     "benchmark:affiliate-remote": "node tests/affiliateRemoteBenchmark.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
@@ -25,9 +27,11 @@
     "sass": "^1.89.2"
   },
   "devDependencies": {
+    "@typescript-eslint/parser": "^8.62.1",
     "@types/node": "^22.15.32",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
+    "eslint": "^9.39.4",
     "typescript": "^5.8.2",
     "wrangler": "^4.106.0"
   }

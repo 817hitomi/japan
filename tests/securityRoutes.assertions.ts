@@ -1,7 +1,9 @@
 import {
   createSecurityFirstFetchHandler,
-  isBlockedSensitivePath
+  isBlockedSensitivePath,
+  isDisallowedProductionHost
 } from "../lib/securityFirstRequest.ts";
+import { readFileSync } from "node:fs";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
@@ -66,6 +68,46 @@ const fetchHandler = createSecurityFirstFetchHandler(
 
 const results: Array<{ path: string; status: number; contentType: string; bytes: number }> = [];
 
+const disallowedHostUrls = [
+  "https://japan-note.com:2083/",
+  "https://japan-note.com:8443/login_up.php",
+  "https://www.japan-note.com:2083/",
+  "https://example.com/",
+  "https://japannote.workers.dev/"
+];
+
+const allowedHostUrls = [
+  "https://japan-note.com/",
+  "https://www.japan-note.com/",
+  "http://localhost:3000/",
+  "http://127.0.0.1:3000/",
+  "http://[::1]:3000/"
+];
+
+for (const requestUrl of disallowedHostUrls) {
+  const request = new Request(requestUrl);
+  assert(isDisallowedProductionHost(request), `${requestUrl} must be rejected before routing`);
+  const callsBefore = downstreamCalls;
+  const response = await fetchHandler(request, {}, {});
+  const body = await response.text();
+
+  assert(response.status === 404, `${requestUrl} must return 404`);
+  assert(response.headers.get("content-type") === "text/plain; charset=utf-8", `${requestUrl} must return text/plain`);
+  assert(response.headers.get("cache-control") === "public, max-age=86400", `${requestUrl} must use fast-404 caching`);
+  assert(response.headers.get("content-length") === "9", `${requestUrl} must declare 9 bytes`);
+  assert(body === "Not Found", `${requestUrl} must return the fixed body`);
+  assert(downstreamCalls === callsBefore, `${requestUrl} must not invoke OpenNext or any downstream work`);
+}
+
+for (const requestUrl of allowedHostUrls) {
+  const request = new Request(requestUrl);
+  assert(!isDisallowedProductionHost(request), `${requestUrl} must preserve normal routing`);
+  const callsBefore = downstreamCalls;
+  const response = await fetchHandler(request, {}, {});
+  assert(response.status === 200, `${requestUrl} must reach the existing handler`);
+  assert(downstreamCalls === callsBefore + 1, `${requestUrl} must invoke the existing handler exactly once`);
+}
+
 for (const path of blockedPaths) {
   assert(isBlockedSensitivePath(path), `${path} must be classified as sensitive`);
   const callsBefore = downstreamCalls;
@@ -93,8 +135,8 @@ for (const path of allowedPaths) {
   assert(downstreamCalls === callsBefore + 1, `${path} must preserve existing routing`);
 }
 
-assert(logEntries.length === blockedPaths.length, "each blocked request must emit exactly one security log");
-for (const entry of logEntries) {
+assert(logEntries.length === blockedPaths.length + disallowedHostUrls.length, "each blocked request must emit exactly one security log");
+for (const entry of logEntries.filter((candidate) => candidate.reason === "blocked-sensitive-path")) {
   assert(entry.source === "japannote", "security log source must be japannote");
   assert(entry.stage === "worker-route", "outer security log must identify the worker stage");
   assert(entry.branch === "fast-404", "security log branch must be fast-404");
@@ -106,5 +148,33 @@ for (const entry of logEntries) {
   ].sort().join(","), "security log must not contain cookies, authorization, tokens, or query values");
 }
 
+for (const entry of logEntries.filter((candidate) => candidate.reason === "disallowed-production-host")) {
+  assert(entry.source === "japannote", "host log source must be japannote");
+  assert(entry.stage === "worker-route", "host log must identify the worker stage");
+  assert(entry.branch === "fast-404", "host log branch must be fast-404");
+  assert(entry.status === 404, "host log status must be 404");
+  assert(typeof entry.elapsedMs === "number" && entry.elapsedMs >= 0, "host log must include elapsedMs");
+  assert(!("pathname" in entry), "host log must not inspect or record the route before rejecting the host");
+}
+
+const middlewareSource = readFileSync(new URL("../middleware.ts", import.meta.url), "utf8");
+assert(
+  middlewareSource.indexOf("isDisallowedProductionHost(request)") < middlewareSource.indexOf("request.headers.set"),
+  "middleware host rejection must run before request mutation, routing, auth, or Supabase"
+);
+
+const wranglerConfig = JSON.parse(readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8")) as {
+  routes?: Array<{ pattern?: string; custom_domain?: boolean }>;
+};
+assert(
+  JSON.stringify(wranglerConfig.routes) === JSON.stringify([
+    { pattern: "japan-note.com", custom_domain: true },
+    { pattern: "www.japan-note.com", custom_domain: true }
+  ]),
+  "Cloudflare routes must contain only the apex and www production custom domains"
+);
+
 console.table(results);
-console.log(`security route assertions passed; blocked=${blockedPaths.length}; allowed=${allowedPaths.length}`);
+console.log(
+  `security route assertions passed; blockedPaths=${blockedPaths.length}; blockedHosts=${disallowedHostUrls.length}; allowed=${allowedPaths.length + allowedHostUrls.length}`
+);

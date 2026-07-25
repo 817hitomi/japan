@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { getNotePath } from "./notes/noteTypes";
 import { readPublishedNotesForPublicPage } from "./publicData";
 
-const siteUrl = "https://japan-note.com";
+const siteUrl = "https://www.japan-note.com";
 
 export const revalidate = 3600;
 

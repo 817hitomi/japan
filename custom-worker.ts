@@ -1,4 +1,6 @@
 import { createSecurityFirstFetchHandler } from "./lib/securityFirstRequest";
+import { handleArticleIsr, type R2BucketLike } from "./lib/articleIsr";
+import { getCanonicalRedirect } from "./lib/canonicalRequest";
 import { bridgedRuntimeEnvNames, getRuntimeEnvHeaderName } from "./lib/runtimeEnv";
 
 // The OpenNext worker is generated after the Next.js build.
@@ -10,6 +12,7 @@ type WorkerEnvironment = {
   ASSETS?: {
     fetch(request: Request): Promise<Response>;
   };
+  ARTICLE_ISR_CACHE?: R2BucketLike;
 };
 
 type WorkerExecutionContext = {
@@ -42,6 +45,11 @@ function withRuntimeEnvHeaders(request: Request, env: WorkerEnvironment) {
 const fetch = createSecurityFirstFetchHandler(
   async (request, env: WorkerEnvironment, context: WorkerExecutionContext) => {
     const url = new URL(request.url);
+    const canonicalRedirect = getCanonicalRedirect(request);
+
+    if (canonicalRedirect) {
+      return canonicalRedirect;
+    }
 
     // OpenNext's asset resolver does not consistently apply the middleware rewrite for favicon.ico.
     if (url.pathname === "/favicon.ico" && env.ASSETS) {
@@ -63,7 +71,18 @@ const fetch = createSecurityFirstFetchHandler(
       }
     }
 
-    const response = await openNextWorker.fetch(withRuntimeEnvHeaders(request, env), env, context);
+    const renderWithOpenNext = (nextRequest: Request) =>
+      openNextWorker.fetch(withRuntimeEnvHeaders(nextRequest, env), env, context);
+
+    if (url.pathname.startsWith("/notes/")) {
+      return handleArticleIsr(request, {
+        bucket: env.ARTICLE_ISR_CACHE,
+        context,
+        render: renderWithOpenNext
+      });
+    }
+
+    const response = await renderWithOpenNext(request);
 
     const contentType = response.headers.get("content-type") ?? "";
     const isCacheableContent = shouldCacheHomepage ? contentType.includes("text/html") : contentType.startsWith("image/");

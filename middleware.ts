@@ -5,7 +5,9 @@ import { createRequestTimer } from "./lib/requestDiagnostics";
 import { getRuntimeEnv } from "./lib/runtimeEnv";
 import {
   createBlockedSensitivePathResponse,
+  createDisallowedHostResponse,
   isBlockedSensitivePath,
+  isDisallowedProductionHost,
   normalizeSecurityPathname
 } from "./lib/securityFirstRequest";
 
@@ -120,8 +122,15 @@ function deniedResponse(request: NextRequest, status: 401 | 403 | 503, authRespo
 }
 
 export async function middleware(request: NextRequest) {
-  const pathname = normalizePathname(request.nextUrl.pathname);
   const startedAt = performance.now();
+
+  // Defense in depth for runtimes that invoke middleware without the custom Worker wrapper.
+  // This must stay before routing, auth, Supabase, rewrites, rendering, and internal fetches.
+  if (isDisallowedProductionHost(request)) {
+    return createDisallowedHostResponse(request, "middleware-route", startedAt);
+  }
+
+  const pathname = normalizePathname(request.nextUrl.pathname);
   request.headers.set("x-japannote-pathname", pathname);
 
   // Security checks must run before assets, routing, auth, Supabase, rewrites, or rendering.

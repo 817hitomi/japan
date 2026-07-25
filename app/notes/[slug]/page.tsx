@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createRequestTimer } from "../../../lib/requestDiagnostics";
+import { canonicalSiteOrigin } from "../../../lib/canonicalRequest";
 import HomeClient from "../../HomeClient";
 import { getNotePath, getNoteRouteKey } from "../noteTypes";
 import {
@@ -10,14 +11,13 @@ import {
   readPublishedNotesForPublicPage
 } from "../../publicData";
 
-export const revalidate = 300;
+export const revalidate = 86_400;
 export const dynamicParams = true;
 
-const publicSiteUrl = "https://japan-note.com";
+const publicSiteUrl = canonicalSiteOrigin;
 
 type NotePageProps = {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ share?: string }>;
 };
 
 export async function generateStaticParams() {
@@ -43,10 +43,9 @@ function toAbsoluteUrl(url: string) {
   }
 }
 
-export async function generateMetadata({ params, searchParams }: NotePageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: NotePageProps): Promise<Metadata> {
   const { slug } = await params;
   const timer = createRequestTimer("page render", { route: "/notes/[slug]", phase: "metadata" });
-  const { share } = (await searchParams) ?? {};
   const note = await readPublishedNoteByRouteKey(slug);
 
   if (!note) {
@@ -59,11 +58,6 @@ export async function generateMetadata({ params, searchParams }: NotePageProps):
   const pageUrl = new URL(getNotePath(note), publicSiteUrl);
   const imagePath = new URL("/api/notes/og", publicSiteUrl);
   imagePath.searchParams.set("slug", getNoteRouteKey(note));
-
-  if (share?.trim()) {
-    pageUrl.searchParams.set("share", share.trim());
-    imagePath.searchParams.set("v", share.trim());
-  }
 
   const url = pageUrl.toString();
   const imageUrl = toAbsoluteUrl(imagePath.toString());

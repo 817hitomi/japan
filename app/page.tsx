@@ -5,7 +5,7 @@ import { getTaipeiDailySelectionKey } from "./dailySelection";
 import { readPublishedNoteCardsForHomePage, readQuotesForPublicPage, readWordsForHomePage } from "./publicData";
 
 export const revalidate = 300;
-const publicSiteUrl = "https://japan-note.com";
+const publicSiteUrl = "https://www.japan-note.com";
 
 export const metadata: Metadata = {
   title: "日文學習筆記 | JapanNote",

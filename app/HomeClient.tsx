@@ -27,7 +27,7 @@ const navItems = [
   { label: "登入", href: "/admin" }
 ];
 
-const publicSiteUrl = "https://japan-note.com";
+const publicSiteUrl = "https://www.japan-note.com";
 
 const parallaxBalls = [
   { className: styles.ballTopLeft, y: -0.1, x: 0.035 },
