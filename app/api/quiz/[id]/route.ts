@@ -4,7 +4,14 @@ import { createSupabaseAdminClient } from "../../../../lib/supabase/server";
 import { requireAdminRoute } from "../../../../lib/adminRouteAuth";
 import { generateQuizDistractors } from "../../../quiz/quizDistractors";
 import { QuizQuestionRecord } from "../../../quiz/quizTypes";
-import { quizQuestionToPayload, QuizQuestionRow, rowToQuizQuestion } from "../quizMapper";
+import {
+  quizDistractorCandidateSelect,
+  quizQuestionSelect,
+  quizQuestionToPayload,
+  QuizDistractorCandidateRow,
+  rowToQuizDistractorCandidate,
+  rowToQuizQuestion
+} from "../quizMapper";
 
 export const dynamic = "force-dynamic";
 
@@ -28,18 +35,18 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const supabase = createSupabaseAdminClient();
     const { data: relatedRows } = await supabase
       .from("quiz_questions")
-      .select("*")
+      .select(quizDistractorCandidateSelect)
       .eq("level", payload.level)
       .eq("category", payload.category)
       .neq("id", Number(id))
       .limit(500);
-    const relatedQuestions = ((relatedRows ?? []) as QuizQuestionRow[]).map(rowToQuizQuestion);
+    const relatedQuestions = ((relatedRows ?? []) as QuizDistractorCandidateRow[]).map(rowToQuizDistractorCandidate);
     const options = generateQuizDistractors(payload.answer, relatedQuestions, payload.options);
     const { data, error } = await supabase
       .from("quiz_questions")
       .update({ ...payload, options })
       .eq("id", Number(id))
-      .select("*")
+      .select(quizQuestionSelect)
       .single();
 
     if (error) {

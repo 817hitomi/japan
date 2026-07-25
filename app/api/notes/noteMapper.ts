@@ -1,16 +1,18 @@
 import { NoteContentBlock, PublicNoteRecord, normalizeNote } from "../../notes/noteTypes";
 
+export const adminNoteListSelect = "id,category,title,status,published_date,slug,tags";
+
 type LearningNoteRow = {
   id: number;
   category: string | null;
   title: string | null;
-  summary: string | null;
+  summary?: string | null;
   status: string | null;
   published_date: string | null;
   slug: string | null;
   tags: string | null;
-  cover_url: string | null;
-  blocks: unknown;
+  cover_url?: string | null;
+  blocks?: unknown;
 };
 
 function normalizeBlocks(blocks: unknown): NoteContentBlock[] {

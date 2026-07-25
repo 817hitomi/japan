@@ -12,6 +12,7 @@ import {
 
 const quizStorageKey = "japannote-quiz-questions";
 const quizCategoryStorageKey = "japannote-quiz-categories";
+let quizCategoriesRequest: Promise<QuizCategoryRecord[]> | null = null;
 
 export type QuizQuestionsReadResult = {
   source: "database" | "local";
@@ -194,13 +195,17 @@ export async function fetchQuizCategories() {
 }
 
 export async function readQuizCategoriesWithFallback() {
-  try {
-    const categories = await fetchQuizCategories();
-    writeStoredQuizCategories(categories);
-    return categories.length > 0 ? categories : seedQuizCategories;
-  } catch {
-    return readStoredQuizCategories();
-  }
+  quizCategoriesRequest ??= (async () => {
+    try {
+      const categories = await fetchQuizCategories();
+      writeStoredQuizCategories(categories);
+      return categories.length > 0 ? categories : seedQuizCategories;
+    } catch {
+      return readStoredQuizCategories();
+    }
+  })();
+
+  return quizCategoriesRequest;
 }
 
 export async function saveQuizQuestion(question: QuizQuestionRecord, mode: "create" | "update") {

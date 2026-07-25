@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../../lib/apiErrors";
 import { createSupabaseReadClient } from "../../../../lib/supabase/server";
-import { QuizCategoryRow, rowToQuizCategory } from "../quizMapper";
+import { quizCategorySelect, QuizCategoryRow, rowToQuizCategory } from "../quizMapper";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ export async function GET() {
     const supabase = createSupabaseReadClient();
     const { data, error } = await supabase
       .from("quiz_categories")
-      .select("*")
+      .select(quizCategorySelect)
       .order("level", { ascending: true })
       .order("name", { ascending: true });
 

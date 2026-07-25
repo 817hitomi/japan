@@ -1,5 +1,9 @@
 import { normalizeQuizCategories, normalizeQuizQuestions, QuizCategoryRecord, QuizQuestionRecord } from "../../quiz/quizTypes";
 
+export const quizQuestionSelect = "id,level,category,theme,prompt,note,answer,options";
+export const quizDistractorCandidateSelect = "answer,options";
+export const quizCategorySelect = "id,level,name";
+
 export type QuizQuestionRow = {
   id: number;
   level: string | null;
@@ -16,6 +20,8 @@ export type QuizCategoryRow = {
   level: string | null;
   name: string | null;
 };
+
+export type QuizDistractorCandidateRow = Pick<QuizQuestionRow, "answer" | "options">;
 
 export function rowToQuizQuestion(row: QuizQuestionRow): QuizQuestionRecord {
   return normalizeQuizQuestions(
@@ -46,6 +52,15 @@ export function quizQuestionToPayload(question: QuizQuestionRecord) {
     note: normalized.note.trim(),
     answer: normalized.answer.trim(),
     options: normalized.options
+  };
+}
+
+export function rowToQuizDistractorCandidate(
+  row: QuizDistractorCandidateRow
+): Pick<QuizQuestionRecord, "answer" | "options"> {
+  return {
+    answer: row.answer ?? "",
+    options: Array.isArray(row.options) ? row.options.map(String) : []
   };
 }
 

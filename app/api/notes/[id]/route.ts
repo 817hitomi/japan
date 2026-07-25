@@ -3,7 +3,7 @@ import { getApiErrorMessage } from "../../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/server";
 import { requireAdminRoute } from "../../../../lib/adminRouteAuth";
 import { PublicNoteRecord } from "../../../notes/noteTypes";
-import { noteToPayload, rowToNote } from "../noteMapper";
+import { adminNoteListSelect, noteToPayload, rowToNote } from "../noteMapper";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       .from("learning_notes")
       .update(noteToPayload({ ...note, id: Number(id) }))
       .eq("id", Number(id))
-      .select("*")
+      .select(adminNoteListSelect)
       .single();
 
     if (error) {

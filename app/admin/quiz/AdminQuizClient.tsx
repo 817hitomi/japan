@@ -26,6 +26,7 @@ const emptyQuestion: QuizQuestionRecord = {
 const quizTextColors = ["#7D7D7D", "#C28080", "#D6C09E", "#8CB993"] as const;
 const quizQuestionsPerPage = 10;
 const maxVisiblePageButtons = 10;
+const quizSearchDebounceMs = 250;
 type QuizEditableField = "prompt" | "note";
 
 function stripHtml(html: string) {
@@ -97,10 +98,16 @@ export default function AdminQuizClient({
   const [draft, setDraft] = useState<QuizQuestionRecord>({ ...emptyQuestion, id: Date.now() });
   const [showEditor, setShowEditor] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState("請選擇題目，或新增文字．語彙題型。");
   const editorRefs = useRef<Record<QuizEditableField, HTMLDivElement | null>>({ prompt: null, note: null });
   const activeEditorRef = useRef<QuizEditableField>("prompt");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearchQuery(searchText.trim()), quizSearchDebounceMs);
+    return () => window.clearTimeout(timer);
+  }, [searchText]);
 
   useEffect(() => {
     let active = true;
@@ -110,7 +117,7 @@ export default function AdminQuizClient({
         readQuizQuestionsWithSource({
           level: selectedLevel,
           category: selectedCategory,
-          query: searchText,
+          query: searchQuery,
           page,
           pageSize: quizQuestionsPerPage
         }),
@@ -141,7 +148,7 @@ export default function AdminQuizClient({
     return () => {
       active = false;
     };
-  }, [page, searchText, selectedCategory, selectedLevel]);
+  }, [page, searchQuery, selectedCategory, selectedLevel]);
 
   const visibleQuestions = questions;
   const pageCount = Math.max(1, Math.ceil(totalQuestions / quizQuestionsPerPage));
@@ -328,6 +335,7 @@ export default function AdminQuizClient({
     event.preventDefault();
     setSelectedId(null);
     setPage(1);
+    setSearchQuery(searchText.trim());
   }
 
   function changePage(nextPage: number) {

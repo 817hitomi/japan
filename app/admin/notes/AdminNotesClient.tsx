@@ -10,6 +10,7 @@ import {
   importStoredNotesToDatabase,
   markStoredNotesImported,
   moveNotesCategory,
+  readNoteWithSource,
   readNotesWithSource,
   readNotesWithFallback,
   saveNote as saveNoteToDatabase,
@@ -569,7 +570,10 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
     let active = true;
 
     async function loadNote() {
-      const result = await readNotesWithSource("all");
+      const [result, noteResult] = await Promise.all([
+        readNotesWithSource("all"),
+        mode === "edit" && noteId ? readNoteWithSource(noteId) : Promise.resolve(null)
+      ]);
       const allNotes = result.notes;
 
       if (!active) {
@@ -586,7 +590,7 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
         return;
       }
 
-      const note = allNotes.find((item) => item.id === noteId);
+      const note = noteResult?.note ?? null;
       if (!note) {
         setMessage("找不到這篇文章，可返回列表重新選擇。");
         setLoaded(true);

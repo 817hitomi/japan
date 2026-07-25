@@ -273,7 +273,11 @@ function shuffle<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
-export function generateQuizDistractors(answer: string, questions: QuizQuestionRecord[], manualOptions: string[] = []) {
+export function generateQuizDistractors(
+  answer: string,
+  questions: Array<Pick<QuizQuestionRecord, "answer" | "options">>,
+  manualOptions: string[] = []
+) {
   const normalizedAnswer = toHiragana(answer.trim());
   const manualDistractors = uniqueOptions(manualOptions).filter((option) => toHiragana(option) !== normalizedAnswer);
   const questionCandidates = questions.flatMap((question) => [question.answer, ...question.options]);

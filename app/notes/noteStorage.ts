@@ -15,6 +15,12 @@ export type NotesReadResult = {
   error?: string;
 };
 
+export type NoteReadResult = {
+  source: "database" | "local";
+  note: PublicNoteRecord | null;
+  error?: string;
+};
+
 export function readStoredNotes() {
   if (typeof window === "undefined") {
     return seedNotes;
@@ -50,6 +56,29 @@ async function parseNotesResponse(response: Response) {
 export async function fetchNotes(status: "published" | "all" = "all") {
   const response = await fetch(`/api/notes?status=${status}`, { cache: "no-store" });
   return parseNotesResponse(response);
+}
+
+export async function fetchNote(id: number) {
+  const response = await fetch(`/api/notes/${id}`, { cache: "no-store" });
+
+  if (!response.ok) {
+    throw new Error(await readApiError(response, `Note API failed: ${response.status}`));
+  }
+
+  const payload = (await response.json()) as { note?: PublicNoteRecord };
+  return payload.note ? normalizeNote(payload.note) : null;
+}
+
+export async function readNoteWithSource(id: number): Promise<NoteReadResult> {
+  try {
+    return { source: "database", note: await fetchNote(id) };
+  } catch (error) {
+    return {
+      source: "local",
+      note: readStoredNotes().find((note) => note.id === id) ?? null,
+      error: error instanceof Error ? error.message : "Note API failed"
+    };
+  }
 }
 
 export async function readNotesWithFallback(status: "published" | "all" = "all") {

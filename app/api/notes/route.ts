@@ -3,7 +3,7 @@ import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
 import { requireAdminRoute } from "../../../lib/adminRouteAuth";
 import { getNoteRouteKey, PublicNoteRecord } from "../../notes/noteTypes";
-import { noteToPayload, rowToNote } from "./noteMapper";
+import { adminNoteListSelect, noteToPayload, rowToNote } from "./noteMapper";
 
 export const dynamic = "force-dynamic";
 const publicNotesLimit = 120;
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       if (authError) return authError;
     }
     const supabase = status === "published" ? createSupabaseReadClient() : createSupabaseAdminClient();
-    const selectColumns = status === "published" ? publicNoteSummarySelect : "*";
+    const selectColumns = status === "published" ? publicNoteSummarySelect : adminNoteListSelect;
     let query = supabase
       .from("learning_notes")
       .select(selectColumns)
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from("learning_notes")
       .insert(noteToPayload(note))
-      .select("*")
+      .select(adminNoteListSelect)
       .single();
 
     if (error) {
