@@ -38,13 +38,6 @@
       "/staging/*"
     ]
   },
-  "r2_buckets": [
-    {
-      "binding": "ARTICLE_ISR_CACHE",
-      "bucket_name": "japannote-article-isr",
-      "preview_bucket_name": "japannote-article-isr-preview"
-    }
-  ],
   "routes": [
     {
       "pattern": "japan-note.com",

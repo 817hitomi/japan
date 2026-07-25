@@ -1,24 +1,6 @@
-export default {
-  default: {
-    override: {
-      wrapper: "cloudflare-node",
-      converter: "edge",
-      proxyExternalRequest: "fetch",
-      incrementalCache: "dummy",
-      tagCache: "dummy",
-      queue: "dummy"
-    }
-  },
-  edgeExternals: ["node:crypto"],
-  middleware: {
-    external: true,
-    override: {
-      wrapper: "cloudflare-edge",
-      converter: "edge",
-      proxyExternalRequest: "fetch",
-      incrementalCache: "dummy",
-      tagCache: "dummy",
-      queue: "dummy"
-    }
-  }
-};
+import { defineCloudflareConfig } from "@opennextjs/cloudflare";
+
+// No R2, KV, Durable Object, or other storage binding is used. The empty
+// Cloudflare config resolves OpenNext's incremental, tag, and queue caches to
+// their no-storage dummy implementations.
+export default defineCloudflareConfig({});

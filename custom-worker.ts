@@ -1,31 +1,30 @@
 import { createSecurityFirstFetchHandler } from "./lib/securityFirstRequest";
-import { handleArticleIsr, type R2BucketLike } from "./lib/articleIsr";
+import {
+  getArticleCacheInvalidationKeys,
+  getInvalidArticleSlugResponse,
+  handleArticleEdgeCache,
+  purgeArticleEdgeCache,
+  type WorkerCacheLike
+} from "./lib/articleEdgeCache";
 import { getCanonicalRedirect } from "./lib/canonicalRequest";
 import { bridgedRuntimeEnvNames, getRuntimeEnvHeaderName } from "./lib/runtimeEnv";
 
 type WorkerEnvironment = {
   [key: string]: unknown;
-  ASSETS?: {
-    fetch(request: Request): Promise<Response>;
-  };
-  ARTICLE_ISR_CACHE?: R2BucketLike;
+  ASSETS?: { fetch(request: Request): Promise<Response> };
 };
 
-type WorkerExecutionContext = {
-  waitUntil(promise: Promise<unknown>): void;
-};
-
-const homepageCacheSeconds = 300;
-const noteImageCacheSeconds = 3600;
+type WorkerExecutionContext = { waitUntil(promise: Promise<unknown>): void };
 type OpenNextWorker = {
   fetch(request: Request, env: WorkerEnvironment, context: WorkerExecutionContext): Promise<Response>;
 };
 
+const homepageCacheSeconds = 300;
+const noteImageCacheSeconds = 3600;
 let openNextWorkerPromise: Promise<OpenNextWorker> | undefined;
 
 function loadOpenNextWorker() {
   // Keep Next.js, middleware, RSC, SSR, and route modules out of scanner requests.
-  // This function is called only after createSecurityFirstFetchHandler allows the request.
   // @ts-expect-error OpenNext generates this JavaScript artifact without a declaration file.
   openNextWorkerPromise ??= import("./.open-next/worker.js").then(
     (module) => module.default as OpenNextWorker
@@ -33,23 +32,20 @@ function loadOpenNextWorker() {
   return openNextWorkerPromise;
 }
 
-function getWorkerDefaultCache() {
-  return typeof caches === "undefined" ? undefined : (caches as CacheStorage & { default?: Cache }).default;
+function getWorkerDefaultCache(): WorkerCacheLike | undefined {
+  return typeof caches === "undefined"
+    ? undefined
+    : (caches as CacheStorage & { default?: WorkerCacheLike }).default;
 }
 
 function withRuntimeEnvHeaders(request: Request, env: WorkerEnvironment) {
   const headers = new Headers(request.headers);
-
   for (const name of bridgedRuntimeEnvNames) {
     const headerName = getRuntimeEnvHeaderName(name);
     const value = env[name];
-
-    // Always replace or remove client-supplied internal headers so callers
-    // cannot spoof authentication configuration.
     if (typeof value === "string" && value.length > 0) headers.set(headerName, value);
     else headers.delete(headerName);
   }
-
   return new Request(request, { headers });
 }
 
@@ -57,52 +53,58 @@ const fetch = createSecurityFirstFetchHandler(
   async (request, env: WorkerEnvironment, context: WorkerExecutionContext) => {
     const url = new URL(request.url);
     const canonicalRedirect = getCanonicalRedirect(request);
+    if (canonicalRedirect) return canonicalRedirect;
 
-    if (canonicalRedirect) {
-      return canonicalRedirect;
-    }
-
-    // OpenNext's asset resolver does not consistently apply the middleware rewrite for favicon.ico.
     if (url.pathname === "/favicon.ico" && env.ASSETS) {
       return env.ASSETS.fetch(new Request(new URL("/brand/logo_b.png", request.url), request));
     }
 
+    // This stays before OpenNext, middleware, metadata, SSR, and Supabase.
+    const invalidArticleSlug = getInvalidArticleSlugResponse(request);
+    if (invalidArticleSlug) return invalidArticleSlug;
+
+    const workerCache = getWorkerDefaultCache();
     const shouldCacheHomepage = request.method === "GET" && url.pathname === "/" && !url.searchParams.has("note");
     const shouldCacheNoteImage = request.method === "GET" && url.pathname === "/api/notes/og" && url.searchParams.has("slug");
-    const workerCache = shouldCacheHomepage || shouldCacheNoteImage ? getWorkerDefaultCache() : undefined;
-    const cacheKey = workerCache
+    const sharedCacheKey = workerCache && (shouldCacheHomepage || shouldCacheNoteImage)
       ? new Request(shouldCacheHomepage ? new URL("/", url.origin) : url, { method: "GET" })
       : undefined;
 
-    if (workerCache && cacheKey) {
-      const cachedResponse = await workerCache.match(cacheKey);
-
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+    if (workerCache && sharedCacheKey) {
+      const cachedResponse = await workerCache.match(sharedCacheKey);
+      if (cachedResponse) return cachedResponse;
     }
 
     const renderWithOpenNext = async (nextRequest: Request) => {
       const openNextWorker = await loadOpenNextWorker();
-      return openNextWorker.fetch(withRuntimeEnvHeaders(nextRequest, env), env, context);
+      const response = await openNextWorker.fetch(withRuntimeEnvHeaders(nextRequest, env), env, context);
+      const invalidationKeys = getArticleCacheInvalidationKeys(response);
+
+      if (workerCache && invalidationKeys.length > 0) {
+        const purged = await purgeArticleEdgeCache(workerCache, invalidationKeys);
+        console.log(JSON.stringify({
+          source: "japannote",
+          stage: "article-edge-cache",
+          branch: "purge",
+          requested: invalidationKeys.length,
+          purged
+        }));
+        const headers = new Headers(response.headers);
+        headers.delete("x-japannote-invalidate-article-cache");
+        return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+      }
+      return response;
     };
 
     if (url.pathname.startsWith("/notes/")) {
-      return handleArticleIsr(request, {
-        bucket: env.ARTICLE_ISR_CACHE,
-        context,
-        render: renderWithOpenNext
-      });
+      return handleArticleEdgeCache(request, { cache: workerCache, render: renderWithOpenNext });
     }
 
     const response = await renderWithOpenNext(request);
-
     const contentType = response.headers.get("content-type") ?? "";
     const isCacheableContent = shouldCacheHomepage ? contentType.includes("text/html") : contentType.startsWith("image/");
 
-    if (!workerCache || !cacheKey || !response.ok || !isCacheableContent) {
-      return response;
-    }
+    if (!workerCache || !sharedCacheKey || !response.ok || !isCacheableContent) return response;
 
     const cacheableResponse = new Response(response.body, response);
     cacheableResponse.headers.delete("set-cookie");
@@ -110,17 +112,9 @@ const fetch = createSecurityFirstFetchHandler(
       "Cache-Control",
       `public, s-maxage=${shouldCacheHomepage ? homepageCacheSeconds : noteImageCacheSeconds}, stale-while-revalidate=86400`
     );
-    context.waitUntil(workerCache.put(cacheKey, cacheableResponse.clone()));
+    context.waitUntil(workerCache.put(sharedCacheKey, cacheableResponse.clone()));
     return cacheableResponse;
   }
 );
 
 export default { fetch };
-
-// Preserve OpenNext Durable Object exports when cache implementations enable them.
-// @ts-expect-error Generated build artifact is intentionally absent in a fresh checkout.
-export { BucketCachePurge } from "./.open-next/.build/durable-objects/bucket-cache-purge.js";
-// @ts-expect-error Generated build artifact is intentionally absent in a fresh checkout.
-export { DOQueueHandler } from "./.open-next/.build/durable-objects/queue.js";
-// @ts-expect-error Generated build artifact is intentionally absent in a fresh checkout.
-export { DOShardedTagCache } from "./.open-next/.build/durable-objects/sharded-tag-cache.js";

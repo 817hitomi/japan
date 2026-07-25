@@ -1,5 +1,6 @@
 import {
   createSecurityFirstFetchHandler,
+  isAcmeChallengePath,
   isBlockedScannerPath,
   isBlockedSensitivePath,
   isDisallowedProductionHost
@@ -74,6 +75,10 @@ const allowedScannerPaths = [
   "/wp-administrator",
   "/wp-contents",
   "/articles/xmlrpc"
+];
+const acmeChallengePaths = [
+  "/.well-known/acme-challenge/test-token",
+  "/.well-known/acme-challenge/another-token"
 ];
 
 let downstreamCalls = 0;
@@ -165,6 +170,15 @@ for (const path of blockedScannerPaths) {
   assert(downstreamCalls === callsBefore, `${path} must not invoke OpenNext, middleware, auth, Supabase, SSR, or RSC`);
 }
 
+for (const path of acmeChallengePaths) {
+  assert(isAcmeChallengePath(path), `${path} must be handled before OpenNext`);
+  const callsBefore = downstreamCalls;
+  const response = await fetchHandler(new Request(`https://japan-note.com${path}`), {}, {});
+  assert(response.status === 404, `${path} must return a fast 404`);
+  assert((await response.text()) === "Not Found", `${path} must use the fixed response`);
+  assert(downstreamCalls === callsBefore, `${path} must not invoke SSR, metadata, auth, or Supabase`);
+}
+
 for (const path of allowedScannerPaths) {
   assert(!isBlockedScannerPath(path), `${path} must not be classified as a scanner path`);
 }
@@ -178,7 +192,7 @@ for (const path of allowedPaths) {
 }
 
 assert(
-  logEntries.length === blockedPaths.length + blockedScannerPaths.length + disallowedHostUrls.length,
+  logEntries.length === blockedPaths.length + blockedScannerPaths.length + acmeChallengePaths.length + disallowedHostUrls.length,
   "each blocked request must emit exactly one security log"
 );
 for (const entry of logEntries.filter((candidate) => candidate.reason === "blocked-sensitive-path")) {
@@ -226,9 +240,16 @@ assert(
   "OpenNext must be loaded lazily only after the outer security handler allows the request"
 );
 
-const wranglerConfig = JSON.parse(readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8")) as {
+const wranglerSource = readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8");
+const wranglerConfig = JSON.parse(wranglerSource) as {
   routes?: Array<{ pattern?: string; custom_domain?: boolean }>;
+  [key: string]: unknown;
 };
+assert(!Object.keys(wranglerConfig).some((key) => key.endsWith("_buckets")), "Wrangler must not contain storage bucket bindings");
+const openNextConfigSource = readFileSync(new URL("../open-next.config.ts", import.meta.url), "utf8");
+assert(!openNextConfigSource.includes("overrides/incremental-cache"), "OpenNext must not configure a storage incremental cache");
+assert(customWorkerSource.includes("handleArticleEdgeCache"), "public article HTML must use the Cache API wrapper");
+assert(!/BucketLike|ARTICLE_.+_CACHE|handleArticle.+Isr/.test(customWorkerSource), "the Worker must not retain the removed bucket cache code");
 assert(
   JSON.stringify(wranglerConfig.routes) === JSON.stringify([
     { pattern: "japan-note.com", custom_domain: true },

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../lib/apiErrors";
+import { withArticleCacheInvalidation } from "../../../lib/articleCacheInvalidation";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
 import { requireAdminRoute } from "../../../lib/adminRouteAuth";
 import { getNoteRouteKey, PublicNoteRecord } from "../../notes/noteTypes";
@@ -71,7 +72,11 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    return NextResponse.json({ note: rowToNote(data) }, { status: 201 });
+    const createdNote = rowToNote(data);
+    return withArticleCacheInvalidation(
+      NextResponse.json({ note: createdNote }, { status: 201 }),
+      [createdNote.slug, createdNote.id]
+    );
   } catch (error) {
     return NextResponse.json({ error: getApiErrorMessage(error, "Unable to create note") }, { status: 500 });
   }
@@ -89,16 +94,22 @@ export async function PATCH(request: NextRequest) {
     }
 
     const supabase = createSupabaseAdminClient();
+    const { data: affectedNotes, error: readError } = await supabase
+      .from("learning_notes")
+      .select("id,slug")
+      .eq("category", body.fromCategory);
+    if (readError) throw readError;
+
     const { error } = await supabase
       .from("learning_notes")
       .update({ category: body.toCategory })
       .eq("category", body.fromCategory);
+    if (error) throw error;
 
-    if (error) {
-      throw error;
-    }
-
-    return NextResponse.json({ ok: true });
+    return withArticleCacheInvalidation(
+      NextResponse.json({ ok: true }),
+      (affectedNotes ?? []).flatMap((note) => [note.slug, note.id])
+    );
   } catch (error) {
     return NextResponse.json({ error: getApiErrorMessage(error, "Unable to update notes") }, { status: 500 });
   }
@@ -117,13 +128,19 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabase = createSupabaseAdminClient();
+    const { data: deletedNotes, error: readError } = await supabase
+      .from("learning_notes")
+      .select("id,slug")
+      .in("id", ids);
+    if (readError) throw readError;
+
     const { error } = await supabase.from("learning_notes").delete().in("id", ids);
+    if (error) throw error;
 
-    if (error) {
-      throw error;
-    }
-
-    return NextResponse.json({ ok: true });
+    return withArticleCacheInvalidation(
+      NextResponse.json({ ok: true }),
+      (deletedNotes ?? []).flatMap((note) => [note.slug, note.id])
+    );
   } catch (error) {
     return NextResponse.json({ error: getApiErrorMessage(error, "Unable to delete notes") }, { status: 500 });
   }

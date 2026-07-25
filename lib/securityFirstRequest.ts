@@ -98,6 +98,9 @@ export function isBlockedSensitivePath(pathname: string) {
   });
 }
 
+export function isAcmeChallengePath(pathname: string) {
+  return normalizeSecurityPathname(pathname).toLowerCase().startsWith("/.well-known/acme-challenge/");
+}
 export function isBlockedScannerPath(pathname: string) {
   const normalized = normalizeSecurityPathname(pathname).toLowerCase();
   const segments = normalized.split("/").filter(Boolean);
@@ -111,7 +114,7 @@ function createStaticNotFoundResponse(
   pathname: string,
   method: string,
   stage: SecurityStage,
-  reason: "blocked-sensitive-path" | "blocked-scanner-path",
+  reason: "blocked-sensitive-path" | "blocked-scanner-path" | "acme-challenge",
   startedAt: number,
   logger: SecurityLogger
 ) {
@@ -194,6 +197,17 @@ export function createSecurityFirstFetchHandler<Environment, Context>(
 
     if (isBlockedSensitivePath(pathname)) {
       return createBlockedSensitivePathResponse(pathname, request.method, "worker-route", startedAt, logger);
+    }
+
+    if (isAcmeChallengePath(pathname)) {
+      return createStaticNotFoundResponse(
+        pathname,
+        request.method,
+        "worker-route",
+        "acme-challenge",
+        startedAt,
+        logger
+      );
     }
 
     if (isBlockedScannerPath(pathname)) {
