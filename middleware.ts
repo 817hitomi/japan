@@ -40,7 +40,7 @@ function normalizePathname(pathname: string) {
 }
 
 function isBlockedProbePath(pathname: string) {
-  return blockedPathPatterns.some((pattern) => pattern.test(pathname));
+  return pathname.toLowerCase().endsWith(".php") || blockedPathPatterns.some((pattern) => pattern.test(pathname));
 }
 
 function isApiPath(pathname: string) {

@@ -10,6 +10,7 @@ const sensitivePathSegments = new Set([
 
 const rootSensitiveDirectories = new Set(["src", "backup", "staging"]);
 const sensitiveEnvironmentFilePattern = /^\.env(?:\..+)?$/i;
+const blockedScannerSegments = new Set(["wp-admin", "wp-content", "wp-includes"]);
 
 type SecurityStage = "middleware-route" | "worker-route";
 type SecurityLogger = (message: string) => void;
@@ -97,12 +98,22 @@ export function isBlockedSensitivePath(pathname: string) {
   });
 }
 
-export function createBlockedSensitivePathResponse(
+export function isBlockedScannerPath(pathname: string) {
+  const normalized = normalizeSecurityPathname(pathname).toLowerCase();
+  const segments = normalized.split("/").filter(Boolean);
+
+  if (normalized.endsWith(".php")) return true;
+
+  return segments.some((segment) => blockedScannerSegments.has(segment));
+}
+
+function createStaticNotFoundResponse(
   pathname: string,
   method: string,
   stage: SecurityStage,
-  startedAt = performance.now(),
-  logger: SecurityLogger = console.log
+  reason: "blocked-sensitive-path" | "blocked-scanner-path",
+  startedAt: number,
+  logger: SecurityLogger
 ) {
   const normalizedPathname = normalizeSecurityPathname(pathname);
   const response = new Response("Not Found", {
@@ -120,12 +131,46 @@ export function createBlockedSensitivePathResponse(
     pathname: normalizedPathname,
     method,
     branch: "fast-404",
-    reason: "blocked-sensitive-path",
+    reason,
     status: 404,
     elapsedMs: Math.round(performance.now() - startedAt)
   }));
 
   return response;
+}
+
+export function createBlockedSensitivePathResponse(
+  pathname: string,
+  method: string,
+  stage: SecurityStage,
+  startedAt = performance.now(),
+  logger: SecurityLogger = console.log
+) {
+  return createStaticNotFoundResponse(
+    pathname,
+    method,
+    stage,
+    "blocked-sensitive-path",
+    startedAt,
+    logger
+  );
+}
+
+export function createBlockedScannerPathResponse(
+  pathname: string,
+  method: string,
+  stage: SecurityStage,
+  startedAt = performance.now(),
+  logger: SecurityLogger = console.log
+) {
+  return createStaticNotFoundResponse(
+    pathname,
+    method,
+    stage,
+    "blocked-scanner-path",
+    startedAt,
+    logger
+  );
 }
 
 type DownstreamFetch<Environment, Context> = (
@@ -149,6 +194,10 @@ export function createSecurityFirstFetchHandler<Environment, Context>(
 
     if (isBlockedSensitivePath(pathname)) {
       return createBlockedSensitivePathResponse(pathname, request.method, "worker-route", startedAt, logger);
+    }
+
+    if (isBlockedScannerPath(pathname)) {
+      return createBlockedScannerPathResponse(pathname, request.method, "worker-route", startedAt, logger);
     }
 
     return downstreamFetch(request, env, context);

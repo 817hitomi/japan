@@ -1,5 +1,6 @@
 import {
   createSecurityFirstFetchHandler,
+  isBlockedScannerPath,
   isBlockedSensitivePath,
   isDisallowedProductionHost
 } from "../lib/securityFirstRequest.ts";
@@ -51,6 +52,28 @@ const allowedPaths = [
   "/articles/git",
   "/images/staging-photo.jpg",
   "/articles/package-json-guide"
+];
+
+const blockedScannerPaths = [
+  "/wp-login.php",
+  "/WP-LOGIN.PHP",
+  "/index.php",
+  "/nested/file.php",
+  "/nested/file.php/",
+  "/wp-admin",
+  "/wp-admin/",
+  "/nested/wp-admin",
+  "/wp-content/plugins/example.js",
+  "/wp-includes/js/example.js",
+  "/xmlrpc.php"
+];
+
+const allowedScannerPaths = [
+  "/notes/php-basics",
+  "/images/php-logo.png",
+  "/wp-administrator",
+  "/wp-contents",
+  "/articles/xmlrpc"
 ];
 
 let downstreamCalls = 0;
@@ -127,6 +150,25 @@ for (const path of blockedPaths) {
   results.push({ path, status: response.status, contentType: response.headers.get("content-type") ?? "", bytes });
 }
 
+for (const path of blockedScannerPaths) {
+  assert(isBlockedScannerPath(path), `${path} must be classified as a scanner path`);
+  const callsBefore = downstreamCalls;
+  const response = await fetchHandler(new Request(`https://japan-note.com${path}`), {}, {});
+  const body = await response.text();
+
+  assert(response.status === 404, `${path} must return 404`);
+  assert(response.headers.get("content-type") === "text/plain; charset=utf-8", `${path} must return text/plain`);
+  assert(response.headers.get("cache-control") === "public, max-age=86400", `${path} must use one-day caching`);
+  assert(response.headers.get("content-length") === "9", `${path} must declare 9 bytes`);
+  assert(body === "Not Found", `${path} must return the fixed body`);
+  assert(!body.includes("__next_f"), `${path} must not contain Next.js or RSC output`);
+  assert(downstreamCalls === callsBefore, `${path} must not invoke OpenNext, middleware, auth, Supabase, SSR, or RSC`);
+}
+
+for (const path of allowedScannerPaths) {
+  assert(!isBlockedScannerPath(path), `${path} must not be classified as a scanner path`);
+}
+
 for (const path of allowedPaths) {
   assert(!isBlockedSensitivePath(path), `${path} must not be classified as sensitive`);
   const callsBefore = downstreamCalls;
@@ -135,7 +177,10 @@ for (const path of allowedPaths) {
   assert(downstreamCalls === callsBefore + 1, `${path} must preserve existing routing`);
 }
 
-assert(logEntries.length === blockedPaths.length + disallowedHostUrls.length, "each blocked request must emit exactly one security log");
+assert(
+  logEntries.length === blockedPaths.length + blockedScannerPaths.length + disallowedHostUrls.length,
+  "each blocked request must emit exactly one security log"
+);
 for (const entry of logEntries.filter((candidate) => candidate.reason === "blocked-sensitive-path")) {
   assert(entry.source === "japannote", "security log source must be japannote");
   assert(entry.stage === "worker-route", "outer security log must identify the worker stage");
@@ -146,6 +191,14 @@ for (const entry of logEntries.filter((candidate) => candidate.reason === "block
   assert(Object.keys(entry).sort().join(",") === [
     "branch", "elapsedMs", "method", "pathname", "reason", "source", "stage", "status"
   ].sort().join(","), "security log must not contain cookies, authorization, tokens, or query values");
+}
+
+for (const entry of logEntries.filter((candidate) => candidate.reason === "blocked-scanner-path")) {
+  assert(entry.source === "japannote", "scanner log source must be japannote");
+  assert(entry.stage === "worker-route", "scanner rejection must happen at the outer Worker stage");
+  assert(entry.branch === "fast-404", "scanner log branch must be fast-404");
+  assert(entry.status === 404, "scanner log status must be 404");
+  assert(typeof entry.elapsedMs === "number" && entry.elapsedMs >= 0, "scanner log must include elapsedMs");
 }
 
 for (const entry of logEntries.filter((candidate) => candidate.reason === "disallowed-production-host")) {
@@ -163,6 +216,16 @@ assert(
   "middleware host rejection must run before request mutation, routing, auth, or Supabase"
 );
 
+const customWorkerSource = readFileSync(new URL("../custom-worker.ts", import.meta.url), "utf8");
+assert(
+  !/^import\s+openNextWorker\s+from\s+["']\.\/\.open-next\/worker\.js["'];/m.test(customWorkerSource),
+  "the outer Worker must not load OpenNext before scanner classification"
+);
+assert(
+  customWorkerSource.includes('import("./.open-next/worker.js")'),
+  "OpenNext must be loaded lazily only after the outer security handler allows the request"
+);
+
 const wranglerConfig = JSON.parse(readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8")) as {
   routes?: Array<{ pattern?: string; custom_domain?: boolean }>;
 };
@@ -176,5 +239,5 @@ assert(
 
 console.table(results);
 console.log(
-  `security route assertions passed; blockedPaths=${blockedPaths.length}; blockedHosts=${disallowedHostUrls.length}; allowed=${allowedPaths.length + allowedHostUrls.length}`
+  `security route assertions passed; blockedPaths=${blockedPaths.length}; blockedScanners=${blockedScannerPaths.length}; blockedHosts=${disallowedHostUrls.length}; allowed=${allowedPaths.length + allowedScannerPaths.length + allowedHostUrls.length}`
 );

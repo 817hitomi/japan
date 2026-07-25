@@ -3,10 +3,6 @@ import { handleArticleIsr, type R2BucketLike } from "./lib/articleIsr";
 import { getCanonicalRedirect } from "./lib/canonicalRequest";
 import { bridgedRuntimeEnvNames, getRuntimeEnvHeaderName } from "./lib/runtimeEnv";
 
-// The OpenNext worker is generated after the Next.js build.
-// @ts-expect-error Generated build artifact is intentionally absent in a fresh checkout.
-import openNextWorker from "./.open-next/worker.js";
-
 type WorkerEnvironment = {
   [key: string]: unknown;
   ASSETS?: {
@@ -21,6 +17,21 @@ type WorkerExecutionContext = {
 
 const homepageCacheSeconds = 300;
 const noteImageCacheSeconds = 3600;
+type OpenNextWorker = {
+  fetch(request: Request, env: WorkerEnvironment, context: WorkerExecutionContext): Promise<Response>;
+};
+
+let openNextWorkerPromise: Promise<OpenNextWorker> | undefined;
+
+function loadOpenNextWorker() {
+  // Keep Next.js, middleware, RSC, SSR, and route modules out of scanner requests.
+  // This function is called only after createSecurityFirstFetchHandler allows the request.
+  // @ts-expect-error OpenNext generates this JavaScript artifact without a declaration file.
+  openNextWorkerPromise ??= import("./.open-next/worker.js").then(
+    (module) => module.default as OpenNextWorker
+  );
+  return openNextWorkerPromise;
+}
 
 function getWorkerDefaultCache() {
   return typeof caches === "undefined" ? undefined : (caches as CacheStorage & { default?: Cache }).default;
@@ -71,8 +82,10 @@ const fetch = createSecurityFirstFetchHandler(
       }
     }
 
-    const renderWithOpenNext = (nextRequest: Request) =>
-      openNextWorker.fetch(withRuntimeEnvHeaders(nextRequest, env), env, context);
+    const renderWithOpenNext = async (nextRequest: Request) => {
+      const openNextWorker = await loadOpenNextWorker();
+      return openNextWorker.fetch(withRuntimeEnvHeaders(nextRequest, env), env, context);
+    };
 
     if (url.pathname.startsWith("/notes/")) {
       return handleArticleIsr(request, {
@@ -106,4 +119,8 @@ export default { fetch };
 
 // Preserve OpenNext Durable Object exports when cache implementations enable them.
 // @ts-expect-error Generated build artifact is intentionally absent in a fresh checkout.
-export { BucketCachePurge, DOQueueHandler, DOShardedTagCache } from "./.open-next/worker.js";
+export { BucketCachePurge } from "./.open-next/.build/durable-objects/bucket-cache-purge.js";
+// @ts-expect-error Generated build artifact is intentionally absent in a fresh checkout.
+export { DOQueueHandler } from "./.open-next/.build/durable-objects/queue.js";
+// @ts-expect-error Generated build artifact is intentionally absent in a fresh checkout.
+export { DOShardedTagCache } from "./.open-next/.build/durable-objects/sharded-tag-cache.js";
