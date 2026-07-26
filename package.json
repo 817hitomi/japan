@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:admin-auth && npm run test:security-routes && npm run test:note-og-security && npm run test:note-card-routes && npm run test:affiliate-performance && npm run test:article-edge-cache && npm run test:admin-notes-performance && npm run test:admin-quiz-performance",
+    "test": "npm run test:admin-auth && npm run test:security-routes && npm run test:note-og-security && npm run test:note-card-routes && npm run test:affiliate-performance && npm run test:article-edge-cache && npm run test:admin-notes-performance && npm run test:admin-quiz-performance && npm run test:admin-analytics-performance",
     "test:admin-auth": "node --experimental-strip-types tests/adminAuth.assertions.ts",
     "test:security-routes": "node --experimental-strip-types tests/securityRoutes.assertions.ts",
     "test:note-og-security": "node --experimental-strip-types tests/noteOgSecurity.assertions.ts",
@@ -17,7 +17,9 @@
     "test:article-edge-cache": "node --experimental-strip-types tests/articleEdgeCache.assertions.ts",
     "test:admin-notes-performance": "node --experimental-strip-types tests/adminNotesPerformance.assertions.ts",
     "test:admin-quiz-performance": "node --experimental-strip-types tests/adminQuizPerformance.assertions.ts",
+    "test:admin-analytics-performance": "node --experimental-strip-types tests/adminAnalyticsPerformance.assertions.ts",
     "benchmark:affiliate-remote": "node tests/affiliateRemoteBenchmark.mjs",
+    "benchmark:admin-analytics-remote": "node tests/adminAnalyticsRemoteBenchmark.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },

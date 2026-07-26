@@ -28,10 +28,39 @@ type SiteAnalytics = {
   totalVisitors: number;
   trackedVisitors: number;
   totalViews: number;
+  processedRows?: number;
   hourly: SiteAnalyticsHour[];
   pages: SiteAnalyticsPage[];
   sources: SiteAnalyticsSource[];
 };
+
+const analyticsClientCacheTtlMs = 30_000;
+let analyticsSnapshot: { value: SiteAnalytics; expiresAt: number } | null = null;
+let analyticsRequest: Promise<SiteAnalytics> | null = null;
+
+function readSiteAnalytics() {
+  if (analyticsSnapshot && analyticsSnapshot.expiresAt > Date.now()) {
+    return Promise.resolve(analyticsSnapshot.value);
+  }
+
+  if (!analyticsRequest) {
+    analyticsRequest = fetch("/api/admin/site-analytics", { credentials: "same-origin" })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Analytics request failed with ${response.status}`);
+        }
+
+        const value = (await response.json()) as SiteAnalytics;
+        analyticsSnapshot = { value, expiresAt: Date.now() + analyticsClientCacheTtlMs };
+        return value;
+      })
+      .finally(() => {
+        analyticsRequest = null;
+      });
+  }
+
+  return analyticsRequest;
+}
 
 export default function AdminDashboardClient() {
   const [analytics, setAnalytics] = useState<SiteAnalytics | null>(null);
@@ -41,8 +70,7 @@ export default function AdminDashboardClient() {
 
     async function loadAnalytics() {
       try {
-        const response = await fetch("/api/admin/site-analytics", { cache: "no-store" });
-        const payload = (await response.json()) as SiteAnalytics;
+        const payload = await readSiteAnalytics();
 
         if (active) {
           setAnalytics(payload);

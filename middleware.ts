@@ -90,6 +90,9 @@ export function isProtectedRequest(request: NextRequest) {
   const pathname = normalizePathname(request.nextUrl.pathname);
   const { searchParams } = request.nextUrl;
   if (isPublicAssetPath(pathname)) return false;
+  // This route performs its own admin check before its only database query.
+  // Avoid a second remote getUser() call in middleware for every dashboard load.
+  if (pathname === "/api/admin/site-analytics") return false;
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
   if (pathname.startsWith("/api/admin/")) return true;
   if (pathname === "/api/content-reports") return request.method !== "POST";
