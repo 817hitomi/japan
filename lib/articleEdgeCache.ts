@@ -2,7 +2,7 @@ import { canonicalSiteOrigin } from "./canonicalRequest.ts";
 
 export const articleEdgeCacheSeconds = 3_600;
 export const articleCacheInvalidationHeader = "x-japannote-invalidate-article-cache";
-const articleCacheVersion = "v2";
+const fallbackArticleCacheVersion = "v2";
 const inFlightRenders = new Map<string, Promise<RenderedPage>>();
 
 export type WorkerCacheLike = {
@@ -13,6 +13,7 @@ export type WorkerCacheLike = {
 
 type ArticleEdgeCacheOptions = {
   cache?: WorkerCacheLike;
+  cacheVersion?: string;
   logger?: (message: string) => void;
   render(request: Request): Promise<Response>;
 };
@@ -81,9 +82,14 @@ function getCanonicalArticleRenderRequest(request: Request) {
   return new Request(url, { method: "GET", headers, redirect: request.redirect });
 }
 
-export function getArticleEdgeCacheKey(pathname: string) {
+function normalizeArticleCacheVersion(version?: string) {
+  const normalized = version?.trim().replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 100);
+  return normalized || fallbackArticleCacheVersion;
+}
+
+export function getArticleEdgeCacheKey(pathname: string, version?: string) {
   const url = new URL(normalizeArticlePathname(pathname), canonicalSiteOrigin);
-  url.searchParams.set("__japannote_article_html", articleCacheVersion);
+  url.searchParams.set("__japannote_article_html", normalizeArticleCacheVersion(version));
   return new Request(url, { method: "GET" });
 }
 
@@ -203,7 +209,7 @@ export async function handleArticleEdgeCache(request: Request, options: ArticleE
     return withCacheHeaders(response, "BYPASS", { ssrWallMs });
   }
   const pathname = normalizeArticlePathname(new URL(request.url).pathname);
-  const cacheKey = getArticleEdgeCacheKey(pathname);
+  const cacheKey = getArticleEdgeCacheKey(pathname, options.cacheVersion);
   const cacheLookupStartedAt = performance.now();
   const cached = await options.cache.match(cacheKey);
   const cacheLookupMs = elapsed(cacheLookupStartedAt);
@@ -235,10 +241,10 @@ export function getArticleCacheInvalidationKeys(response: Response) {
   return Array.from(new Set(value.split(",").map((key) => key.trim()).filter((key) => isValidPublicArticleRouteKey(key))));
 }
 
-export async function purgeArticleEdgeCache(cache: WorkerCacheLike, routeKeys: string[]) {
+export async function purgeArticleEdgeCache(cache: WorkerCacheLike, routeKeys: string[], version?: string) {
   const keys = Array.from(new Set(routeKeys.filter((key) => isValidPublicArticleRouteKey(key))));
   const results = await Promise.all(keys.map((key) =>
-    cache.delete(getArticleEdgeCacheKey(`/notes/${encodeURIComponent(key)}`))
+    cache.delete(getArticleEdgeCacheKey(`/notes/${encodeURIComponent(key)}`, version))
   ));
   return results.filter(Boolean).length;
 }

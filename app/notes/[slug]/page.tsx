@@ -5,8 +5,7 @@ import { canonicalSiteOrigin } from "../../../lib/canonicalRequest";
 import HomeClient from "../../HomeClient";
 import { getNotePath, getNoteRouteKey } from "../noteTypes";
 import {
-  readLearningOverviewForPublicPage,
-  readPublicArticleContext,
+  readPublicArticlePageData,
   readPublishedNoteByRouteKey,
   readPublishedNotesForPublicPage
 } from "../../publicData";
@@ -100,14 +99,11 @@ export default async function NotePage({ params }: NotePageProps) {
   }
 
   timer.mark("related articles start");
-  const [articleContext, learningOverview] = await Promise.all([
-    readPublicArticleContext(note),
-    readLearningOverviewForPublicPage()
-  ]);
+  const articleData = await readPublicArticlePageData(note);
   timer.mark("related articles end", {
-    notes: articleContext.notes.length,
-    previous: Boolean(articleContext.previousNote),
-    next: Boolean(articleContext.nextNote)
+    notes: articleData.notes.length,
+    previous: Boolean(articleData.previousNote),
+    next: Boolean(articleData.nextNote)
   });
   timer.mark("article rendering", { blocks: note.blocks.length });
   timer.mark("waitUntil background tasks", { tasks: 0 });
@@ -117,16 +113,16 @@ export default async function NotePage({ params }: NotePageProps) {
     <HomeClient
       disableClientDataRefresh
       disableSiteStatsWrite
-      initialCategoryCounts={learningOverview.categoryCounts}
+      initialCategoryCounts={articleData.learningOverview.categoryCounts}
       initialLearningStats={{
-        currentLevel: learningOverview.currentLevel,
-        learningDays: learningOverview.learningDays,
+        currentLevel: articleData.learningOverview.currentLevel,
+        learningDays: articleData.learningOverview.learningDays,
         wordCount: 0
       }}
-      initialNextNote={articleContext.nextNote}
-      initialNoteTotal={articleContext.total}
-      initialNotes={articleContext.notes}
-      initialPreviousNote={articleContext.previousNote}
+      initialNextNote={articleData.nextNote}
+      initialNoteTotal={articleData.total}
+      initialNotes={articleData.notes}
+      initialPreviousNote={articleData.previousNote}
       initialSelectedNoteSlug={note.slug || String(note.id)}
     />
   );

@@ -71,9 +71,9 @@ const fetch = createSecurityFirstFetchHandler(
     const workerCache = getWorkerDefaultCache();
     const shouldCacheHomepage = request.method === "GET" && url.pathname === "/" && !url.searchParams.has("note");
     const shouldCacheNoteImage = request.method === "GET" && url.pathname === "/api/notes/og" && url.searchParams.has("slug");
-    const homepageVersion = env.CF_VERSION_METADATA?.id ?? "local";
+    const deploymentVersion = env.CF_VERSION_METADATA?.id ?? "local";
     const homepageCacheUrl = new URL("/", url.origin);
-    homepageCacheUrl.searchParams.set("__japannote_worker_version", homepageVersion);
+    homepageCacheUrl.searchParams.set("__japannote_worker_version", deploymentVersion);
     const sharedCacheKey = workerCache && (shouldCacheHomepage || shouldCacheNoteImage)
       ? new Request(shouldCacheHomepage ? homepageCacheUrl : url, { method: "GET" })
       : undefined;
@@ -89,7 +89,7 @@ const fetch = createSecurityFirstFetchHandler(
       const invalidationKeys = getArticleCacheInvalidationKeys(response);
 
       if (workerCache && invalidationKeys.length > 0) {
-        const purged = await purgeArticleEdgeCache(workerCache, invalidationKeys);
+        const purged = await purgeArticleEdgeCache(workerCache, invalidationKeys, deploymentVersion);
         console.log(JSON.stringify({
           source: "japannote",
           stage: "article-edge-cache",
@@ -105,7 +105,11 @@ const fetch = createSecurityFirstFetchHandler(
     };
 
     if (url.pathname.startsWith("/notes/")) {
-      return handleArticleEdgeCache(request, { cache: workerCache, render: renderWithOpenNext });
+      return handleArticleEdgeCache(request, {
+        cache: workerCache,
+        cacheVersion: deploymentVersion,
+        render: renderWithOpenNext
+      });
     }
 
     const response = await renderWithOpenNext(request);

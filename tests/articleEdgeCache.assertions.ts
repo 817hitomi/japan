@@ -177,6 +177,32 @@ assert.equal(
   getArticleEdgeCacheKey("/notes/n5-test").url,
   `${canonicalSiteOrigin}/notes/n5-test?__japannote_article_html=v2`
 );
+assert.equal(
+  getArticleEdgeCacheKey("/notes/n5-test", "deployment-123").url,
+  `${canonicalSiteOrigin}/notes/n5-test?__japannote_article_html=deployment-123`
+);
+
+const deploymentCache = new MemoryCache();
+let deploymentRenders = 0;
+const deploymentOptions = {
+  cache: deploymentCache,
+  logger: () => undefined,
+  render: async () => {
+    deploymentRenders += 1;
+    return new Response(`<html>deployment-${deploymentRenders}</html>`, {
+      headers: { "Content-Type": "text/html" }
+    });
+  }
+};
+await handleArticleEdgeCache(articleRequest("/notes/versioned"), {
+  ...deploymentOptions,
+  cacheVersion: "deploy-a"
+});
+await handleArticleEdgeCache(articleRequest("/notes/versioned"), {
+  ...deploymentOptions,
+  cacheVersion: "deploy-b"
+});
+assert.equal(deploymentRenders, 2, "a new deployment must not reuse stale article HTML");
 assert(logs.some((entry) => entry.cacheStatus === "MISS"));
 assert(logs.some((entry) => entry.cacheStatus === "HIT" && entry.ssrWallMs === 0));
 

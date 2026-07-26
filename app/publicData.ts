@@ -210,8 +210,7 @@ export type PublicLearningOverview = {
   learningDays: number;
 };
 
-export async function readLearningOverviewForPublicPage(): Promise<PublicLearningOverview> {
-  const notes = await readPublishedNotesForPublicPage();
+function buildLearningOverview(notes: PublicNoteRecord[]): PublicLearningOverview {
   const categoryCounts = new Map<string, number>();
   const firstDate = notes.map((note) => note.date).filter(Boolean).sort()[0];
   let learningDays = 0;
@@ -248,6 +247,10 @@ export async function readLearningOverviewForPublicPage(): Promise<PublicLearnin
     currentLevel,
     learningDays
   };
+}
+
+export async function readLearningOverviewForPublicPage(): Promise<PublicLearningOverview> {
+  return buildLearningOverview(await readPublishedNotesForPublicPage());
 }
 
 export async function readPublishedNoteCardsForHomePage(): Promise<PublicNoteRecord[]> {
@@ -415,6 +418,10 @@ export type PublicArticleContext = {
   total: number;
 };
 
+export type PublicArticlePageData = PublicArticleContext & {
+  learningOverview: PublicLearningOverview;
+};
+
 function mergeUniqueNotes(notes: PublicNoteRecord[], limit = publicArticleSidebarLimit) {
   const seen = new Set<number>();
   const merged: PublicNoteRecord[] = [];
@@ -495,6 +502,56 @@ export async function readPublicArticleContext(note: PublicNoteRecord): Promise<
       notes: [note],
       previousNote: null,
       nextNote: null,
+      total: 1
+    };
+  }
+}
+
+export async function readPublicArticlePageData(note: PublicNoteRecord): Promise<PublicArticlePageData> {
+  const timer = createRequestTimer("article page data", { route: "/notes/[slug]", noteId: note.id });
+
+  try {
+    const { rows, total } = await fetchSupabaseRowsWithCount<Parameters<typeof rowToNote>[0]>(
+      "learning_notes",
+      {
+        select: noteSummarySelect,
+        status: `eq.${publishedStatus}`,
+        order: "published_date.desc,id.desc"
+      },
+      { from: 0, to: publicNotesLimit - 1 }
+    );
+    const summaries = rows.map(rowToNote);
+    const newerNotes = summaries.filter((candidate) => candidate.date > note.date);
+    const olderNotes = summaries.filter((candidate) => candidate.date < note.date);
+    const previousNote = newerNotes[newerNotes.length - 1] ?? null;
+    const nextNote = olderNotes[0] ?? null;
+    const relatedNotes = note.category?.trim()
+      ? summaries.filter((candidate) => candidate.id !== note.id && candidate.category === note.category).slice(0, 6)
+      : [];
+    const latestNotes = summaries.filter((candidate) => candidate.id !== note.id).slice(0, 8);
+    const notes = mergeUniqueNotes([
+      note,
+      ...(previousNote ? [previousNote] : []),
+      ...(nextNote ? [nextNote] : []),
+      ...relatedNotes,
+      ...latestNotes
+    ]);
+
+    timer.end({ status: "ok", rows: summaries.length, related: notes.length, total });
+    return {
+      learningOverview: buildLearningOverview(summaries),
+      nextNote,
+      notes,
+      previousNote,
+      total: Math.max(total, summaries.length, notes.length)
+    };
+  } catch {
+    timer.end({ status: "fallback" });
+    return {
+      learningOverview: buildLearningOverview([note]),
+      nextNote: null,
+      notes: [note],
+      previousNote: null,
       total: 1
     };
   }
