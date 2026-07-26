@@ -95,6 +95,25 @@ export function getNotePath(note: Pick<PublicNoteRecord, "id" | "slug">) {
   return `/notes/${encodeURIComponent(getNoteRouteKey(note))}`;
 }
 
+export function preparePublicNoteCards(notes: PublicNoteRecord[]) {
+  const slugCounts = new Map<string, number>();
+
+  notes.forEach((note) => {
+    const slug = note.slug?.trim();
+    if (slug) slugCounts.set(slug, (slugCounts.get(slug) ?? 0) + 1);
+  });
+
+  return notes.map((note) => {
+    const slug = note.slug?.trim();
+    const routeNote = slug && (slugCounts.get(slug) ?? 0) > 1 ? { ...note, slug: "" } : note;
+
+    return {
+      ...routeNote,
+      coverUrl: `/api/notes/og?slug=${encodeURIComponent(getNoteRouteKey(routeNote))}`
+    };
+  });
+}
+
 export function findNoteByRouteKey(notes: PublicNoteRecord[], routeKey: string) {
   const key = decodeURIComponent(routeKey).trim();
   const numericId = Number(key);

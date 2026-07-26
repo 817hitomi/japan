@@ -5,7 +5,7 @@ import { createSupabaseReadClient } from "../lib/supabase/server";
 import { rowToNote } from "./api/notes/noteMapper";
 import { rowToWord } from "./api/words/wordMapper";
 import { getDailySelectionIndex } from "./dailySelection";
-import { getNoteRouteKey, PublicNoteRecord } from "./notes/noteTypes";
+import { preparePublicNoteCards, PublicNoteRecord } from "./notes/noteTypes";
 import { defaultQuotes, normalizeQuotes, QuoteRecord } from "./quotes/quoteTypes";
 import { getKanaRowKey, kanaRows, KanaRowKey, normalizeKanaRowKey } from "./words/kanaRows";
 import { normalizeWordCards, WordCardRecord } from "./words/wordTypes";
@@ -182,13 +182,6 @@ function rowToQuote(row: QuoteRow): QuoteRecord {
   ])[0];
 }
 
-export function withPublicNoteImageUrl(note: PublicNoteRecord): PublicNoteRecord {
-  return {
-    ...note,
-    coverUrl: `/api/notes/og?slug=${encodeURIComponent(getNoteRouteKey(note))}`
-  };
-}
-
 export async function readPublishedNotesForPublicPage(): Promise<PublicNoteRecord[]> {
   try {
     const rows = await fetchSupabaseRows<Parameters<typeof rowToNote>[0]>("learning_notes", {
@@ -266,7 +259,7 @@ export async function readPublishedNoteCardsForHomePage(): Promise<PublicNoteRec
       { useNextCache: true }
     );
 
-    return rows.map(rowToNote).map(withPublicNoteImageUrl);
+    return preparePublicNoteCards(rows.map(rowToNote));
   } catch {
     return [];
   }
@@ -316,7 +309,7 @@ export async function readPublishedNotesPage(options: {
     );
 
     return {
-      notes: result.rows.map(rowToNote).map(withPublicNoteImageUrl),
+      notes: preparePublicNoteCards(result.rows.map(rowToNote)),
       page,
       pageSize: publicNotesPageSize,
       total: result.total

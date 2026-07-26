@@ -3,12 +3,13 @@ import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { withArticleCacheInvalidation } from "../../../lib/articleCacheInvalidation";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
 import { requireAdminRoute } from "../../../lib/adminRouteAuth";
-import { getNoteRouteKey, PublicNoteRecord } from "../../notes/noteTypes";
+import { preparePublicNoteCards, PublicNoteRecord } from "../../notes/noteTypes";
 import { adminNoteListSelect, noteToPayload, rowToNote } from "./noteMapper";
 
 export const dynamic = "force-dynamic";
 const publicNotesLimit = 120;
 const publicNoteSummarySelect = "id,category,title,status,published_date,slug,tags,summary";
+const duplicateSlugMessage = "網址代稱已被其他文章使用，請改用不重複的網址代稱。";
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,15 +42,7 @@ export async function GET(request: NextRequest) {
 
     const rows = (data ?? []) as unknown as Parameters<typeof rowToNote>[0][];
     const notes = rows.map(rowToNote);
-    return NextResponse.json({
-      notes:
-        status === "published"
-          ? notes.map((note) => ({
-              ...note,
-              coverUrl: `/api/notes/og?slug=${encodeURIComponent(getNoteRouteKey(note))}`
-            }))
-          : notes
-    });
+    return NextResponse.json({ notes: status === "published" ? preparePublicNoteCards(notes) : notes });
   } catch (error) {
     return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load notes") }, { status: 500 });
   }
@@ -62,6 +55,21 @@ export async function POST(request: NextRequest) {
   try {
     const note = (await request.json()) as PublicNoteRecord;
     const supabase = createSupabaseAdminClient();
+    const slug = note.slug?.trim();
+
+    if (slug) {
+      const { data: duplicateNote, error: duplicateError } = await supabase
+        .from("learning_notes")
+        .select("id")
+        .eq("slug", slug)
+        .limit(1)
+        .maybeSingle();
+      if (duplicateError) throw duplicateError;
+      if (duplicateNote) {
+        return NextResponse.json({ error: duplicateSlugMessage }, { status: 409 });
+      }
+    }
+
     const { data, error } = await supabase
       .from("learning_notes")
       .insert(noteToPayload(note))

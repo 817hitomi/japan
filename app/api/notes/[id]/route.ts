@@ -7,6 +7,7 @@ import { PublicNoteRecord } from "../../../notes/noteTypes";
 import { adminNoteListSelect, noteToPayload, rowToNote } from "../noteMapper";
 
 export const dynamic = "force-dynamic";
+const duplicateSlugMessage = "網址代稱已被其他文章使用，請改用不重複的網址代稱。";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -52,6 +53,22 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     const note = (await request.json()) as PublicNoteRecord;
     const supabase = createSupabaseAdminClient();
+    const slug = note.slug?.trim();
+
+    if (slug) {
+      const { data: duplicateNote, error: duplicateError } = await supabase
+        .from("learning_notes")
+        .select("id")
+        .eq("slug", slug)
+        .neq("id", numericId)
+        .limit(1)
+        .maybeSingle();
+      if (duplicateError) throw duplicateError;
+      if (duplicateNote) {
+        return NextResponse.json({ error: duplicateSlugMessage }, { status: 409 });
+      }
+    }
+
     const { data: previousNote, error: readError } = await supabase
       .from("learning_notes")
       .select("id,slug")

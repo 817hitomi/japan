@@ -586,7 +586,15 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
       }
 
       if (mode === "new") {
+        setTitle("");
+        setSummary("");
+        setCategory("");
         setDate(new Date().toISOString().slice(0, 10));
+        setSlug("");
+        setTags("");
+        setCoverUrl("");
+        setBlocks(cloneBlocks(initialBlocks));
+        setLoaded(true);
         return;
       }
 
