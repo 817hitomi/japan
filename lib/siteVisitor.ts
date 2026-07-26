@@ -1,11 +1,17 @@
+import { readLocalStorage, writeLocalStorage } from "./browserStorage";
+
 export const visitorIdStorageKey = "japannote-visitor-id";
 
 export function getOrCreateVisitorId() {
-  let visitorId = window.localStorage.getItem(visitorIdStorageKey);
+  let visitorId = readLocalStorage(visitorIdStorageKey);
 
   if (!visitorId) {
-    visitorId = window.crypto.randomUUID();
-    window.localStorage.setItem(visitorIdStorageKey, visitorId);
+    try {
+      visitorId = window.crypto.randomUUID();
+    } catch {
+      visitorId = `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+    writeLocalStorage(visitorIdStorageKey, visitorId);
   }
 
   return visitorId;

@@ -171,27 +171,35 @@ function getCalendarDayStart(dateText: string) {
   return Date.UTC(year, month - 1, day);
 }
 
-function getLearningDays(notes: PublicNoteRecord[]) {
-  const dates = notes.map((note) => note.date).filter(Boolean).sort();
+function getLearningDays(notes: PublicNoteRecord[], currentDate?: string) {
+  const dates = (Array.isArray(notes) ? notes : []).map((note) => note?.date).filter(Boolean).sort();
   const start = dates[0] ? getCalendarDayStart(dates[0]) : null;
 
   if (start === null) {
     return 0;
   }
 
+  const currentDayStart = currentDate ? getCalendarDayStart(currentDate) : null;
   const now = new Date();
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const today = currentDayStart ?? Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   const elapsedDays = Math.floor((today - start) / 86_400_000) + 1;
 
   return Math.max(elapsedDays, 1);
 }
 
-function getFallbackLearningStats(notes: PublicNoteRecord[], words: WordCardRecord[], wordCount = words.length): HomeLearningStats {
-  const publishedNotes = notes.filter((note) => note.status === "已發布");
+function getFallbackLearningStats(
+  notes: PublicNoteRecord[],
+  words: WordCardRecord[],
+  wordCount = words.length,
+  currentDate?: string
+): HomeLearningStats {
+  const safeNotes = Array.isArray(notes) ? notes : [];
+  const safeWords = Array.isArray(words) ? words : [];
+  const publishedNotes = safeNotes.filter((note) => note?.status === "已發布");
 
   return {
-    currentLevel: getCurrentLevel(publishedNotes) === "-" ? getCurrentWordLevel(words) : getCurrentLevel(publishedNotes),
-    learningDays: getLearningDays(publishedNotes),
+    currentLevel: getCurrentLevel(publishedNotes) === "-" ? getCurrentWordLevel(safeWords) : getCurrentLevel(publishedNotes),
+    learningDays: getLearningDays(publishedNotes, currentDate),
     wordCount
   };
 }
@@ -397,17 +405,24 @@ export default function Home({
   initialWordTotal?: number;
   initialWords?: WordCardRecord[];
 }) {
+  const safeInitialNotes = useMemo(() => (Array.isArray(initialNotes) ? initialNotes : []), [initialNotes]);
+  const safeInitialWords = useMemo(() => (Array.isArray(initialWords) ? initialWords : []), [initialWords]);
+  const safeInitialQuotes = useMemo(
+    () => (Array.isArray(initialQuotes) && initialQuotes.length > 0 ? initialQuotes : defaultQuotes),
+    [initialQuotes]
+  );
   const initialNoteId = Number(initialSelectedNoteId);
   const initialSelectedNote =
     initialSelectedNoteSlug
-      ? initialNotes.find((note) => note.slug === initialSelectedNoteSlug || String(note.id) === initialSelectedNoteSlug) ?? null
+      ? safeInitialNotes.find((note) => note.slug === initialSelectedNoteSlug || String(note.id) === initialSelectedNoteSlug) ?? null
       : initialSelectedNoteId && Number.isFinite(initialNoteId)
-        ? initialNotes.find((note) => note.id === initialNoteId) ?? null
+        ? safeInitialNotes.find((note) => note.id === initialNoteId) ?? null
         : null;
-  const [notes, setNotes] = useState<PublicNoteRecord[]>(initialNotes);
-  const [words, setWords] = useState<WordCardRecord[]>(initialWords);
+  const [notes, setNotes] = useState<PublicNoteRecord[]>(safeInitialNotes);
+  const [words, setWords] = useState<WordCardRecord[]>(safeInitialWords);
   const [learningStats, setLearningStats] = useState<HomeLearningStats>(
-    initialLearningStats ?? getFallbackLearningStats(initialNotes, initialWords, initialWordTotal ?? initialWords.length)
+    initialLearningStats ??
+      getFallbackLearningStats(safeInitialNotes, safeInitialWords, initialWordTotal ?? safeInitialWords.length, initialDailySelectionKey)
   );
   const [currentNote, setCurrentNote] = useState<PublicNoteRecord | null>(initialSelectedNote);
   const [hasSelectedNote, setHasSelectedNote] = useState<boolean | null>(
@@ -437,8 +452,10 @@ export default function Home({
         return;
       }
 
-      const nextNotes = storedNotes.length > 0 || initialNotes.length === 0 ? storedNotes : initialNotes;
-      const nextWords = storedWords.words.length > 0 || initialWords.length === 0 ? storedWords.words : initialWords;
+      const safeStoredNotes = Array.isArray(storedNotes) ? storedNotes : [];
+      const safeStoredWords = Array.isArray(storedWords?.words) ? storedWords.words : [];
+      const nextNotes = safeStoredNotes.length > 0 || safeInitialNotes.length === 0 ? safeStoredNotes : safeInitialNotes;
+      const nextWords = safeStoredWords.length > 0 || safeInitialWords.length === 0 ? safeStoredWords : safeInitialWords;
       const nextWordCount = Math.max(storedWords.total, nextWords.length, initialWordTotal ?? 0);
       setNotes(nextNotes);
       setWords(nextWords);
@@ -462,7 +479,7 @@ export default function Home({
     return () => {
       active = false;
     };
-  }, [disableClientDataRefresh, disableNotesAndWordsRefresh, initialNotes, initialSelectedNote, initialSelectedNoteSlug, initialWordTotal, initialWords]);
+  }, [disableClientDataRefresh, disableNotesAndWordsRefresh, initialSelectedNote, initialSelectedNoteSlug, initialWordTotal, safeInitialNotes, safeInitialWords]);
 
   useEffect(() => {
     if (disableClientDataRefresh) {
@@ -568,7 +585,7 @@ export default function Home({
   );
 
   const categories = useMemo(() => {
-    if (initialCategoryCounts.length > 0) {
+    if (Array.isArray(initialCategoryCounts) && initialCategoryCounts.length > 0) {
       return initialCategoryCounts;
     }
 
@@ -676,10 +693,10 @@ export default function Home({
   if (hasSelectedNote !== true) {
     return (
       <NotesFrontClient
-        initialBoardItems={initialQuotes}
+        initialBoardItems={safeInitialQuotes}
         initialDailySelectionKey={initialDailySelectionKey}
-        initialNotes={initialNotes}
-        initialWords={initialWords}
+        initialNotes={safeInitialNotes}
+        initialWords={safeInitialWords}
         siteCount={siteCount}
       />
     );

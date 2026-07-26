@@ -1,6 +1,7 @@
 "use client";
 
 import { normalizeWordCards, seedWordCards, WordCardRecord } from "./wordTypes";
+import { readLocalStorage, writeLocalStorage } from "../../lib/browserStorage";
 
 const wordStorageKey = "japannote-word-cards";
 
@@ -37,9 +38,9 @@ export function readStoredWordCards() {
     return seedWordCards;
   }
 
-  const raw = window.localStorage.getItem(wordStorageKey);
+  const raw = readLocalStorage(wordStorageKey);
   if (!raw) {
-    window.localStorage.setItem(wordStorageKey, JSON.stringify(seedWordCards));
+    writeLocalStorage(wordStorageKey, JSON.stringify(seedWordCards));
     return seedWordCards;
   }
 
@@ -47,7 +48,7 @@ export function readStoredWordCards() {
     const words = normalizeWordCards(JSON.parse(raw));
 
     if (isOldDefaultCards(words) || isOldTrialCard(words)) {
-      window.localStorage.setItem(wordStorageKey, JSON.stringify(seedWordCards));
+      writeLocalStorage(wordStorageKey, JSON.stringify(seedWordCards));
       return seedWordCards;
     }
 
@@ -58,9 +59,7 @@ export function readStoredWordCards() {
 }
 
 export function writeStoredWordCards(words: WordCardRecord[]) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(wordStorageKey, JSON.stringify(normalizeWordCards(words)));
-  }
+  writeLocalStorage(wordStorageKey, JSON.stringify(normalizeWordCards(words)));
 }
 
 async function parseWordsResponse(response: Response) {

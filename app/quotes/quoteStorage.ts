@@ -2,6 +2,7 @@
 
 import { readApiError } from "../../lib/apiErrors";
 import { defaultQuotes, normalizeQuotes, QuoteRecord } from "./quoteTypes";
+import { readLocalStorage, writeLocalStorage } from "../../lib/browserStorage";
 
 const quoteStorageKey = "japannote-hero-board-cards";
 
@@ -17,9 +18,9 @@ export function readStoredQuotes() {
     return defaultQuotes;
   }
 
-  const raw = window.localStorage.getItem(quoteStorageKey);
+  const raw = readLocalStorage(quoteStorageKey);
   if (!raw) {
-    window.localStorage.setItem(quoteStorageKey, JSON.stringify(defaultQuotes));
+    writeLocalStorage(quoteStorageKey, JSON.stringify(defaultQuotes));
     return defaultQuotes;
   }
 
@@ -31,9 +32,7 @@ export function readStoredQuotes() {
 }
 
 export function writeStoredQuotes(quotes: QuoteRecord[]) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(quoteStorageKey, JSON.stringify(normalizeQuotes(quotes)));
-  }
+  writeLocalStorage(quoteStorageKey, JSON.stringify(normalizeQuotes(quotes)));
 }
 
 async function parseQuotesResponse(response: Response) {

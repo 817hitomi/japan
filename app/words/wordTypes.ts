@@ -36,7 +36,7 @@ export function normalizeWordCards(words: unknown, allowEmpty = false): WordCard
       const source = word as Partial<WordCardRecord>;
 
       return {
-        id: Number(source.id) || Date.now() + index,
+        id: Number(source.id) || -(index + 1),
         category: source.category || "N5",
         kana: source.kana || "",
         japanese: source.japanese || "",

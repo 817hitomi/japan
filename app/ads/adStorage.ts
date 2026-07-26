@@ -2,6 +2,7 @@
 
 import { AdSetting, defaultAdSettings, normalizeAdSettings } from "./adTypes";
 import { readApiError } from "../../lib/apiErrors";
+import { readLocalStorage, writeLocalStorage } from "../../lib/browserStorage";
 
 const adStorageKey = "japannote-ad-settings";
 
@@ -16,9 +17,9 @@ export function readStoredAds() {
     return defaultAdSettings;
   }
 
-  const raw = window.localStorage.getItem(adStorageKey);
+  const raw = readLocalStorage(adStorageKey);
   if (!raw) {
-    window.localStorage.setItem(adStorageKey, JSON.stringify(defaultAdSettings));
+    writeLocalStorage(adStorageKey, JSON.stringify(defaultAdSettings));
     return defaultAdSettings;
   }
 
@@ -30,9 +31,7 @@ export function readStoredAds() {
 }
 
 export function writeStoredAds(settings: AdSetting[]) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(adStorageKey, JSON.stringify(normalizeAdSettings(settings)));
-  }
+  writeLocalStorage(adStorageKey, JSON.stringify(normalizeAdSettings(settings)));
 }
 
 export async function fetchAdSettings() {

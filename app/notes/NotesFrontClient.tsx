@@ -16,6 +16,7 @@ import {
 } from "../dailySelection";
 import { defaultQuotes, QuoteRecord } from "../quotes/quoteTypes";
 import { readQuotesWithFallback } from "../quotes/quoteStorage";
+import HomeRuntimeErrorBoundary from "../HomeRuntimeErrorBoundary";
 import { readingsToSpeechText, renderWordRuby, shouldShowStandaloneKana, stripInlineReadings } from "../../lib/japaneseText";
 import homeStyles from "../page.module.scss";
 import styles from "./NotesFront.module.scss";
@@ -198,9 +199,9 @@ function HeroBoardCard({ item }: { item: QuoteRecord }) {
   );
 }
 
-function pickRandomBoardItem(items: QuoteRecord[]) {
+function selectInitialBoardItem(items: QuoteRecord[], dailySelectionKey: string) {
   const candidates = items.length > 0 ? items : defaultQuotes;
-  return candidates[Math.floor(Math.random() * candidates.length)] ?? defaultQuotes[0];
+  return selectDailyItems(candidates, 1, dailySelectionKey, "hero-board")[0] ?? defaultQuotes[0];
 }
 
 function ParallaxBackground() {
@@ -254,12 +255,19 @@ export default function NotesFrontClient({
   initialWords?: WordCardRecord[];
   siteCount: number;
 }) {
-  const [notes, setNotes] = useState<PublicNoteRecord[]>(initialNotes);
-  const [words, setWords] = useState<WordCardRecord[]>(initialWords);
-  const [boardItems, setBoardItems] = useState<QuoteRecord[]>(initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes);
   const [dailySelectionKey, setDailySelectionKey] = useState(initialDailySelectionKey);
+  const hasInitialBoardItems = Array.isArray(initialBoardItems) && initialBoardItems.length > 0;
+  const safeInitialBoardItems = useMemo(
+    () => (Array.isArray(initialBoardItems) && initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes),
+    [initialBoardItems]
+  );
+  const safeInitialNotes = useMemo(() => (Array.isArray(initialNotes) ? initialNotes : []), [initialNotes]);
+  const safeInitialWords = useMemo(() => (Array.isArray(initialWords) ? initialWords : []), [initialWords]);
+  const [notes, setNotes] = useState<PublicNoteRecord[]>(safeInitialNotes);
+  const [words, setWords] = useState<WordCardRecord[]>(safeInitialWords);
+  const [boardItems, setBoardItems] = useState<QuoteRecord[]>(safeInitialBoardItems);
   const [randomBoardItem, setRandomBoardItem] = useState<QuoteRecord>(() =>
-    pickRandomBoardItem(initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes)
+    selectInitialBoardItem(safeInitialBoardItems, initialDailySelectionKey)
   );
 
   useEffect(() => {
@@ -280,23 +288,23 @@ export default function NotesFrontClient({
 
     async function loadHomeData() {
       const [nextNotes, nextWords, nextQuotes] = await Promise.all([
-        initialNotes.length > 0 ? Promise.resolve(initialNotes) : readNotesWithFallback("published"),
-        initialWords.length > 0 ? Promise.resolve(initialWords) : readWordCardsWithFallback(),
-        initialBoardItems.length > 0 ? Promise.resolve(initialBoardItems) : readQuotesWithFallback()
+        safeInitialNotes.length > 0 ? Promise.resolve(safeInitialNotes) : readNotesWithFallback("published"),
+        safeInitialWords.length > 0 ? Promise.resolve(safeInitialWords) : readWordCardsWithFallback(),
+        hasInitialBoardItems ? Promise.resolve(safeInitialBoardItems) : readQuotesWithFallback()
       ]);
 
       if (!active) {
         return;
       }
 
-      const resolvedBoardItems = nextQuotes.length > 0 ? nextQuotes : initialBoardItems.length > 0 ? initialBoardItems : defaultQuotes;
+      const resolvedBoardItems = Array.isArray(nextQuotes) && nextQuotes.length > 0 ? nextQuotes : safeInitialBoardItems;
+      const resolvedNotes = Array.isArray(nextNotes) ? nextNotes : [];
+      const resolvedWords = Array.isArray(nextWords) ? nextWords : [];
 
-      setNotes(nextNotes.length > 0 || initialNotes.length === 0 ? nextNotes : initialNotes);
-      setWords(nextWords.length > 0 || initialWords.length === 0 ? nextWords : initialWords);
+      setNotes(resolvedNotes.length > 0 || safeInitialNotes.length === 0 ? resolvedNotes : safeInitialNotes);
+      setWords(resolvedWords.length > 0 || safeInitialWords.length === 0 ? resolvedWords : safeInitialWords);
       setBoardItems(resolvedBoardItems);
-      setRandomBoardItem((current) =>
-        resolvedBoardItems.some((item) => item.id === current.id) ? current : pickRandomBoardItem(resolvedBoardItems)
-      );
+      setRandomBoardItem(selectInitialBoardItem(resolvedBoardItems, dailySelectionKey));
     }
 
     loadHomeData();
@@ -304,7 +312,7 @@ export default function NotesFrontClient({
     return () => {
       active = false;
     };
-  }, [initialBoardItems, initialNotes, initialWords]);
+  }, [dailySelectionKey, hasInitialBoardItems, safeInitialBoardItems, safeInitialNotes, safeInitialWords]);
 
   const publishedNotes = useMemo(
     () =>
@@ -363,7 +371,9 @@ export default function NotesFrontClient({
           <div className={homeStyles.heroCopy}>
             <h1>日文筆記</h1>
             <p className={homeStyles.heroLead}>每天學習一點點</p>
-            <HeroBoardCard item={displayedBoardItem} />
+            <HomeRuntimeErrorBoundary fallback={<p className={styles.empty}>今日句子暫時無法顯示。</p>}>
+              <HeroBoardCard item={displayedBoardItem} />
+            </HomeRuntimeErrorBoundary>
           </div>
           <div className={homeStyles.heroArt}>
             <div className={homeStyles.dotGrid} aria-hidden="true" />
@@ -373,7 +383,9 @@ export default function NotesFrontClient({
         </div>
       </section>
 
-      <AdSlot slot="top-banner" className={homeStyles.adWide} />
+      <HomeRuntimeErrorBoundary fallback={null}>
+        <AdSlot slot="top-banner" className={homeStyles.adWide} />
+      </HomeRuntimeErrorBoundary>
 
       <div className={styles.notesLayout}>
         <section className={styles.homeSection}>
@@ -381,7 +393,9 @@ export default function NotesFrontClient({
           {latestNotes.length > 0 ? (
             <div className={styles.grid}>
               {latestNotes.map((note) => (
-                <NoteCard note={note} key={note.id} />
+                <HomeRuntimeErrorBoundary fallback={<p className={styles.empty}>文章卡片暫時無法顯示。</p>} key={note.id}>
+                  <NoteCard note={note} />
+                </HomeRuntimeErrorBoundary>
               ))}
             </div>
           ) : (
@@ -394,7 +408,9 @@ export default function NotesFrontClient({
           {randomWords.length > 0 ? (
             <div className={styles.wordGrid}>
               {randomWords.map((word) => (
-                <WordCard word={word} key={word.id} />
+                <HomeRuntimeErrorBoundary fallback={<p className={styles.empty}>單字卡片暫時無法顯示。</p>} key={word.id}>
+                  <WordCard word={word} />
+                </HomeRuntimeErrorBoundary>
               ))}
             </div>
           ) : (
@@ -402,14 +418,18 @@ export default function NotesFrontClient({
           )}
         </section>
 
-        <AdSlot slot="article-mid" className={homeStyles.adWide} />
+        <HomeRuntimeErrorBoundary fallback={null}>
+          <AdSlot slot="article-mid" className={homeStyles.adWide} />
+        </HomeRuntimeErrorBoundary>
 
         <section className={styles.homeSection}>
           <SectionTitle title="推薦筆記" />
           {recommendedNotes.length > 0 ? (
             <div className={styles.grid}>
               {recommendedNotes.map((note) => (
-                <NoteCard note={note} key={note.id} />
+                <HomeRuntimeErrorBoundary fallback={<p className={styles.empty}>文章卡片暫時無法顯示。</p>} key={note.id}>
+                  <NoteCard note={note} />
+                </HomeRuntimeErrorBoundary>
               ))}
             </div>
           ) : (
@@ -417,7 +437,9 @@ export default function NotesFrontClient({
           )}
         </section>
 
-        <AdSlot slot="article-bottom" className={homeStyles.adWide} />
+        <HomeRuntimeErrorBoundary fallback={null}>
+          <AdSlot slot="article-bottom" className={homeStyles.adWide} />
+        </HomeRuntimeErrorBoundary>
       </div>
 
       <SiteFooter />

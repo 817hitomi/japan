@@ -2,6 +2,7 @@
 
 import { normalizeNote, PublicNoteRecord, seedNotes } from "./noteTypes";
 import { readApiError } from "../../lib/apiErrors";
+import { readLocalStorage, writeLocalStorage } from "../../lib/browserStorage";
 
 export type { NoteBlockType, NoteContentBlock, PublicNoteRecord } from "./noteTypes";
 export { getNotePath, getNotePreviewImage, getNoteRouteKey, normalizeNote, seedNotes } from "./noteTypes";
@@ -26,9 +27,9 @@ export function readStoredNotes() {
     return seedNotes;
   }
 
-  const raw = window.localStorage.getItem(noteStorageKey);
+  const raw = readLocalStorage(noteStorageKey);
   if (!raw) {
-    window.localStorage.setItem(noteStorageKey, JSON.stringify(seedNotes));
+    writeLocalStorage(noteStorageKey, JSON.stringify(seedNotes));
     return seedNotes;
   }
 
@@ -41,7 +42,7 @@ export function readStoredNotes() {
 }
 
 export function writeStoredNotes(notes: PublicNoteRecord[]) {
-  window.localStorage.setItem(noteStorageKey, JSON.stringify(notes));
+  writeLocalStorage(noteStorageKey, JSON.stringify(Array.isArray(notes) ? notes : []));
 }
 
 async function parseNotesResponse(response: Response) {
@@ -163,13 +164,11 @@ export async function importStoredNotesToDatabase() {
 }
 
 export function hasImportedStoredNotes() {
-  return typeof window !== "undefined" && window.localStorage.getItem(noteImportCompletedKey) === "true";
+  return readLocalStorage(noteImportCompletedKey) === "true";
 }
 
 export function markStoredNotesImported() {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(noteImportCompletedKey, "true");
-  }
+  writeLocalStorage(noteImportCompletedKey, "true");
 }
 
 export async function deleteNotes(ids: number[]) {

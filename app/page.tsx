@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createRequestTimer } from "../lib/requestDiagnostics";
 import HomeClient from "./HomeClient";
+import HomeRuntimeErrorBoundary from "./HomeRuntimeErrorBoundary";
 import { getTaipeiDailySelectionKey } from "./dailySelection";
 import { readPublishedNoteCardsForHomePage, readQuotesForPublicPage, readWordsForHomePage } from "./publicData";
 
@@ -40,13 +41,15 @@ export default async function HomePage() {
   timer.end({ status: 200 });
 
   return (
-    <HomeClient
-      disableNotesAndWordsRefresh
-      initialNotes={notes}
-      initialQuotes={quotes}
-      initialDailySelectionKey={dailySelectionKey}
-      initialWordTotal={wordsResult.total}
-      initialWords={wordsResult.words}
-    />
+    <HomeRuntimeErrorBoundary>
+      <HomeClient
+        disableNotesAndWordsRefresh
+        initialNotes={notes}
+        initialQuotes={quotes}
+        initialDailySelectionKey={dailySelectionKey}
+        initialWordTotal={wordsResult.total}
+        initialWords={wordsResult.words}
+      />
+    </HomeRuntimeErrorBoundary>
   );
 }

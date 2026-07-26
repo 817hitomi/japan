@@ -60,7 +60,7 @@ export function normalizeQuotes(quotes: unknown, allowEmpty = false): QuoteRecor
       const defaultReading = defaultQuoteReadings.get(fallbackText.trim());
 
       return {
-        id: Number(source.id) || Date.now() + index,
+        id: Number(source.id) || -(index + 1),
         category: source.category?.trim() || "首頁白版",
         japanese: fallbackText.trim(),
         kana: source.kana?.trim() || defaultReading?.kana || "",

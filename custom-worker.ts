@@ -13,6 +13,7 @@ import { bridgedRuntimeEnvNames, getRuntimeEnvHeaderName } from "./lib/runtimeEn
 type WorkerEnvironment = {
   [key: string]: unknown;
   ASSETS?: { fetch(request: Request): Promise<Response> };
+  CF_VERSION_METADATA?: { id?: string; tag?: string; timestamp?: string };
 };
 
 type WorkerExecutionContext = { waitUntil(promise: Promise<unknown>): void };
@@ -70,8 +71,11 @@ const fetch = createSecurityFirstFetchHandler(
     const workerCache = getWorkerDefaultCache();
     const shouldCacheHomepage = request.method === "GET" && url.pathname === "/" && !url.searchParams.has("note");
     const shouldCacheNoteImage = request.method === "GET" && url.pathname === "/api/notes/og" && url.searchParams.has("slug");
+    const homepageVersion = env.CF_VERSION_METADATA?.id ?? "local";
+    const homepageCacheUrl = new URL("/", url.origin);
+    homepageCacheUrl.searchParams.set("__japannote_worker_version", homepageVersion);
     const sharedCacheKey = workerCache && (shouldCacheHomepage || shouldCacheNoteImage)
-      ? new Request(shouldCacheHomepage ? new URL("/", url.origin) : url, { method: "GET" })
+      ? new Request(shouldCacheHomepage ? homepageCacheUrl : url, { method: "GET" })
       : undefined;
 
     if (workerCache && sharedCacheKey) {
@@ -114,7 +118,9 @@ const fetch = createSecurityFirstFetchHandler(
     cacheableResponse.headers.delete("set-cookie");
     cacheableResponse.headers.set(
       "Cache-Control",
-      `public, s-maxage=${shouldCacheHomepage ? homepageCacheSeconds : noteImageCacheSeconds}, stale-while-revalidate=86400`
+      shouldCacheHomepage
+        ? `public, max-age=0, must-revalidate, s-maxage=${homepageCacheSeconds}, stale-while-revalidate=60`
+        : `public, s-maxage=${noteImageCacheSeconds}, stale-while-revalidate=86400`
     );
     context.waitUntil(workerCache.put(sharedCacheKey, cacheableResponse.clone()));
     return cacheableResponse;
