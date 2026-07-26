@@ -11,6 +11,7 @@ const sensitivePathSegments = new Set([
 const rootSensitiveDirectories = new Set(["src", "backup", "staging"]);
 const sensitiveEnvironmentFilePattern = /^\.env(?:\..+)?$/i;
 const blockedScannerSegments = new Set(["wp-admin", "wp-content", "wp-includes"]);
+const phpPathPattern = /\.php(?:\/|$)/i;
 
 type SecurityStage = "middleware-route" | "worker-route";
 type SecurityLogger = (message: string) => void;
@@ -102,10 +103,10 @@ export function isAcmeChallengePath(pathname: string) {
   return normalizeSecurityPathname(pathname).toLowerCase().startsWith("/.well-known/acme-challenge/");
 }
 export function isBlockedScannerPath(pathname: string) {
-  const normalized = normalizeSecurityPathname(pathname).toLowerCase();
-  const segments = normalized.split("/").filter(Boolean);
+  const normalized = normalizeSecurityPathname(pathname);
+  const segments = normalized.toLowerCase().split("/").filter(Boolean);
 
-  if (normalized.endsWith(".php")) return true;
+  if (phpPathPattern.test(normalized)) return true;
 
   return segments.some((segment) => blockedScannerSegments.has(segment));
 }

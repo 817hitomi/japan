@@ -50,6 +50,8 @@ const allowedPaths = [
   "/_next/image?url=%2Fbrand%2Flogo_b.png&w=64&q=75",
   "/admin",
   "/admin/notes",
+  "/api/site-stats",
+  "/api/admin/site-analytics",
   "/.github",
   "/articles/git",
   "/images/staging-photo.jpg",
@@ -57,11 +59,15 @@ const allowedPaths = [
 ];
 
 const blockedScannerPaths = [
+  "/mjq.php",
   "/wp-login.php",
   "/WP-LOGIN.PHP",
   "/index.php",
   "/nested/file.php",
   "/nested/file.php/",
+  "/folder/test.PHP",
+  "/shell.php?x=1",
+  "/file.php/path",
   "/wp-admin",
   "/wp-admin/",
   "/nested/wp-admin",
@@ -176,9 +182,11 @@ for (const path of blockedPaths) {
 }
 
 for (const path of blockedScannerPaths) {
-  assert(isBlockedScannerPath(path), `${path} must be classified as a scanner path`);
+  const requestUrl = `https://japan-note.com${path}`;
+  const pathname = new URL(requestUrl).pathname;
+  assert(isBlockedScannerPath(pathname), `${path} must be classified as a scanner path`);
   const callsBefore = downstreamCalls;
-  const response = await fetchHandler(new Request(`https://japan-note.com${path}`), {}, {});
+  const response = await fetchHandler(new Request(requestUrl), {}, {});
   const body = await response.text();
 
   assert(response.status === 404, `${path} must return 404`);
@@ -248,6 +256,16 @@ const middlewareSource = readFileSync(new URL("../middleware.ts", import.meta.ur
 assert(
   middlewareSource.indexOf("isDisallowedProductionHost(request)") < middlewareSource.indexOf("request.headers.set"),
   "middleware host rejection must run before request mutation, routing, auth, or Supabase"
+);
+assert(
+  middlewareSource.indexOf("isBlockedScannerPath(securityPathname)") <
+    middlewareSource.indexOf('createRequestTimer("middleware"'),
+  "middleware scanner rejection must run before routing, auth, Supabase, SSR, or internal fetches"
+);
+assert(
+  middlewareSource.indexOf("isBlockedScannerPath(securityPathname)") <
+    middlewareSource.indexOf("createServerClient(supabaseUrl"),
+  "middleware scanner rejection must run before creating a Supabase client"
 );
 
 const customWorkerSource = readFileSync(new URL("../custom-worker.ts", import.meta.url), "utf8");

@@ -4,8 +4,10 @@ import { evaluateAdminAccess } from "./lib/adminAuth";
 import { createRequestTimer } from "./lib/requestDiagnostics";
 import { getRuntimeEnv } from "./lib/runtimeEnv";
 import {
+  createBlockedScannerPathResponse,
   createBlockedSensitivePathResponse,
   createDisallowedHostResponse,
+  isBlockedScannerPath,
   isBlockedSensitivePath,
   isDisallowedProductionHost,
   normalizeSecurityPathname
@@ -40,7 +42,7 @@ function normalizePathname(pathname: string) {
 }
 
 function isBlockedProbePath(pathname: string) {
-  return pathname.toLowerCase().endsWith(".php") || blockedPathPatterns.some((pattern) => pattern.test(pathname));
+  return isBlockedScannerPath(pathname) || blockedPathPatterns.some((pattern) => pattern.test(pathname));
 }
 
 function isApiPath(pathname: string) {
@@ -140,6 +142,14 @@ export async function middleware(request: NextRequest) {
   const securityPathname = normalizeSecurityPathname(pathname);
   if (isBlockedSensitivePath(securityPathname)) {
     return createBlockedSensitivePathResponse(
+      securityPathname,
+      request.method,
+      "middleware-route",
+      startedAt
+    );
+  }
+  if (isBlockedScannerPath(securityPathname)) {
+    return createBlockedScannerPathResponse(
       securityPathname,
       request.method,
       "middleware-route",
