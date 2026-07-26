@@ -368,6 +368,7 @@ export default function Home({
   disableClientDataRefresh = false,
   disableNotesAndWordsRefresh = false,
   disableSiteStatsWrite = false,
+  initialCategoryCounts = [],
   initialDailySelectionKey,
   initialLearningStats,
   initialNoteTotal,
@@ -383,6 +384,7 @@ export default function Home({
   disableClientDataRefresh?: boolean;
   disableNotesAndWordsRefresh?: boolean;
   disableSiteStatsWrite?: boolean;
+  initialCategoryCounts?: Array<[string, number]>;
   initialDailySelectionKey?: string;
   initialLearningStats?: HomeLearningStats;
   initialNoteTotal?: number;
@@ -566,6 +568,10 @@ export default function Home({
   );
 
   const categories = useMemo(() => {
+    if (initialCategoryCounts.length > 0) {
+      return initialCategoryCounts;
+    }
+
     const counts = new Map<string, number>();
 
     publishedNotes.forEach((note) => {
@@ -579,7 +585,7 @@ export default function Home({
     });
 
     return Array.from(counts.entries()).sort(([first], [second]) => first.localeCompare(second, "zh-Hant"));
-  }, [publishedNotes]);
+  }, [initialCategoryCounts, publishedNotes]);
 
   const popularNotes = useMemo(() => publishedNotes.slice(0, 5), [publishedNotes]);
 

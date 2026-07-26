@@ -117,6 +117,7 @@ export default async function NotePage({ params }: NotePageProps) {
     <HomeClient
       disableClientDataRefresh
       disableSiteStatsWrite
+      initialCategoryCounts={learningOverview.categoryCounts}
       initialLearningStats={{
         currentLevel: learningOverview.currentLevel,
         learningDays: learningOverview.learningDays,

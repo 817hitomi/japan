@@ -205,14 +205,24 @@ export async function readPublishedNotesForPublicPage(): Promise<PublicNoteRecor
 }
 
 export type PublicLearningOverview = {
+  categoryCounts: Array<[string, number]>;
   currentLevel: string;
   learningDays: number;
 };
 
 export async function readLearningOverviewForPublicPage(): Promise<PublicLearningOverview> {
   const notes = await readPublishedNotesForPublicPage();
+  const categoryCounts = new Map<string, number>();
   const firstDate = notes.map((note) => note.date).filter(Boolean).sort()[0];
   let learningDays = 0;
+
+  notes.forEach((note) => {
+    const category = note.category?.trim();
+
+    if (category) {
+      categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
+    }
+  });
 
   if (firstDate) {
     const [year, month, day] = firstDate.slice(0, 10).split("-").map(Number);
@@ -231,7 +241,13 @@ export async function readLearningOverviewForPublicPage(): Promise<PublicLearnin
       .find(Boolean)
       ?.toUpperCase() ?? "-";
 
-  return { currentLevel, learningDays };
+  return {
+    categoryCounts: Array.from(categoryCounts.entries()).sort(([first], [second]) =>
+      first.localeCompare(second, "zh-Hant")
+    ),
+    currentLevel,
+    learningDays
+  };
 }
 
 export async function readPublishedNoteCardsForHomePage(): Promise<PublicNoteRecord[]> {
