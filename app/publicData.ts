@@ -24,6 +24,7 @@ const noteSummarySelect = "id,category,title,status,published_date,slug,tags";
 const noteListSelect = `${noteSummarySelect},summary`;
 const notePreviewSelect = `${noteListSelect},cover_url`;
 const noteFullSelect = `${noteListSelect},blocks`;
+const sitemapNoteSelect = "id,slug,updated_at";
 const wordSelect = "id,category,kana,japanese,chinese,example_japanese,example_chinese,audio_url,front_audio_url,back_audio_url";
 
 function getWorkerDefaultCache() {
@@ -240,6 +241,27 @@ function buildLearningOverview(notes: PublicNoteRecord[]): PublicLearningOvervie
     currentLevel,
     learningDays
   };
+}
+
+type PublishedSitemapNoteRow = {
+  id: number;
+  slug: string | null;
+  updated_at: string;
+};
+
+export async function readPublishedNotesForSitemap() {
+  const rows = await fetchSupabaseRows<PublishedSitemapNoteRow>("learning_notes", {
+    select: sitemapNoteSelect,
+    status: `eq.${publishedStatus}`,
+    order: "updated_at.desc,id.desc",
+    limit: "50000"
+  });
+
+  return rows.map((row) => ({
+    id: Number(row.id),
+    slug: row.slug ?? "",
+    updatedAt: row.updated_at
+  }));
 }
 
 export async function readLearningOverviewForPublicPage(): Promise<PublicLearningOverview> {

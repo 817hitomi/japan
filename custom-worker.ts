@@ -9,6 +9,7 @@ import {
 import { getCanonicalRedirect } from "./lib/canonicalRequest";
 import { getOAuthCallbackFallbackRedirect } from "./lib/oauthCallbackFallback";
 import { bridgedRuntimeEnvNames, getRuntimeEnvHeaderName } from "./lib/runtimeEnv";
+import { handleSitemapEdgeCache, purgeSitemapEdgeCache } from "./lib/sitemapEdgeCache";
 
 type WorkerEnvironment = {
   [key: string]: unknown;
@@ -89,13 +90,17 @@ const fetch = createSecurityFirstFetchHandler(
       const invalidationKeys = getArticleCacheInvalidationKeys(response);
 
       if (workerCache && invalidationKeys.length > 0) {
-        const purged = await purgeArticleEdgeCache(workerCache, invalidationKeys, deploymentVersion);
+        const [purged, sitemapPurged] = await Promise.all([
+          purgeArticleEdgeCache(workerCache, invalidationKeys, deploymentVersion),
+          purgeSitemapEdgeCache(workerCache, deploymentVersion)
+        ]);
         console.log(JSON.stringify({
           source: "japannote",
           stage: "article-edge-cache",
           branch: "purge",
           requested: invalidationKeys.length,
-          purged
+          purged,
+          sitemapPurged
         }));
         const headers = new Headers(response.headers);
         headers.delete("x-japannote-invalidate-article-cache");
@@ -106,6 +111,14 @@ const fetch = createSecurityFirstFetchHandler(
 
     if (url.pathname.startsWith("/notes/")) {
       return handleArticleEdgeCache(request, {
+        cache: workerCache,
+        cacheVersion: deploymentVersion,
+        render: renderWithOpenNext
+      });
+    }
+
+    if (url.pathname === "/sitemap.xml") {
+      return handleSitemapEdgeCache(request, {
         cache: workerCache,
         cacheVersion: deploymentVersion,
         render: renderWithOpenNext
