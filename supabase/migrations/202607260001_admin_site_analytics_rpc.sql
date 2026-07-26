@@ -97,10 +97,10 @@ as $$
     from valid_events
   )
   select jsonb_build_object(
-    'totalVisitors', (select count(*) from public.site_visitors),
-    'trackedVisitors', event_summary.tracked_visitors,
-    'totalViews', event_summary.total_views,
-    'processedRows', event_summary.total_views,
+    'totalVisitors', coalesce((select count(*) from public.site_visitors), 0),
+    'trackedVisitors', coalesce(event_summary.tracked_visitors, 0),
+    'totalViews', coalesce(event_summary.total_views, 0),
+    'processedRows', coalesce(event_summary.total_views, 0),
     'hourly', coalesce((
       select jsonb_agg(jsonb_build_object(
         'label', to_char(taipei_hour, 'MM/DD HH24:00'),
@@ -134,4 +134,6 @@ $$;
 revoke all on function public.get_admin_site_analytics(timestamptz, timestamptz, integer, integer) from public;
 revoke all on function public.get_admin_site_analytics(timestamptz, timestamptz, integer, integer) from anon;
 revoke all on function public.get_admin_site_analytics(timestamptz, timestamptz, integer, integer) from authenticated;
+grant select on table public.site_visitors to service_role;
+grant select on table public.site_visit_events to service_role;
 grant execute on function public.get_admin_site_analytics(timestamptz, timestamptz, integer, integer) to service_role;
