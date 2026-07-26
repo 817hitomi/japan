@@ -8,6 +8,10 @@ const migration = fs.readFileSync(
   new URL("../supabase/migrations/202607260001_admin_site_analytics_rpc.sql", import.meta.url),
   "utf8"
 );
+const signatureFixMigration = fs.readFileSync(
+  new URL("../supabase/migrations/20260726185342_fix_admin_site_analytics_rpc_signature.sql", import.meta.url),
+  "utf8"
+);
 
 assert.match(route, /\.rpc\("get_admin_site_analytics"/);
 assert.match(route, /catch \(error\) \{[\s\S]*?readFallbackAnalytics\(supabase, now\)/);
@@ -47,5 +51,23 @@ assert.match(migration, /security invoker/i);
 assert.match(migration, /grant select on table public\.site_visitors to service_role/i);
 assert.match(migration, /grant select on table public\.site_visit_events to service_role/i);
 assert.match(migration, /grant execute[\s\S]*service_role/i);
+
+assert.match(
+  signatureFixMigration,
+  /drop function if exists public\.get_admin_site_analytics\(timestamptz, timestamptz, integer, integer\)/i
+);
+assert.match(
+  signatureFixMigration,
+  /create function public\.get_admin_site_analytics\(\s*p_page_limit integer,\s*p_since timestamptz,\s*p_source_limit integer,\s*p_until timestamptz\s*\)/i
+);
+assert.match(
+  signatureFixMigration,
+  /revoke all on function public\.get_admin_site_analytics\(integer, timestamptz, integer, timestamptz\)[\s\S]*from public, anon, authenticated/i
+);
+assert.match(
+  signatureFixMigration,
+  /grant execute on function public\.get_admin_site_analytics\(integer, timestamptz, integer, timestamptz\)[\s\S]*to service_role/i
+);
+assert.match(signatureFixMigration, /notify pgrst, 'reload schema'/i);
 
 console.log("Admin analytics performance assertions passed.");
