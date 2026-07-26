@@ -1,0 +1,2327 @@
+{
+    "wallTime": 2,
+    "cpuTime": 1,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [],
+    "eventTimestamp": 1785024067455,
+    "event": {
+        "request": {
+            "url": "http://www.japan-note.com/notes/n5-grammar-wa-ja-arimasen",
+            "method": "GET",
+            "headers": {
+                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "accept-encoding": "gzip",
+                "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cache-control": "no-cache",
+                "cf-connecting-ip": "43.157.156.190",
+                "cf-ipcountry": "BR",
+                "cf-ray": "a20f20c569bfa417",
+                "cf-visitor": "{\"scheme\":\"http\"}",
+                "connection": "Keep-Alive",
+                "host": "www.japan-note.com",
+                "pragma": "no-cache",
+                "upgrade-insecure-requests": "1",
+                "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
+                "x-forwarded-proto": "http",
+                "x-real-ip": "43.157.156.190"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/1.1",
+                "clientAcceptEncoding": "gzip",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 1,
+                "clientQuicRtt": 0,
+                "colo": "GRU",
+                "asn": 132203,
+                "asOrganization": "6 COLLYER QUAY",
+                "country": "BR",
+                "isEUCountry": false,
+                "city": "São Paulo",
+                "continent": "SA",
+                "region": "São Paulo",
+                "regionCode": "SP",
+                "timezone": "America/Sao_Paulo",
+                "longitude": "-46.63611",
+                "latitude": "-23.5475",
+                "postalCode": "01000-000",
+                "tlsVersion": "",
+                "tlsCipher": "",
+                "tlsClientRandom": "",
+                "tlsClientCiphersSha1": "",
+                "tlsClientExtensionsSha1": "",
+                "tlsClientExtensionsSha1Le": "",
+                "tlsClientHelloLength": "0",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 0
+                }
+            }
+        },
+        "response": {
+            "status": 308
+        }
+    }
+}
+{
+    "wallTime": 18,
+    "cpuTime": 2,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"article-edge-cache\",\"pathname\":\"/notes/n5-grammar-wa-ja-arimasen\",\"method\":\"GET\",\"cacheStatus\":\"HIT\",\"cacheLookupMs\":16,\"cacheWriteMs\":0,\"ssrWallMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024070362
+        }
+    ],
+    "eventTimestamp": 1785024070079,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/notes/n5-grammar-wa-ja-arimasen",
+            "method": "GET",
+            "headers": {
+                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cache-control": "no-cache",
+                "cf-connecting-ip": "43.157.156.190",
+                "cf-ipcountry": "BR",
+                "cf-ray": "a20f20d5eb77c6c1",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "host": "www.japan-note.com",
+                "pragma": "no-cache",
+                "referer": "http://www.japan-note.com/notes/n5-grammar-wa-ja-arimasen#article-section-4",
+                "upgrade-insecure-requests": "1",
+                "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "43.157.156.190"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/1.1",
+                "clientAcceptEncoding": "gzip",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 1,
+                "clientQuicRtt": 0,
+                "colo": "GRU",
+                "asn": 132203,
+                "asOrganization": "6 COLLYER QUAY",
+                "country": "BR",
+                "isEUCountry": false,
+                "city": "São Paulo",
+                "continent": "SA",
+                "region": "São Paulo",
+                "regionCode": "SP",
+                "timezone": "America/Sao_Paulo",
+                "longitude": "-46.63611",
+                "latitude": "-23.5475",
+                "postalCode": "01000-000",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "oiHuRM1GtGkOgj8vCSvuO8TN9AJ1ibJvziH+1KgG2eQ=",
+                "tlsClientCiphersSha1": "QrF6UadKW3vtNOqdNqbd4frxxxE=",
+                "tlsClientExtensionsSha1": "aWVCohOefx9sYmnLzIkGYW/Cb9M=",
+                "tlsClientExtensionsSha1Le": "G5t+uwtBmY9hJOvSdB/+WgzrvyI=",
+                "tlsExportedAuthenticator": {
+                    "clientHandshake": "d8f1fe1418ad5655b39a4b521bd7c5f2bb1b948ffdfb6f6cf0168527020ede3c",
+                    "serverHandshake": "f262738b44ea76ed10c7026f1a15f213ec0ebf3a75b69d8eb5cda6ab92b9822b",
+                    "clientFinished": "d9a2663aa6390e339caf0f4a2ff450b79f11b0591d3c8dabd59defc5e9838270",
+                    "serverFinished": "eee10826696ad67ebde21e33aa3cca31eece12f349c744be33e507f007800589"
+                },
+                "tlsClientHelloLength": "1471",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 2318555
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}
+{
+    "wallTime": 1044,
+    "cpuTime": 216,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"middleware-route\",\"pathname\":\"/admin\",\"method\":\"GET\",\"branch\":\"protected-unauthorized\",\"status\":401,\"elapsedMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024256133
+        }
+    ],
+    "eventTimestamp": 1785024255909,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/admin",
+            "method": "GET",
+            "headers": {
+                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f255f593ac390",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "cookie": "REDACTED",
+                "host": "www.japan-note.com",
+                "priority": "u=0, i",
+                "referer": "https://www.japan-note.com/?code=3950c205-8a61-4705-a197-8378d18f8521",
+                "sec-ch-ua": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "document",
+                "sec-fetch-mode": "navigate",
+                "sec-fetch-site": "same-origin",
+                "sec-fetch-user": "?1",
+                "upgrade-insecure-requests": "1",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 92,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "SvmOpMNVjHLaH9B3sUxbzRiaRKdSrWaFeqaFZ0rXBYA=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "pI6svidxr6iUoYGf8T00fdHzo1w=",
+                "tlsClientExtensionsSha1Le": "Je/te4RiNjfm6V+tN4z+HhKP3lI=",
+                "tlsClientHelloLength": "1736",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 15807
+                }
+            }
+        },
+        "response": {
+            "status": 401
+        }
+    }
+}
+{
+    "wallTime": 0,
+    "cpuTime": 0,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [],
+    "eventTimestamp": 1785024258348,
+    "event": {
+        "request": {
+            "url": "https://japan-note.com/sw.js",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cache-control": "max-age=0",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f256eabbdc390",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "cookie": "REDACTED",
+                "host": "japan-note.com",
+                "priority": "u=4, i",
+                "referer": "https://japan-note.com/sw.js",
+                "sec-fetch-dest": "serviceworker",
+                "sec-fetch-mode": "same-origin",
+                "sec-fetch-site": "same-origin",
+                "service-worker": "script",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 95,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "SvmOpMNVjHLaH9B3sUxbzRiaRKdSrWaFeqaFZ0rXBYA=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "pI6svidxr6iUoYGf8T00fdHzo1w=",
+                "tlsClientExtensionsSha1Le": "Je/te4RiNjfm6V+tN4z+HhKP3lI=",
+                "tlsClientHelloLength": "1736",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 76878
+                }
+            }
+        },
+        "response": {
+            "status": 308
+        }
+    }
+}
+{
+    "wallTime": 0,
+    "cpuTime": 0,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [],
+    "eventTimestamp": 1785024259852,
+    "event": {
+        "request": {
+            "url": "https://japan-note.com/?code=REDACTED",
+            "method": "GET",
+            "headers": {
+                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f25780d5dc390",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "cookie": "REDACTED",
+                "host": "japan-note.com",
+                "priority": "u=0, i",
+                "referer": "https://www.japan-note.com/",
+                "sec-ch-ua": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "document",
+                "sec-fetch-mode": "navigate",
+                "sec-fetch-site": "cross-site",
+                "sec-fetch-user": "?1",
+                "upgrade-insecure-requests": "1",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 96,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "SvmOpMNVjHLaH9B3sUxbzRiaRKdSrWaFeqaFZ0rXBYA=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "pI6svidxr6iUoYGf8T00fdHzo1w=",
+                "tlsClientExtensionsSha1Le": "Je/te4RiNjfm6V+tN4z+HhKP3lI=",
+                "tlsClientHelloLength": "1736",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 76878
+                }
+            }
+        },
+        "response": {
+            "status": 308
+        }
+    }
+}
+{
+    "wallTime": 510,
+    "cpuTime": 74,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"middleware-route\",\"pathname\":\"/\",\"method\":\"GET\",\"branch\":\"next\",\"status\":200,\"elapsedMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024259968
+        }
+    ],
+    "eventTimestamp": 1785024259962,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/?code=REDACTED",
+            "method": "GET",
+            "headers": {
+                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f2578bd7ec390",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "cookie": "REDACTED",
+                "host": "www.japan-note.com",
+                "priority": "u=0, i",
+                "referer": "https://www.japan-note.com/",
+                "sec-ch-ua": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "document",
+                "sec-fetch-mode": "navigate",
+                "sec-fetch-site": "cross-site",
+                "sec-fetch-user": "?1",
+                "upgrade-insecure-requests": "1",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 96,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "SvmOpMNVjHLaH9B3sUxbzRiaRKdSrWaFeqaFZ0rXBYA=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "pI6svidxr6iUoYGf8T00fdHzo1w=",
+                "tlsClientExtensionsSha1Le": "Je/te4RiNjfm6V+tN4z+HhKP3lI=",
+                "tlsClientHelloLength": "1736",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 76878
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}
+{
+    "wallTime": 558,
+    "cpuTime": 38,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"middleware-route\",\"pathname\":\"/api/ads\",\"method\":\"GET\",\"branch\":\"next\",\"status\":200,\"elapsedMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024260743
+        }
+    ],
+    "eventTimestamp": 1785024260743,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/api/ads",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cache-control": "no-cache",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f257d9e47c390",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "cookie": "REDACTED",
+                "host": "www.japan-note.com",
+                "pragma": "no-cache",
+                "priority": "u=1, i",
+                "referer": "https://www.japan-note.com/?code=c4675672-15f1-45c5-910e-b9bdfe8f766c",
+                "sec-ch-ua": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 93,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "SvmOpMNVjHLaH9B3sUxbzRiaRKdSrWaFeqaFZ0rXBYA=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "pI6svidxr6iUoYGf8T00fdHzo1w=",
+                "tlsClientExtensionsSha1Le": "Je/te4RiNjfm6V+tN4z+HhKP3lI=",
+                "tlsClientHelloLength": "1736",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 159761
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}
+{
+    "wallTime": 347,
+    "cpuTime": 16,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"middleware-route\",\"pathname\":\"/api/home-stats\",\"method\":\"GET\",\"branch\":\"next\",\"status\":200,\"elapsedMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024261136
+        }
+    ],
+    "eventTimestamp": 1785024260746,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/api/home-stats",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cache-control": "no-cache",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f257dae4ec390",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "cookie": "REDACTED",
+                "host": "www.japan-note.com",
+                "pragma": "no-cache",
+                "priority": "u=1, i",
+                "referer": "https://www.japan-note.com/?code=c4675672-15f1-45c5-910e-b9bdfe8f766c",
+                "sec-ch-ua": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 93,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "SvmOpMNVjHLaH9B3sUxbzRiaRKdSrWaFeqaFZ0rXBYA=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "pI6svidxr6iUoYGf8T00fdHzo1w=",
+                "tlsClientExtensionsSha1Le": "Je/te4RiNjfm6V+tN4z+HhKP3lI=",
+                "tlsClientHelloLength": "1736",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 159761
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}
+{
+    "wallTime": 352,
+    "cpuTime": 13,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"middleware-route\",\"pathname\":\"/api/site-stats\",\"method\":\"POST\",\"branch\":\"next\",\"status\":200,\"elapsedMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024261151
+        }
+    ],
+    "eventTimestamp": 1785024260744,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/api/site-stats",
+            "method": "POST",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cache-control": "no-cache",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f257dae48c390",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "content-length": "52",
+                "content-type": "application/json",
+                "cookie": "REDACTED",
+                "host": "www.japan-note.com",
+                "origin": "https://www.japan-note.com",
+                "pragma": "no-cache",
+                "priority": "u=1, i",
+                "referer": "https://www.japan-note.com/?code=c4675672-15f1-45c5-910e-b9bdfe8f766c",
+                "sec-ch-ua": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 93,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "SvmOpMNVjHLaH9B3sUxbzRiaRKdSrWaFeqaFZ0rXBYA=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "pI6svidxr6iUoYGf8T00fdHzo1w=",
+                "tlsClientExtensionsSha1Le": "Je/te4RiNjfm6V+tN4z+HhKP3lI=",
+                "tlsClientHelloLength": "1736",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 159761
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}
+{
+    "wallTime": 418,
+    "cpuTime": 12,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"middleware-route\",\"pathname\":\"/api/site-page-view\",\"method\":\"POST\",\"branch\":\"next\",\"status\":200,\"elapsedMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024261153
+        }
+    ],
+    "eventTimestamp": 1785024260745,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/api/site-page-view",
+            "method": "POST",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cache-control": "no-cache",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f257dae4bc390",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "content-length": "195",
+                "content-type": "application/json",
+                "cookie": "REDACTED",
+                "host": "www.japan-note.com",
+                "origin": "https://www.japan-note.com",
+                "pragma": "no-cache",
+                "priority": "u=1, i",
+                "referer": "https://www.japan-note.com/?code=c4675672-15f1-45c5-910e-b9bdfe8f766c",
+                "sec-ch-ua": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 93,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "SvmOpMNVjHLaH9B3sUxbzRiaRKdSrWaFeqaFZ0rXBYA=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "pI6svidxr6iUoYGf8T00fdHzo1w=",
+                "tlsClientExtensionsSha1Le": "Je/te4RiNjfm6V+tN4z+HhKP3lI=",
+                "tlsClientHelloLength": "1736",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 159761
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}
+{
+    "wallTime": 774,
+    "cpuTime": 171,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"middleware-route\",\"pathname\":\"/api/ads\",\"method\":\"GET\",\"branch\":\"next\",\"status\":200,\"elapsedMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024260964
+        }
+    ],
+    "eventTimestamp": 1785024260745,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/api/ads",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cache-control": "no-cache",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f257dae4cc390",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "cookie": "REDACTED",
+                "host": "www.japan-note.com",
+                "pragma": "no-cache",
+                "priority": "u=1, i",
+                "referer": "https://www.japan-note.com/?code=c4675672-15f1-45c5-910e-b9bdfe8f766c",
+                "sec-ch-ua": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 93,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "SvmOpMNVjHLaH9B3sUxbzRiaRKdSrWaFeqaFZ0rXBYA=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "pI6svidxr6iUoYGf8T00fdHzo1w=",
+                "tlsClientExtensionsSha1Le": "Je/te4RiNjfm6V+tN4z+HhKP3lI=",
+                "tlsClientHelloLength": "1736",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 159761
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}
+{
+    "wallTime": 820,
+    "cpuTime": 15,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"middleware-route\",\"pathname\":\"/api/ads\",\"method\":\"GET\",\"branch\":\"next\",\"status\":200,\"elapsedMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024261145
+        }
+    ],
+    "eventTimestamp": 1785024260746,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/api/ads",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cache-control": "no-cache",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f257dae4dc390",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "cookie": "REDACTED",
+                "host": "www.japan-note.com",
+                "pragma": "no-cache",
+                "priority": "u=1, i",
+                "referer": "https://www.japan-note.com/?code=c4675672-15f1-45c5-910e-b9bdfe8f766c",
+                "sec-ch-ua": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 93,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "SvmOpMNVjHLaH9B3sUxbzRiaRKdSrWaFeqaFZ0rXBYA=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "pI6svidxr6iUoYGf8T00fdHzo1w=",
+                "tlsClientExtensionsSha1Le": "Je/te4RiNjfm6V+tN4z+HhKP3lI=",
+                "tlsClientHelloLength": "1736",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 159761
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}
+{
+    "wallTime": 0,
+    "cpuTime": 0,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [],
+    "eventTimestamp": 1785024290949,
+    "event": {
+        "request": {
+            "url": "https://japan-note.com/sw.js",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cache-control": "max-age=0",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f263a6bafc390",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "cookie": "REDACTED",
+                "host": "japan-note.com",
+                "priority": "u=4, i",
+                "referer": "https://japan-note.com/sw.js",
+                "sec-fetch-dest": "serviceworker",
+                "sec-fetch-mode": "same-origin",
+                "sec-fetch-site": "same-origin",
+                "service-worker": "script",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 95,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "SvmOpMNVjHLaH9B3sUxbzRiaRKdSrWaFeqaFZ0rXBYA=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "pI6svidxr6iUoYGf8T00fdHzo1w=",
+                "tlsClientExtensionsSha1Le": "Je/te4RiNjfm6V+tN4z+HhKP3lI=",
+                "tlsClientHelloLength": "1736",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 6457200
+                }
+            }
+        },
+        "response": {
+            "status": 308
+        }
+    }
+}
+{
+    "wallTime": 14,
+    "cpuTime": 1,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [],
+    "eventTimestamp": 1785024313521,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/favicon.ico",
+            "method": "GET",
+            "headers": {
+                "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f26c76f9c40f5",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "host": "www.japan-note.com",
+                "if-none-match": "\"1d940a89cd3a3f8cabc8b56e98cb34c8\"",
+                "priority": "u=1, i",
+                "sec-ch-ua": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "image",
+                "sec-fetch-mode": "no-cors",
+                "sec-fetch-site": "cross-site",
+                "sec-fetch-storage-access": "active",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 140,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "HETzPG276EVouqBuCn+r4sAPiYzzmzIokyZ93wNRTf8=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "LVcG0ygaWRBAcCXMHanoBm847yk=",
+                "tlsClientExtensionsSha1Le": "5udorq9WCJcS5zzc4Iwar3PqExY=",
+                "tlsClientHelloLength": "1734",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 10460
+                }
+            }
+        },
+        "response": {
+            "status": 304
+        }
+    }
+}
+{
+    "wallTime": 1,
+    "cpuTime": 1,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [],
+    "eventTimestamp": 1785024407121,
+    "event": {
+        "request": {
+            "url": "http://www.japan-note.com/terms",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip",
+                "accept-language": "zh-cn,zh-tw",
+                "cf-connecting-ip": "116.179.32.41",
+                "cf-ipcountry": "CN",
+                "cf-ray": "a20f29104cdf2a8b",
+                "cf-visitor": "{\"scheme\":\"http\"}",
+                "connection": "Keep-Alive",
+                "host": "www.japan-note.com",
+                "user-agent": "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)",
+                "x-forwarded-proto": "http",
+                "x-real-ip": "116.179.32.41"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/1.1",
+                "clientAcceptEncoding": "gzip",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 179,
+                "clientQuicRtt": 0,
+                "colo": "LAX",
+                "asn": 4837,
+                "asOrganization": "China United Network Communications Corporation Limited",
+                "country": "CN",
+                "isEUCountry": false,
+                "city": "Taiyuan",
+                "continent": "AS",
+                "region": "Shanxi",
+                "regionCode": "SX",
+                "timezone": "Asia/Shanghai",
+                "longitude": "112.56028",
+                "latitude": "37.86944",
+                "postalCode": "030000",
+                "tlsVersion": "",
+                "tlsCipher": "",
+                "tlsClientRandom": "",
+                "tlsClientCiphersSha1": "",
+                "tlsClientExtensionsSha1": "",
+                "tlsClientExtensionsSha1Le": "",
+                "tlsClientHelloLength": "0",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "Search Engine Crawler",
+                "edgeL4": {
+                    "deliveryRate": 0
+                }
+            }
+        },
+        "response": {
+            "status": 308
+        }
+    }
+}
+{
+    "wallTime": 1456,
+    "cpuTime": 235,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"middleware-route\",\"pathname\":\"/terms\",\"method\":\"GET\",\"branch\":\"next\",\"status\":200,\"elapsedMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024408403
+        }
+    ],
+    "eventTimestamp": 1785024408160,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/terms",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-cn,zh-tw",
+                "cf-connecting-ip": "116.179.32.112",
+                "cf-ipcountry": "CN",
+                "cf-ray": "a20f2916ec7f6414",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "host": "www.japan-note.com",
+                "user-agent": "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "116.179.32.112"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/2",
+                "clientAcceptEncoding": "gzip",
+                "requestPriority": "weight=16;exclusive=0;group=0;group-weight=0",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 193,
+                "clientQuicRtt": 0,
+                "colo": "LAX",
+                "asn": 4837,
+                "asOrganization": "China United Network Communications Corporation Limited",
+                "country": "CN",
+                "isEUCountry": false,
+                "city": "Taiyuan",
+                "continent": "AS",
+                "region": "Shanxi",
+                "regionCode": "SX",
+                "timezone": "Asia/Shanghai",
+                "longitude": "112.56028",
+                "latitude": "37.86944",
+                "postalCode": "030000",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES256-GCM-SHA384",
+                "tlsClientRandom": "9DN9RsZwRrh53t2QTYfSMwMPzu5ETQ6gq7sPQkTcQjU=",
+                "tlsClientCiphersSha1": "GXSPDLP4G3X+prK73a4wBuOaHRc=",
+                "tlsClientExtensionsSha1": "tlH5gnoC5Z1HF45J5OgHEi338V0=",
+                "tlsClientExtensionsSha1Le": "mRCkyUCRFDTLCNHGQsZNFhkU1/4=",
+                "tlsExportedAuthenticator": {
+                    "clientHandshake": "9a9b72d146bff1bb84e093a726a9f7fb2b700402ec2f54d6de9acdf3d35770b9d9c05a5d4d70317314fd11daae06b19b",
+                    "serverHandshake": "86bc0c595dadbc3b60cf55e899151300921994d6ed0b11873d133c5eecb9fc55a5f91f2cb5cdf2cb6d41d06871707c0b",
+                    "clientFinished": "13061c1f0d92ba85f4214d3e6807fef7ef24bf45ff82d4e59747590d451e57f7fb14859d219341919f78defa15556206",
+                    "serverFinished": "8c74885e42874de6910a608c18d7344f39e69d5a062730fd86000813d38c6120a351e7b7ff157733895a39c3f517db73"
+                },
+                "tlsClientHelloLength": "508",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "Search Engine Crawler",
+                "edgeL4": {
+                    "deliveryRate": 14725
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}
+{
+    "wallTime": 200,
+    "cpuTime": 189,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "6de1fc87-3ac9-48a5-b28e-f64fc675d9b5"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"middleware-route\",\"pathname\":\"/robots.txt\",\"method\":\"GET\",\"branch\":\"next\",\"status\":200,\"elapsedMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024411739
+        }
+    ],
+    "eventTimestamp": 1785024411474,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/robots.txt",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "cf-connecting-ip": "216.73.216.7",
+                "cf-ipcountry": "US",
+                "cf-ray": "a20f292ba9ddfa14",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "host": "www.japan-note.com",
+                "user-agent": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@anthropic.com)",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "216.73.216.7"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/2",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "weight=16;exclusive=0;group=0;group-weight=0",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 1,
+                "clientQuicRtt": 0,
+                "colo": "CMH",
+                "asn": 16509,
+                "asOrganization": "Anthropic, PBC",
+                "country": "US",
+                "isEUCountry": false,
+                "city": "Columbus",
+                "continent": "NA",
+                "region": "Ohio",
+                "regionCode": "OH",
+                "timezone": "America/New_York",
+                "longitude": "-82.99879",
+                "latitude": "39.96118",
+                "postalCode": "43215",
+                "metroCode": "535",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES256-GCM-SHA384",
+                "tlsClientRandom": "vG6TpkZStqXtJA5UNiWc/ovlzbCbWiHJ0b7E4jY4jLE=",
+                "tlsClientCiphersSha1": "WUS9+h7TjVkF9aEouGuCEMjGQGA=",
+                "tlsClientExtensionsSha1": "vsREcYyUTKoJDmfY87saMDy33lM=",
+                "tlsClientExtensionsSha1Le": "9uXsNZUDuMuKe1Eteitzk6VXWPg=",
+                "tlsExportedAuthenticator": {
+                    "clientHandshake": "09040f51ae6bd889c4164a40f3a83b9f8dd57502588c7dc4c6abea07ad2c65ba7a630911b4a892d3edaf5a3a01954277",
+                    "serverHandshake": "495d5a804f3dd0c737e7e66fe2fb80f507626ace7e7e6ca056a3df4c70df7aef79b3e91dbd006df0b7e2baec819987e4",
+                    "clientFinished": "7d425bec48dfb8799cf347ac5d9d41a9167804d879664b0e906dfd9df86ea3eb9202824608854820751fcbdc462849d6",
+                    "serverFinished": "668865bf9f46a90f4ddc8d81b3b7273f47aa3f4f69ae8c47b62d01d2ea934dbf475425f7ae8e317d09f6602b77f847c4"
+                },
+                "tlsClientHelloLength": "254",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "AI Assistant",
+                "edgeL4": {
+                    "deliveryRate": 2033707
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}
+{
+    "wallTime": 0,
+    "cpuTime": 0,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "1323ebbd-ba54-4101-84ca-81e3e69ccae0"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [],
+    "eventTimestamp": 1785024512890,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/?code=codex-probe",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "cf-connecting-ip": "114.36.245.63",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f2ba57e68fd69",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "host": "www.japan-note.com",
+                "user-agent": "curl/8.21.0",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "114.36.245.63"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/1.1",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 192,
+                "clientQuicRtt": 0,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "Chunghwa Telecom Data Communication Business Group",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES256-GCM-SHA384",
+                "tlsClientRandom": "bBg+lIlEKBFMAQ9jsIRcENW2qVCieVHhwAOiH3O+wTI=",
+                "tlsClientCiphersSha1": "kTkJ+HAwBvIuoPFncb1wEDLcgfg=",
+                "tlsClientExtensionsSha1": "p2XN7z/lcnmBD9Q+f8xSyG4x4VA=",
+                "tlsClientExtensionsSha1Le": "ydwLHTahJx17MvHnnvv2lsdgs/g=",
+                "tlsExportedAuthenticator": {
+                    "clientHandshake": "f280e3434176f66c2dd0b90a93d623a98965a21325238fba338c8e73a8b81935ec4cfa81791e58355b6aeb520c7fb830",
+                    "serverHandshake": "06bce873097ba11d6fd054a7a86671ae8d80d6cb292e56f81bf294c887b7e7718a128a75c4fcec583b1b62641dbacd1c",
+                    "clientFinished": "127a9d1bb884eee623a8e4921b54cebdb52e37c8a8a7a5bc778d73ccd79216f7e401674e23a48beefc0b9910a68d23f8",
+                    "serverFinished": "6d2376caccde4e862010699a85f6f24a45ba4b4fca3f3ee2b3fc921de0254551bfdfa8c28581fa3fc0b0d28b56a4ed99"
+                },
+                "tlsClientHelloLength": "456",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 15096
+                }
+            }
+        },
+        "response": {
+            "status": 303
+        }
+    }
+}
+{
+    "wallTime": 0,
+    "cpuTime": 0,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "1323ebbd-ba54-4101-84ca-81e3e69ccae0"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [],
+    "eventTimestamp": 1785024513619,
+    "event": {
+        "request": {
+            "url": "https://japan-note.com/?code=codex-probe",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f2baa1809fdc5",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "host": "japan-note.com",
+                "user-agent": "curl/8.21.0",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/1.1",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 83,
+                "clientQuicRtt": 0,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES256-GCM-SHA384",
+                "tlsClientRandom": "FFDk9E6KmMgSPf/+stcGYtMV4IwGmdFnhCZvieNce+Q=",
+                "tlsClientCiphersSha1": "kTkJ+HAwBvIuoPFncb1wEDLcgfg=",
+                "tlsClientExtensionsSha1": "p2XN7z/lcnmBD9Q+f8xSyG4x4VA=",
+                "tlsClientExtensionsSha1Le": "ydwLHTahJx17MvHnnvv2lsdgs/g=",
+                "tlsExportedAuthenticator": {
+                    "clientHandshake": "6d18e998328f4ae2d03407f8fce000c478acb8332684c1242946e003bb24e903f37c8001954445f08936e3cbd6796e8b",
+                    "serverHandshake": "b3135f208362bff199e1acff4aa65ec76d7ba4f6159bdd3a344c0a6b16a6bef4391c6e311f3dc519874503d93eccb911",
+                    "clientFinished": "aecd91c8c939d197571528c1947563b6126b7ef8397bd1bf9b53a7830e1b16feeb683cf3236dd55b8865850a3a202081",
+                    "serverFinished": "280dd6bdba758b07a84d425afa84993651731a437533c3d36b152abc0e06f3fe2bd7823ede39d55f7e32fd3807bf8707"
+                },
+                "tlsClientHelloLength": "452",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 47024
+                }
+            }
+        },
+        "response": {
+            "status": 308
+        }
+    }
+}
+{
+    "wallTime": 17,
+    "cpuTime": 1,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "1323ebbd-ba54-4101-84ca-81e3e69ccae0"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [],
+    "eventTimestamp": 1785024513948,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f2bac1cebf87a",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "host": "www.japan-note.com",
+                "user-agent": "curl/8.21.0",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/1.1",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 92,
+                "clientQuicRtt": 0,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES256-GCM-SHA384",
+                "tlsClientRandom": "Qx5xJIXFPk8n/YzU1C2NqjMaRxygApPpEROOUqjJ3+U=",
+                "tlsClientCiphersSha1": "kTkJ+HAwBvIuoPFncb1wEDLcgfg=",
+                "tlsClientExtensionsSha1": "p2XN7z/lcnmBD9Q+f8xSyG4x4VA=",
+                "tlsClientExtensionsSha1Le": "ydwLHTahJx17MvHnnvv2lsdgs/g=",
+                "tlsExportedAuthenticator": {
+                    "clientHandshake": "aca219d8f541a4c1c5d015d58ee17f4663f4bd7615a10c6260fc5ce8e4ff189e3f11ef39e7b4e9fa9b0565f433c47ee4",
+                    "serverHandshake": "c8845451dd778d3b0cf4b5e270d810059b962560116634d24f9f6dc2efeecf8a525764fd4738c8b3348101fc53194c46",
+                    "clientFinished": "0aaef63040a99d397682aa40eb187c9d61f00aa86d765c993e9e547bff9844666f756ce67ea40ad0f9db41f3cdff8aa6",
+                    "serverFinished": "3e5b7d813e36d27657f7b6bda92cc3abc1eea197e4b5a0e1e8f1f58fbdc6f8b24a9168ca71ed7e3ea6e459743f7b6974"
+                },
+                "tlsClientHelloLength": "456",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 43383
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}
+{
+    "wallTime": 872,
+    "cpuTime": 216,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "1323ebbd-ba54-4101-84ca-81e3e69ccae0"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "{\"source\":\"japannote\",\"stage\":\"middleware-route\",\"pathname\":\"/admin\",\"method\":\"GET\",\"branch\":\"protected-unauthorized\",\"status\":401,\"elapsedMs\":0}"
+            ],
+            "level": "log",
+            "timestamp": 1785024514959
+        }
+    ],
+    "eventTimestamp": 1785024514700,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/admin",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f2bb0cb5086fb",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "host": "www.japan-note.com",
+                "user-agent": "curl/8.21.0",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/1.1",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 93,
+                "clientQuicRtt": 0,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES256-GCM-SHA384",
+                "tlsClientRandom": "Y9NhcBvpxMqmaNJ9em5LChmsPvjpqLEKf3ilRXc9q+Y=",
+                "tlsClientCiphersSha1": "kTkJ+HAwBvIuoPFncb1wEDLcgfg=",
+                "tlsClientExtensionsSha1": "p2XN7z/lcnmBD9Q+f8xSyG4x4VA=",
+                "tlsClientExtensionsSha1Le": "ydwLHTahJx17MvHnnvv2lsdgs/g=",
+                "tlsExportedAuthenticator": {
+                    "clientHandshake": "6b39b1ebf2329c81ba40966dbb2ebc7a13c2f4956a930032a2e9145bb2fe4773414c51b1c0ea18e539bec8b9dde94b85",
+                    "serverHandshake": "25175e27549612844dc5be76711feb35d1c8714e404e0393a0c547d8fdad7e25584ac24b60540b2e61485d31b386df41",
+                    "clientFinished": "4d7adaad09d86cbb8f6ed5ce85bbabe86a5114998d92b64ce0a1ddb95fffd2b1e3b35b6aed41dfced1ef25493879d5ce",
+                    "serverFinished": "524c88a7d752161eb5af4fe36c6ff7678e96a1a9cae262c0457c83a2eb0db60aa8b127e568cdba140529b6692f30d28b"
+                },
+                "tlsClientHelloLength": "456",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 42436
+                }
+            }
+        },
+        "response": {
+            "status": 401
+        }
+    }
+}
+{
+    "wallTime": 10,
+    "cpuTime": 0,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "1323ebbd-ba54-4101-84ca-81e3e69ccae0"
+    },
+    "scriptName": "japannote",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [],
+    "eventTimestamp": 1785024547589,
+    "event": {
+        "request": {
+            "url": "https://www.japan-note.com/favicon.ico",
+            "method": "GET",
+            "headers": {
+                "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                "accept-encoding": "gzip, br",
+                "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                "cf-connecting-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90",
+                "cf-ipcountry": "TW",
+                "cf-ray": "a20f2c7e5b8afdea",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "host": "www.japan-note.com",
+                "if-none-match": "\"1d940a89cd3a3f8cabc8b56e98cb34c8\"",
+                "priority": "i",
+                "sec-ch-ua": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"150\", \"Google Chrome\";v=\"150\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "image",
+                "sec-fetch-mode": "no-cors",
+                "sec-fetch-site": "cross-site",
+                "sec-fetch-storage-access": "active",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2001:b011:3817:5c77:b8e0:befe:69e1:fb90"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/3",
+                "clientAcceptEncoding": "gzip, deflate, br",
+                "requestPriority": "",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 0,
+                "clientQuicRtt": 93,
+                "colo": "SIN",
+                "asn": 3462,
+                "asOrganization": "HiNet Taiwan",
+                "country": "TW",
+                "isEUCountry": false,
+                "city": "Banqiao",
+                "continent": "AS",
+                "region": "Taipei",
+                "regionCode": "TPE",
+                "timezone": "Asia/Taipei",
+                "longitude": "121.46719",
+                "latitude": "25.01427",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-AES128-GCM-SHA256",
+                "tlsClientRandom": "YxXPFstFggFKzCu6r4rXmE+Uj/DzG/13xSnzaekhU9E=",
+                "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+                "tlsClientExtensionsSha1": "DEy+14fO23WtNcrZkzN6n9G5Kbo=",
+                "tlsClientExtensionsSha1Le": "X29AhS5o3TSEokifbecQVl18k6Q=",
+                "tlsClientHelloLength": "1738",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 15692
+                }
+            }
+        },
+        "response": {
+            "status": 304
+        }
+    }
+}

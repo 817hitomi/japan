@@ -5,6 +5,7 @@ import {
   isBlockedSensitivePath,
   isDisallowedProductionHost
 } from "../lib/securityFirstRequest.ts";
+import { getOAuthCallbackFallbackRedirect } from "../lib/oauthCallbackFallback.ts";
 import { readFileSync } from "node:fs";
 
 function assert(condition: boolean, message: string) {
@@ -136,6 +137,25 @@ for (const requestUrl of allowedHostUrls) {
   assert(downstreamCalls === callsBefore + 1, `${requestUrl} must invoke the existing handler exactly once`);
 }
 
+const oauthFallback = getOAuthCallbackFallbackRedirect(
+  new Request("https://www.japan-note.com/?code=oauth-code")
+);
+assert(oauthFallback?.status === 303, "root OAuth code fallback must redirect with 303");
+assert(
+  oauthFallback?.headers.get("location") ===
+    "https://www.japan-note.com/auth/callback?code=oauth-code&next=%2Fadmin",
+  "root OAuth code fallback must preserve the code and continue through the real callback"
+);
+assert(
+  getOAuthCallbackFallbackRedirect(new Request("https://www.japan-note.com/?note=1")) === null,
+  "ordinary homepage queries must preserve existing routing"
+);
+assert(
+  getOAuthCallbackFallbackRedirect(
+    new Request("https://www.japan-note.com/?code=oauth-code", { method: "POST" })
+  ) === null,
+  "OAuth fallback must only handle GET requests"
+);
 for (const path of blockedPaths) {
   assert(isBlockedSensitivePath(path), `${path} must be classified as sensitive`);
   const callsBefore = downstreamCalls;

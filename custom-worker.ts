@@ -7,6 +7,7 @@ import {
   type WorkerCacheLike
 } from "./lib/articleEdgeCache";
 import { getCanonicalRedirect } from "./lib/canonicalRequest";
+import { getOAuthCallbackFallbackRedirect } from "./lib/oauthCallbackFallback";
 import { bridgedRuntimeEnvNames, getRuntimeEnvHeaderName } from "./lib/runtimeEnv";
 
 type WorkerEnvironment = {
@@ -54,6 +55,9 @@ const fetch = createSecurityFirstFetchHandler(
     const url = new URL(request.url);
     const canonicalRedirect = getCanonicalRedirect(request);
     if (canonicalRedirect) return canonicalRedirect;
+
+    const oauthCallbackFallback = getOAuthCallbackFallbackRedirect(request);
+    if (oauthCallbackFallback) return oauthCallbackFallback;
 
     if (url.pathname === "/favicon.ico" && env.ASSETS) {
       return env.ASSETS.fetch(new Request(new URL("/brand/logo_b.png", request.url), request));
