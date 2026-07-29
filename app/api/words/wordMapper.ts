@@ -3,6 +3,7 @@ import { normalizeWordCards, WordCardRecord } from "../../words/wordTypes";
 type WordCardRow = {
   id: number;
   category: string | null;
+  kana_row: string | null;
   kana: string | null;
   japanese: string | null;
   chinese: string | null;
@@ -18,6 +19,7 @@ export function rowToWord(row: WordCardRow): WordCardRecord {
     {
       id: Number(row.id),
       category: row.category ?? "N5",
+      kanaRow: row.kana_row ?? "",
       kana: row.kana ?? "",
       japanese: row.japanese ?? "",
       chinese: row.chinese ?? "",
@@ -35,6 +37,7 @@ export function wordToPayload(word: WordCardRecord) {
 
   return {
     category: normalized.category || "N5",
+    kana_row: normalized.kanaRow,
     kana: normalized.kana.trim(),
     japanese: normalized.japanese.trim(),
     chinese: normalized.chinese.trim(),

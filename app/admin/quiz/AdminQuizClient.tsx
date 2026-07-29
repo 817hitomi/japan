@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ClipboardEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AdminShell } from "../AdminShell";
 import {
   deleteQuizQuestions,
@@ -10,6 +10,7 @@ import {
   writeStoredQuizQuestions
 } from "../../quiz/quizStorage";
 import { generateQuizDistractors } from "../../quiz/quizDistractors";
+import { normalizeQuizEditorHtml } from "../../quiz/quizEditorHtml";
 import { QuizCategoryRecord, QuizLevel, QuizQuestionRecord, quizLevels, seedQuizCategories } from "../../quiz/quizTypes";
 import styles from "../notes/AdminNotes.module.scss";
 
@@ -56,6 +57,7 @@ function getDraftForEditor(question: QuizQuestionRecord, relatedQuestions: QuizQ
 
   return {
     ...question,
+    note: normalizeQuizEditorHtml(question.note),
     options: getEditorOptions(generatedOptions, question.answer)
   };
 }
@@ -199,7 +201,7 @@ export default function AdminQuizClient({
     event.preventDefault();
 
     const promptHtml = editorRefs.current.prompt?.innerHTML ?? draft.prompt;
-    const noteHtml = editorRefs.current.note?.innerHTML ?? draft.note;
+    const noteHtml = normalizeQuizEditorHtml(editorRefs.current.note?.innerHTML ?? draft.note);
     const promptText = stripHtml(promptHtml);
     const answer = draft.answer.trim();
     const manualOptions = normalizeOptions(draft.options, answer);
@@ -269,11 +271,29 @@ export default function AdminQuizClient({
   }
 
   function commitEditableField(field: QuizEditableField, html: string) {
+    const normalizedHtml = field === "note" ? normalizeQuizEditorHtml(html) : html;
+
     setDraft((current) => ({
       ...current,
-      [field]: html,
-      ...(field === "prompt" ? { theme: stripHtml(html) } : {})
+      [field]: normalizedHtml,
+      ...(field === "prompt" ? { theme: stripHtml(normalizedHtml) } : {})
     }));
+  }
+
+  function handleEditableBlur(field: QuizEditableField, editor: HTMLDivElement) {
+    const normalizedHtml = field === "note" ? normalizeQuizEditorHtml(editor.innerHTML) : editor.innerHTML;
+
+    if (editor.innerHTML !== normalizedHtml) {
+      editor.innerHTML = normalizedHtml;
+    }
+
+    commitEditableField(field, normalizedHtml);
+  }
+
+  function handleEditablePaste(event: ClipboardEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const plainText = event.clipboardData.getData("text/plain");
+    document.execCommand("insertText", false, plainText);
   }
 
   function handleEditableKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -294,8 +314,6 @@ export default function AdminQuizClient({
 
     editor.focus();
     document.execCommand("foreColor", false, color);
-    commitEditableField(field, editor.innerHTML);
-    setMessage(`已套用文字色彩 ${color}。`);
   }
 
   function toggleTextBold() {
@@ -307,8 +325,6 @@ export default function AdminQuizClient({
 
     editor.focus();
     document.execCommand("bold");
-    commitEditableField(field, editor.innerHTML);
-    setMessage("已套用粗體。");
   }
 
   function changeCategory(category: string) {
@@ -414,7 +430,7 @@ export default function AdminQuizClient({
               onFocus={() => {
                 activeEditorRef.current = "prompt";
               }}
-              onBlur={(event) => commitEditableField("prompt", event.currentTarget.innerHTML)}
+              onBlur={(event) => handleEditableBlur("prompt", event.currentTarget)}
               onKeyDown={handleEditableKeyDown}
             />
             <span className={styles.quizFieldLabel}>
@@ -433,8 +449,9 @@ export default function AdminQuizClient({
               onFocus={() => {
                 activeEditorRef.current = "note";
               }}
-              onBlur={(event) => commitEditableField("note", event.currentTarget.innerHTML)}
+              onBlur={(event) => handleEditableBlur("note", event.currentTarget)}
               onKeyDown={handleEditableKeyDown}
+              onPaste={handleEditablePaste}
             />
             <span className={styles.quizFieldLabel}>正確解答</span>
             <input

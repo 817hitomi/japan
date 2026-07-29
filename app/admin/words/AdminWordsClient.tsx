@@ -4,12 +4,14 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminShell } from "../AdminShell";
 import { uploadMediaFile } from "../../notes/noteStorage";
 import { deleteWordCards, readWordCardsWithSource, saveWordCard, writeStoredWordCards } from "../../words/wordStorage";
+import { kanaRows } from "../../words/kanaRows";
 import { WordCardRecord } from "../../words/wordTypes";
 import styles from "../notes/AdminNotes.module.scss";
 
 const emptyWord: WordCardRecord = {
   id: 0,
   category: "N5",
+  kanaRow: "",
   kana: "",
   japanese: "",
   chinese: "",
@@ -37,6 +39,11 @@ function getAdminWordsPageHref(page: number, query = "") {
 
 function getWordDuplicateKey(word: Pick<WordCardRecord, "japanese">) {
   return word.japanese.trim();
+}
+
+function getKanaRowLabel(kanaRow: WordCardRecord["kanaRow"]) {
+  const row = kanaRows.find((item) => item.key === kanaRow);
+  return row ? `${row.label}行` : "未分類";
 }
 
 function getVisiblePageNumbers(currentPage: number, totalPages: number) {
@@ -143,6 +150,7 @@ export default function AdminWordsClient({
       ...draft,
       id: selectedId ?? (draft.id || Date.now()),
       category: draft.category.trim() || "N5",
+      kanaRow: draft.kanaRow,
       japanese: draft.japanese.trim(),
       kana: draft.kana.trim(),
       chinese: draft.chinese.trim(),
@@ -153,8 +161,8 @@ export default function AdminWordsClient({
       backAudioUrl: draft.backAudioUrl.trim()
     };
 
-    if (!nextWord.japanese || !nextWord.chinese) {
-      setMessage("請至少輸入日文與中文。");
+    if (!nextWord.kanaRow || !nextWord.japanese || !nextWord.chinese) {
+      setMessage("請選擇五十音分類，並輸入日文與中文。");
       return;
     }
 
@@ -270,6 +278,23 @@ export default function AdminWordsClient({
               <span>分類</span>
               <input value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} />
             </label>
+            <label>
+              <span>五十音分類</span>
+              <select
+                required
+                value={draft.kanaRow}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, kanaRow: event.target.value as WordCardRecord["kanaRow"] }))
+                }
+              >
+                <option value="">請選擇</option>
+                {kanaRows.map((row) => (
+                  <option key={row.key} value={row.key}>
+                    {row.label}行
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
           <section className={styles.wordSidePanel}>
@@ -360,6 +385,7 @@ export default function AdminWordsClient({
                 <tr>
                   <th aria-label="選取" />
                   <th>分類名稱</th>
+                  <th>行分類</th>
                   <th>單字</th>
                   <th>中文</th>
                 </tr>
@@ -371,13 +397,14 @@ export default function AdminWordsClient({
                       <input checked={selectedId === word.id} readOnly type="checkbox" aria-label={`選取 ${word.japanese}`} />
                     </td>
                     <td>{word.category}</td>
+                    <td>{getKanaRowLabel(word.kanaRow)}</td>
                     <td>{word.japanese}</td>
                     <td>{word.chinese}</td>
                   </tr>
                 ))}
                 {filteredWords.length === 0 ? (
                   <tr>
-                    <td colSpan={4}>找不到符合的單字。</td>
+                    <td colSpan={5}>找不到符合的單字。</td>
                   </tr>
                 ) : null}
               </tbody>

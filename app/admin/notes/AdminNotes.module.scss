@@ -557,6 +557,10 @@
 }
 
 .wordCategoryRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 366px));
+  gap: 20px;
+
   label {
     display: grid;
     grid-template-columns: 72px minmax(0, 280px);
@@ -566,6 +570,11 @@
 
   span {
     font-weight: 700;
+    white-space: nowrap;
+  }
+
+  label:last-child {
+    grid-template-columns: 106px minmax(0, 240px);
   }
 }
 
@@ -1783,8 +1792,13 @@
 
   .wordFrontRow,
   .wordAudioRow,
-  .wordCategoryRow label,
+  .wordCategoryRow,
   .wordSearchBar label {
+    grid-template-columns: 1fr;
+  }
+
+  .wordCategoryRow label,
+  .wordCategoryRow label:last-child {
     grid-template-columns: 1fr;
   }
 

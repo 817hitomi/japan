@@ -1,6 +1,16 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { handleNoteOgRequest, noteOgPositiveCacheControl } from "../../../../lib/noteOgRequest";
+import {
+  handleNoteOgRequest,
+  noteOgPositiveCacheControl,
+  type NoteOgRequestContext
+} from "../../../../lib/noteOgRequest";
+import {
+  getCloudflareErrorDetails,
+  getReadRetryAttempt,
+  logCloudflareStage,
+  withReadRetry
+} from "../../../../lib/cloudflareReadRetry";
 import { getRuntimeEnv } from "../../../../lib/runtimeEnv";
 import type { PublicNoteRecord } from "../../../notes/noteTypes";
 import { getNotePreviewImage } from "../../../notes/noteTypes";
@@ -33,7 +43,7 @@ function dataUrlToResponse(dataUrl: string) {
   });
 }
 
-async function supabaseStorageImageToResponse(imageUrl: string) {
+async function supabaseStorageImageToResponse(imageUrl: string, context: NoteOgRequestContext) {
   try {
     const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL");
 
@@ -48,7 +58,13 @@ async function supabaseStorageImageToResponse(imageUrl: string) {
       return null;
     }
 
-    const response = await fetch(source, { cache: "no-store" });
+    const response = await withReadRetry(
+      () => fetch(source, { cache: "no-store" }),
+      {
+        ...context,
+        stage: "supabase-storage-image-fetch"
+      }
+    );
     const contentType = response.headers.get("content-type") ?? "";
 
     if (!response.ok || !contentType.startsWith("image/")) {
@@ -61,7 +77,13 @@ async function supabaseStorageImageToResponse(imageUrl: string) {
         "Content-Type": contentType
       }
     });
-  } catch {
+  } catch (error) {
+    logCloudflareStage("fallback", {
+      ...context,
+      stage: "supabase-storage-image-fetch",
+      attempt: getReadRetryAttempt(error),
+      ...getCloudflareErrorDetails(error)
+    }, console.error);
     return null;
   }
 }
@@ -75,7 +97,7 @@ function sanitizeImageText(text: string) {
     .trim();
 }
 
-async function renderNoteOg(note: PublicNoteRecord) {
+async function renderNoteOg(note: PublicNoteRecord, context: NoteOgRequestContext) {
   const imageUrl = getNotePreviewImage(note, "/brand/logo_b.png");
   const embeddedImageResponse = dataUrlToResponse(imageUrl);
 
@@ -83,7 +105,7 @@ async function renderNoteOg(note: PublicNoteRecord) {
     return embeddedImageResponse;
   }
 
-  const storageImageResponse = await supabaseStorageImageToResponse(imageUrl);
+  const storageImageResponse = await supabaseStorageImageToResponse(imageUrl, context);
 
   if (storageImageResponse) {
     return storageImageResponse;

@@ -7,6 +7,13 @@ import {
   type WorkerCacheLike
 } from "./lib/articleEdgeCache";
 import { getCanonicalRedirect } from "./lib/canonicalRequest";
+import {
+  getCloudflareErrorDetails,
+  getReadRetryAttempt,
+  logCloudflareStage,
+  resolveRequestId,
+  withReadRetry
+} from "./lib/cloudflareReadRetry";
 import { getOAuthCallbackFallbackRedirect } from "./lib/oauthCallbackFallback";
 import { bridgedRuntimeEnvNames, getRuntimeEnvHeaderName } from "./lib/runtimeEnv";
 import { handleSitemapEdgeCache, purgeSitemapEdgeCache } from "./lib/sitemapEdgeCache";
@@ -72,6 +79,11 @@ const fetch = createSecurityFirstFetchHandler(
     const workerCache = getWorkerDefaultCache();
     const shouldCacheHomepage = request.method === "GET" && url.pathname === "/" && !url.searchParams.has("note");
     const shouldCacheNoteImage = request.method === "GET" && url.pathname === "/api/notes/og" && url.searchParams.has("slug");
+    const noteOgSlug = shouldCacheNoteImage ? url.searchParams.get("slug") ?? "" : "";
+    const requestId = shouldCacheNoteImage ? resolveRequestId(request) : "";
+    const requestHeaders = new Headers(request.headers);
+    if (shouldCacheNoteImage) requestHeaders.set("x-japannote-request-id", requestId);
+    const routedRequest = shouldCacheNoteImage ? new Request(request, { headers: requestHeaders }) : request;
     const deploymentVersion = env.CF_VERSION_METADATA?.id ?? "local";
     const homepageCacheUrl = new URL("/", url.origin);
     homepageCacheUrl.searchParams.set("__japannote_worker_version", deploymentVersion);
@@ -80,7 +92,31 @@ const fetch = createSecurityFirstFetchHandler(
       : undefined;
 
     if (workerCache && sharedCacheKey) {
-      const cachedResponse = await workerCache.match(sharedCacheKey);
+      let cachedResponse: Response | undefined;
+      if (shouldCacheNoteImage) {
+        try {
+          cachedResponse = await withReadRetry(
+            () => workerCache.match(sharedCacheKey),
+            {
+              route: "/api/notes/og",
+              slug: noteOgSlug,
+              stage: "cloudflare-cache-read",
+              requestId
+            }
+          );
+        } catch (error) {
+          logCloudflareStage("fallback", {
+            route: "/api/notes/og",
+            slug: noteOgSlug,
+            stage: "cloudflare-cache-read-bypass",
+            attempt: getReadRetryAttempt(error),
+            requestId,
+            ...getCloudflareErrorDetails(error)
+          }, console.error);
+        }
+      } else {
+        cachedResponse = await workerCache.match(sharedCacheKey);
+      }
       if (cachedResponse) return cachedResponse;
     }
 
@@ -125,7 +161,39 @@ const fetch = createSecurityFirstFetchHandler(
       });
     }
 
-    const response = await renderWithOpenNext(request);
+    let response: Response;
+    const openNextOgFields = {
+      route: "/api/notes/og",
+      slug: noteOgSlug,
+      stage: "open-next-og-handler",
+      attempt: 1,
+      requestId
+    };
+    if (shouldCacheNoteImage) logCloudflareStage("start", openNextOgFields);
+    try {
+      response = await renderWithOpenNext(routedRequest);
+      if (shouldCacheNoteImage) logCloudflareStage("success", openNextOgFields);
+    } catch (error) {
+      if (!shouldCacheNoteImage) throw error;
+      logCloudflareStage("error", {
+        ...openNextOgFields,
+        ...getCloudflareErrorDetails(error)
+      }, console.error);
+      return Response.json(
+        {
+          error: "OG image temporarily unavailable",
+          requestId,
+          retryable: true
+        },
+        {
+          status: 503,
+          headers: {
+            "Cache-Control": "no-store, max-age=0",
+            "Retry-After": "5"
+          }
+        }
+      );
+    }
     const contentType = response.headers.get("content-type") ?? "";
     const isCacheableContent = shouldCacheHomepage ? contentType.includes("text/html") : contentType.startsWith("image/");
 
@@ -137,9 +205,32 @@ const fetch = createSecurityFirstFetchHandler(
       "Cache-Control",
       shouldCacheHomepage
         ? `public, max-age=0, must-revalidate, s-maxage=${homepageCacheSeconds}, stale-while-revalidate=60`
-        : `public, s-maxage=${noteImageCacheSeconds}, stale-while-revalidate=86400`
+        : `public, max-age=${noteImageCacheSeconds}, s-maxage=${noteImageCacheSeconds}, stale-while-revalidate=86400`
     );
-    context.waitUntil(workerCache.put(sharedCacheKey, cacheableResponse.clone()));
+    if (shouldCacheNoteImage) {
+      const cacheWrite = async () => {
+        const fields = {
+          route: "/api/notes/og",
+          slug: noteOgSlug,
+          stage: "cloudflare-cache-write",
+          attempt: 1,
+          requestId
+        };
+        logCloudflareStage("start", fields);
+        try {
+          await workerCache.put(sharedCacheKey, cacheableResponse.clone());
+          logCloudflareStage("success", fields);
+        } catch (error) {
+          logCloudflareStage("error", {
+            ...fields,
+            ...getCloudflareErrorDetails(error)
+          }, console.error);
+        }
+      };
+      context.waitUntil(cacheWrite());
+    } else {
+      context.waitUntil(workerCache.put(sharedCacheKey, cacheableResponse.clone()));
+    }
     return cacheableResponse;
   }
 );

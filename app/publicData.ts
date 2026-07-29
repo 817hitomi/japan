@@ -7,7 +7,7 @@ import { rowToWord } from "./api/words/wordMapper";
 import { getDailySelectionIndex } from "./dailySelection";
 import { preparePublicNoteCards, PublicNoteRecord } from "./notes/noteTypes";
 import { defaultQuotes, normalizeQuotes, QuoteRecord } from "./quotes/quoteTypes";
-import { getKanaRowKey, kanaRows, KanaRowKey, normalizeKanaRowKey } from "./words/kanaRows";
+import { kanaRows, KanaRowKey, normalizeKanaRowKey } from "./words/kanaRows";
 import { normalizeWordCards, WordCardRecord } from "./words/wordTypes";
 
 const quoteCategory = "首頁白版";
@@ -25,7 +25,7 @@ const noteListSelect = `${noteSummarySelect},summary`;
 const notePreviewSelect = `${noteListSelect},cover_url`;
 const noteFullSelect = `${noteListSelect},blocks`;
 const sitemapNoteSelect = "id,slug,updated_at";
-const wordSelect = "id,category,kana,japanese,chinese,example_japanese,example_chinese,audio_url,front_audio_url,back_audio_url";
+const wordSelect = "id,category,kana_row,kana,japanese,chinese,example_japanese,example_chinese,audio_url,front_audio_url,back_audio_url";
 
 function getWorkerDefaultCache() {
   return (caches as CacheStorage & { default?: Cache }).default;
@@ -397,33 +397,29 @@ export async function readPublishedNotePreviewByRouteKey(routeKey?: string): Pro
     return null;
   }
 
-  try {
-    const numericId = Number(key);
-    const supabase = createSupabaseReadClient();
-    let query = supabase
-      .from("learning_notes")
-      .select(notePreviewSelect)
-      .eq("status", publishedStatus);
+  const numericId = Number(key);
+  const supabase = createSupabaseReadClient();
+  let query = supabase
+    .from("learning_notes")
+    .select(notePreviewSelect)
+    .eq("status", publishedStatus);
 
-    query =
-      Number.isFinite(numericId) && String(numericId) === key
-        ? query.eq("id", numericId)
-        : query.eq("slug", key);
+  query =
+    Number.isFinite(numericId) && String(numericId) === key
+      ? query.eq("id", numericId)
+      : query.eq("slug", key);
 
-    const { data, error } = await query.limit(1).maybeSingle();
+  const { data, error } = await query.limit(1).maybeSingle();
 
-    if (error) {
-      throw error;
-    }
+  if (error) {
+    throw error;
+  }
 
-    if (!data) {
-      return null;
-    }
-
-    return rowToNote(data as unknown as Parameters<typeof rowToNote>[0]);
-  } catch {
+  if (!data) {
     return null;
   }
+
+  return rowToNote(data as unknown as Parameters<typeof rowToNote>[0]);
 }
 
 export type PublicArticleContext = {
@@ -598,92 +594,86 @@ export function normalizePublicPage(value?: string | number) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
-async function readWordFacetData(category = "", kanaRow = "") {
-  const batchSize = 1000;
+type PublicWordFacetRow = {
+  category: string | null;
+  kana_row: string | null;
+  word_count: number | string | null;
+};
+
+async function readWordFacetData(category = "") {
   const emptyCounts = Object.fromEntries(kanaRows.map((row) => [row.key, 0])) as Record<KanaRowKey, number>;
 
   try {
     const timer = createRequestTimer("database query", {
-      table: "word_cards",
-      operation: "public-words-filter-source"
+      table: "public_word_facets",
+      operation: "public-word-facets"
     });
-    const rows: Array<{ id: number; category: string | null; japanese: string | null; kana: string | null }> = [];
-    let total = 0;
-
-    for (let from = 0; ; from += batchSize) {
-      const to = from + batchSize - 1;
-      const result = await fetchSupabaseRowsWithCount<{ id: number; category: string | null; japanese: string | null; kana: string | null }>(
-        "word_cards",
-        {
-          select: "id,category,kana,japanese",
-          category: `neq.${quoteCategory}`,
-          order: "id.desc"
-        },
-        { from, to }
-      );
-
-      if (from === 0) {
-        total = result.total;
-      }
-
-      rows.push(...result.rows);
-
-      if (result.rows.length < batchSize || (total > 0 && rows.length >= total)) {
-        break;
-      }
-    }
-
+    const rows = await fetchSupabaseRows<PublicWordFacetRow>("public_word_facets", {
+      select: "category,kana_row,word_count",
+      order: "category.asc,kana_row.asc"
+    });
     const categories = Array.from(new Set(rows.map((row) => row.category?.trim() ?? "").filter(Boolean))).sort((a, b) =>
       a.localeCompare(b, "zh-Hant")
     );
     const filteredRows = category ? rows.filter((row) => row.category === category) : rows;
     const kanaCounts = { ...emptyCounts };
-    const normalizedKanaRow = normalizeKanaRowKey(kanaRow);
+    let filteredTotal = 0;
+    let total = 0;
+
+    rows.forEach((row) => {
+      const count = Number(row.word_count) || 0;
+      total += count;
+    });
 
     filteredRows.forEach((row) => {
-      const key = getKanaRowKey({ japanese: row.japanese ?? "", kana: row.kana ?? "" });
+      const count = Number(row.word_count) || 0;
+      filteredTotal += count;
+      const key = normalizeKanaRowKey(row.kana_row ?? "");
       if (key) {
-        kanaCounts[key] += 1;
+        kanaCounts[key] += count;
       }
     });
 
-    const matchingIds = filteredRows
-      .filter((row) => !normalizedKanaRow || getKanaRowKey({ japanese: row.japanese ?? "", kana: row.kana ?? "" }) === normalizedKanaRow)
-      .map((row) => row.id);
-
-    timer.end({ status: "ok", rows: rows.length, total });
+    timer.end({ status: "ok", rows: rows.length, total, filteredTotal });
     return {
-      facets: { categories, filteredTotal: filteredRows.length, kanaCounts, total: total || rows.length } satisfies PublicWordsFacets,
-      matchingIds
+      categories,
+      filteredTotal,
+      kanaCounts,
+      total
     };
   } catch {
-    return {
-      facets: { categories: [], filteredTotal: 0, kanaCounts: emptyCounts, total: 0 } satisfies PublicWordsFacets,
-      matchingIds: [] as number[]
-    };
+    return { categories: [], filteredTotal: 0, kanaCounts: emptyCounts, total: 0 };
   }
 }
 
 export async function readWordsListingForPublicPage(options: PublicWordsPageOptions = {}) {
   const page = normalizePublicPage(options.page);
   const pageSize = options.pageSize ?? publicWordsPageSize;
-  const { facets, matchingIds } = await readWordFacetData(options.category?.trim() ?? "", options.kanaRow ?? "");
-  const pageIds = matchingIds.slice((page - 1) * pageSize, page * pageSize);
-
-  if (pageIds.length === 0) {
-    return { facets, page: { page, pageSize, total: matchingIds.length, words: [] } satisfies PublicWordsPageResult };
-  }
+  const category = options.category?.trim() ?? "";
+  const kanaRow = normalizeKanaRowKey(options.kanaRow);
+  const facets = await readWordFacetData(category);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
   try {
-    const rows = await fetchSupabaseRows<Parameters<typeof rowToWord>[0]>("word_cards", {
+    const queryParams: Record<string, string> = {
       select: wordSelect,
-      id: `in.(${pageIds.join(",")})`
-    });
-    const wordsById = new Map(normalizeWordCards(rows.map(rowToWord), true).map((word) => [word.id, word]));
-    const words = pageIds.map((id) => wordsById.get(id)).filter((word): word is WordCardRecord => Boolean(word));
-    return { facets, page: { page, pageSize, total: matchingIds.length, words } satisfies PublicWordsPageResult };
+      category: category ? `eq.${category}` : `neq.${quoteCategory}`,
+      order: "id.desc"
+    };
+    if (kanaRow) {
+      queryParams.kana_row = `eq.${kanaRow}`;
+    }
+
+    const result = await fetchSupabaseRowsWithCount<Parameters<typeof rowToWord>[0]>(
+      "word_cards",
+      queryParams,
+      { from, to }
+    );
+    const words = normalizeWordCards(result.rows.map(rowToWord), true);
+    return { facets, page: { page, pageSize, total: result.total, words } satisfies PublicWordsPageResult };
   } catch {
-    return { facets, page: { page, pageSize, total: matchingIds.length, words: [] } satisfies PublicWordsPageResult };
+    return { facets, page: { page, pageSize, total: 0, words: [] } satisfies PublicWordsPageResult };
   }
 }
 
