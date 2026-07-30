@@ -13,7 +13,18 @@ const noteImportCompletedKey = "japannote-admin-notes-imported";
 export type NotesReadResult = {
   source: "database" | "local";
   notes: PublicNoteRecord[];
+  page: number;
+  pageSize: number;
+  total: number;
+  categories: string[];
   error?: string;
+};
+
+export type NotesReadOptions = {
+  page?: number;
+  pageSize?: number;
+  category?: string;
+  includeCategories?: boolean;
 };
 
 export type NoteReadResult = {
@@ -45,18 +56,36 @@ export function writeStoredNotes(notes: PublicNoteRecord[]) {
   writeLocalStorage(noteStorageKey, JSON.stringify(Array.isArray(notes) ? notes : []));
 }
 
-async function parseNotesResponse(response: Response) {
+async function parseNotesResponse(response: Response, options: NotesReadOptions = {}) {
   if (!response.ok) {
     throw new Error(await readApiError(response, `Notes API failed: ${response.status}`));
   }
 
-  const payload = (await response.json()) as { notes?: PublicNoteRecord[] };
-  return Array.isArray(payload.notes) ? payload.notes.map(normalizeNote) : seedNotes;
+  const payload = (await response.json()) as {
+    notes?: PublicNoteRecord[];
+    page?: number;
+    pageSize?: number;
+    total?: number;
+    categories?: string[];
+  };
+  const notes = Array.isArray(payload.notes) ? payload.notes.map(normalizeNote) : [];
+  return {
+    notes,
+    page: payload.page ?? options.page ?? 1,
+    pageSize: payload.pageSize ?? options.pageSize ?? Math.max(notes.length, 1),
+    total: payload.total ?? notes.length,
+    categories: Array.isArray(payload.categories) ? payload.categories.filter(Boolean) : []
+  };
 }
 
-export async function fetchNotes(status: "published" | "all" = "all") {
-  const response = await fetch(`/api/notes?status=${status}`, { cache: "no-store" });
-  return parseNotesResponse(response);
+export async function fetchNotes(status: "published" | "all" = "all", options: NotesReadOptions = {}) {
+  const params = new URLSearchParams({ status });
+  if (options.page) params.set("page", String(options.page));
+  if (options.pageSize) params.set("pageSize", String(options.pageSize));
+  if (options.category) params.set("category", options.category);
+  if (options.includeCategories) params.set("includeCategories", "true");
+  const response = await fetch(`/api/notes?${params.toString()}`, { cache: "no-store" });
+  return parseNotesResponse(response, options);
 }
 
 export async function fetchNote(id: number) {
@@ -82,32 +111,44 @@ export async function readNoteWithSource(id: number): Promise<NoteReadResult> {
   }
 }
 
-export async function readNotesWithFallback(status: "published" | "all" = "all") {
-  const result = await readNotesWithSource(status);
+export async function readNotesWithFallback(status: "published" | "all" = "all", options: NotesReadOptions = {}) {
+  const result = await readNotesWithSource(status, options);
   return result.notes;
 }
 
-export async function readNotesWithSource(status: "published" | "all" = "all"): Promise<NotesReadResult> {
-  try {
-    const remoteNotes = await fetchNotes(status);
-    const localNotes = readStoredNotes();
-
-    if (remoteNotes.length === 0 && localNotes.length > 0) {
-      return {
-        source: "local",
-        notes: status === "published" ? localNotes.filter((note) => note.status === "已發布") : localNotes,
-        error: "資料庫沒有文章，暫時顯示本機資料。"
-      };
-    }
-
-    return { source: "database", notes: remoteNotes };
-  } catch (error) {
-    const localNotes = readStoredNotes();
+export async function readNotesWithSource(
+  status: "published" | "all" = "all",
+  options: NotesReadOptions = {}
+): Promise<NotesReadResult> {
+  function readLocalResult(error?: string): NotesReadResult {
+    const allLocalNotes = readStoredNotes();
+    const statusNotes = status === "published" ? allLocalNotes.filter((note) => note.status === "已發布") : allLocalNotes;
+    const categoryNotes = options.category ? statusNotes.filter((note) => note.category === options.category) : statusNotes;
+    const page = options.page ?? 1;
+    const pageSize = options.pageSize ?? Math.max(categoryNotes.length, 1);
+    const from = (page - 1) * pageSize;
     return {
       source: "local",
-      notes: status === "published" ? localNotes.filter((note) => note.status === "已發布") : localNotes,
-      error: error instanceof Error ? error.message : "Notes API failed"
+      notes: categoryNotes.slice(from, from + pageSize),
+      page,
+      pageSize,
+      total: categoryNotes.length,
+      categories: Array.from(new Set(allLocalNotes.map((note) => note.category).filter(Boolean))),
+      error
     };
+  }
+
+  try {
+    const remoteResult = await fetchNotes(status, options);
+    const localNotes = readStoredNotes();
+
+    if (remoteResult.total === 0 && localNotes.length > 0) {
+      return readLocalResult("資料庫沒有文章，暫時顯示本機資料。");
+    }
+
+    return { source: "database", ...remoteResult };
+  } catch (error) {
+    return readLocalResult(error instanceof Error ? error.message : "Notes API failed");
   }
 }
 

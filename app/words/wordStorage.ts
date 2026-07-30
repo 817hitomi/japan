@@ -9,6 +9,8 @@ export type WordCardsReadResult = {
   source: "database" | "local";
   words: WordCardRecord[];
   total: number;
+  unfilteredTotal: number;
+  kanaCounts: Record<string, number>;
   page: number;
   pageSize: number;
   error?: string;
@@ -18,6 +20,8 @@ export type WordCardsReadOptions = {
   page?: number;
   pageSize?: number;
   query?: string;
+  kanaRow?: string;
+  includeFacets?: boolean;
 };
 
 function isOldDefaultCards(words: WordCardRecord[]) {
@@ -74,7 +78,16 @@ async function parseWordsResponse(response: Response) {
           }
         })()
       : {}
-  ) as { words?: WordCardRecord[]; word?: WordCardRecord; total?: number; page?: number; pageSize?: number; error?: string };
+  ) as {
+    words?: WordCardRecord[];
+    word?: WordCardRecord;
+    total?: number;
+    unfilteredTotal?: number;
+    kanaCounts?: Record<string, number>;
+    page?: number;
+    pageSize?: number;
+    error?: string;
+  };
 
   if (!response.ok) {
     const error = new Error(payload.error || responseText || `Words API failed: ${response.status}`);
@@ -104,6 +117,14 @@ function getWordsApiUrl(options: WordCardsReadOptions = {}) {
     params.set("q", options.query.trim());
   }
 
+  if (options.kanaRow?.trim()) {
+    params.set("kana", options.kanaRow.trim());
+  }
+
+  if (options.includeFacets) {
+    params.set("facets", "1");
+  }
+
   const query = params.toString();
   return query ? `/api/words?${query}` : "/api/words";
 }
@@ -117,6 +138,8 @@ export async function fetchWordCards(options: WordCardsReadOptions = {}) {
     page: payload.page ?? options.page ?? 1,
     pageSize: payload.pageSize ?? options.pageSize ?? words.length,
     total: payload.total ?? words.length,
+    unfilteredTotal: payload.unfilteredTotal ?? payload.total ?? words.length,
+    kanaCounts: payload.kanaCounts ?? {},
     words
   };
 }
@@ -137,6 +160,13 @@ export async function readWordCardsWithSource(options: WordCardsReadOptions = {}
       source: "local",
       words,
       total: words.length,
+      unfilteredTotal: words.length,
+      kanaCounts: words.reduce<Record<string, number>>((counts, word) => {
+        if (word.kanaRow) {
+          counts[word.kanaRow] = (counts[word.kanaRow] ?? 0) + 1;
+        }
+        return counts;
+      }, {}),
       page: options.page ?? 1,
       pageSize: options.pageSize ?? words.length,
       error: getErrorMessage(error)

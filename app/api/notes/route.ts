@@ -8,8 +8,15 @@ import { adminNoteListSelect, noteToPayload, rowToNote } from "./noteMapper";
 
 export const dynamic = "force-dynamic";
 const publicNotesLimit = 120;
+const defaultAdminPageSize = 10;
+const maxAdminPageSize = 50;
 const publicNoteSummarySelect = "id,category,title,status,published_date,slug,tags,summary";
 const duplicateSlugMessage = "網址代稱已被其他文章使用，請改用不重複的網址代稱。";
+
+function readPositiveInteger(value: string | null, fallback: number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,9 +27,13 @@ export async function GET(request: NextRequest) {
     }
     const supabase = status === "published" ? createSupabaseReadClient() : createSupabaseAdminClient();
     const selectColumns = status === "published" ? publicNoteSummarySelect : adminNoteListSelect;
+    const page = readPositiveInteger(request.nextUrl.searchParams.get("page"), 1);
+    const pageSize = Math.min(readPositiveInteger(request.nextUrl.searchParams.get("pageSize"), defaultAdminPageSize), maxAdminPageSize);
+    const category = request.nextUrl.searchParams.get("category")?.trim() ?? "";
+    const includeCategories = request.nextUrl.searchParams.get("includeCategories") === "true";
     let query = supabase
       .from("learning_notes")
-      .select(selectColumns)
+      .select(selectColumns, status === "published" ? undefined : { count: "exact" })
       .order("published_date", { ascending: false })
       .order("id", { ascending: false });
 
@@ -32,17 +43,36 @@ export async function GET(request: NextRequest) {
 
     if (status === "published") {
       query = query.limit(publicNotesLimit);
+    } else {
+      if (category) {
+        query = query.eq("category", category);
+      }
+      const from = (page - 1) * pageSize;
+      query = query.range(from, from + pageSize - 1);
     }
 
-    const { data, error } = await query;
+    const categoriesQuery =
+      status !== "published" && includeCategories
+        ? supabase.from("learning_notes").select("category").order("category", { ascending: true })
+        : null;
+    const [{ data, error, count }, categoriesResult] = await Promise.all([query, categoriesQuery]);
 
     if (error) {
       throw error;
     }
+    if (categoriesResult?.error) {
+      throw categoriesResult.error;
+    }
 
     const rows = (data ?? []) as unknown as Parameters<typeof rowToNote>[0][];
     const notes = rows.map(rowToNote);
-    return NextResponse.json({ notes: status === "published" ? preparePublicNoteCards(notes) : notes });
+    const categories = Array.from(
+      new Set((categoriesResult?.data ?? []).map((row) => row.category).filter((item): item is string => Boolean(item)))
+    );
+    return NextResponse.json({
+      notes: status === "published" ? preparePublicNoteCards(notes) : notes,
+      ...(status === "published" ? {} : { page, pageSize, total: count ?? 0, categories })
+    });
   } catch (error) {
     return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load notes") }, { status: 500 });
   }

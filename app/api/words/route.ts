@@ -3,6 +3,7 @@ import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createRequestTimer } from "../../../lib/requestDiagnostics";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
 import { requireAdminRoute } from "../../../lib/adminRouteAuth";
+import { kanaRows, normalizeKanaRowKey } from "../../words/kanaRows";
 import { WordCardRecord } from "../../words/wordTypes";
 import { rowToWord, wordToPayload } from "./wordMapper";
 
@@ -34,6 +35,8 @@ export async function GET(request: NextRequest) {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
+    const kanaRow = normalizeKanaRowKey(request.nextUrl.searchParams.get("kana") ?? "");
+    const includeFacets = request.nextUrl.searchParams.get("facets") === "1";
     const supabase = createSupabaseReadClient();
     timer.mark("database query start", { table: "word_cards", page, pageSize });
     let requestBuilder = supabase
@@ -48,6 +51,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (kanaRow) {
+      requestBuilder = requestBuilder.eq("kana_row", kanaRow);
+    }
+
     const { data, error, count } = await requestBuilder
       .order("category", { ascending: true })
       .order("id", { ascending: false })
@@ -59,9 +66,30 @@ export async function GET(request: NextRequest) {
     }
 
     const words = (data ?? []).map(rowToWord);
+    let unfilteredTotal = count ?? 0;
+    const kanaCounts = Object.fromEntries(kanaRows.map((row) => [row.key, 0]));
+
+    if (includeFacets) {
+      const { data: facetRows, error: facetError } = await supabase
+        .from("public_word_facets")
+        .select("kana_row,word_count");
+
+      if (!facetError) {
+        unfilteredTotal = 0;
+        for (const facet of facetRows ?? []) {
+          const facetCount = Number(facet.word_count) || 0;
+          unfilteredTotal += facetCount;
+          const facetKanaRow = normalizeKanaRowKey(facet.kana_row ?? "");
+          if (facetKanaRow) {
+            kanaCounts[facetKanaRow] += facetCount;
+          }
+        }
+      }
+    }
+
     timer.mark("database query end", { rows: words.length, total: count ?? 0 });
     timer.end({ status: 200 });
-    return NextResponse.json({ page, pageSize, total: count ?? 0, words });
+    return NextResponse.json({ page, pageSize, total: count ?? 0, unfilteredTotal, kanaCounts, words });
   } catch (error) {
     timer.end({ status: 500 });
     return NextResponse.json({ error: getApiErrorMessage(error, "Unable to load words") }, { status: 500 });

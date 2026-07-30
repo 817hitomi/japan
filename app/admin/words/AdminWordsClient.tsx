@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminShell } from "../AdminShell";
 import { uploadMediaFile } from "../../notes/noteStorage";
 import { deleteWordCards, readWordCardsWithSource, saveWordCard, writeStoredWordCards } from "../../words/wordStorage";
-import { kanaRows } from "../../words/kanaRows";
+import { KanaRowKey, kanaRows } from "../../words/kanaRows";
 import { WordCardRecord } from "../../words/wordTypes";
 import styles from "../notes/AdminNotes.module.scss";
 
@@ -25,12 +25,16 @@ const emptyWord: WordCardRecord = {
 const wordsPerPage = 10;
 const maxVisiblePageButtons = 10;
 
-function getAdminWordsPageHref(page: number, query = "") {
+function getAdminWordsPageHref(page: number, query = "", kanaRow = "") {
   const path = page <= 1 ? "/admin/words" : `/admin/words/${page}`;
   const params = new URLSearchParams();
 
   if (query.trim()) {
     params.set("q", query.trim());
+  }
+
+  if (kanaRow) {
+    params.set("kana", kanaRow);
   }
 
   const search = params.toString();
@@ -60,13 +64,17 @@ function getVisiblePageNumbers(currentPage: number, totalPages: number) {
 
 export default function AdminWordsClient({
   initialPage = 1,
-  initialSearchText = ""
+  initialSearchText = "",
+  initialKanaRow = ""
 }: {
   initialPage?: number;
   initialSearchText?: string;
+  initialKanaRow?: KanaRowKey | "";
 }) {
   const [words, setWords] = useState<WordCardRecord[]>([]);
   const [totalWords, setTotalWords] = useState(0);
+  const [unfilteredTotal, setUnfilteredTotal] = useState(0);
+  const [kanaCounts, setKanaCounts] = useState<Record<string, number>>({});
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [draft, setDraft] = useState<WordCardRecord>(emptyWord);
   const [showEditor, setShowEditor] = useState(false);
@@ -94,10 +102,18 @@ export default function AdminWordsClient({
   const visibleWords = filteredWords;
 
   useEffect(() => {
-    readWordCardsWithSource({ page, pageSize: wordsPerPage, query: initialSearchText })
+    readWordCardsWithSource({
+      page,
+      pageSize: wordsPerPage,
+      query: initialSearchText,
+      kanaRow: initialKanaRow,
+      includeFacets: true
+    })
       .then((result) => {
         setWords(result.words);
         setTotalWords(result.total);
+        setUnfilteredTotal(result.unfilteredTotal);
+        setKanaCounts(result.kanaCounts);
         setMessage(
           result.source === "database"
             ? "已載入資料庫單字。"
@@ -107,11 +123,11 @@ export default function AdminWordsClient({
       .catch(() => {
         setMessage("資料庫讀取失敗，暫時顯示本機資料。");
       });
-  }, [initialSearchText, page]);
+  }, [initialKanaRow, initialSearchText, page]);
 
   function searchWords(event: FormEvent) {
     event.preventDefault();
-    window.location.href = getAdminWordsPageHref(1, searchText);
+    window.location.href = getAdminWordsPageHref(1, searchText, initialKanaRow);
   }
 
   function persist(nextWords: WordCardRecord[], nextMessage: string) {
@@ -379,6 +395,25 @@ export default function AdminWordsClient({
             </label>
             <button type="submit">搜尋</button>
           </form>
+          <nav className={styles.adminKanaRowTabs} aria-label="單字行分類">
+            <a
+              className={!initialKanaRow ? styles.activeAdminKanaRow : undefined}
+              href={getAdminWordsPageHref(1, initialSearchText)}
+            >
+              <strong>全部</strong>
+              <span>{unfilteredTotal}</span>
+            </a>
+            {kanaRows.map((row) => (
+              <a
+                key={row.key}
+                className={initialKanaRow === row.key ? styles.activeAdminKanaRow : undefined}
+                href={getAdminWordsPageHref(1, initialSearchText, row.key)}
+              >
+                <strong>{row.label}</strong>
+                <span>{kanaCounts[row.key] ?? 0}</span>
+              </a>
+            ))}
+          </nav>
           <div className={styles.tableWrap}>
             <table className={styles.noteTable}>
               <thead>
@@ -414,7 +449,7 @@ export default function AdminWordsClient({
             <nav className={styles.pagination} aria-label="單字列表頁碼">
               {pageCount > maxVisiblePageButtons ? (
                 <a
-                  href={getAdminWordsPageHref(Math.max(1, page - 1), initialSearchText)}
+                  href={getAdminWordsPageHref(Math.max(1, page - 1), initialSearchText, initialKanaRow)}
                   aria-disabled={page === 1}
                   aria-label="上一頁"
                 >
@@ -425,14 +460,14 @@ export default function AdminWordsClient({
                 <a
                   key={item}
                   className={item === page ? styles.currentPage : undefined}
-                  href={getAdminWordsPageHref(item, initialSearchText)}
+                  href={getAdminWordsPageHref(item, initialSearchText, initialKanaRow)}
                 >
                   {item}
                 </a>
               ))}
               {pageCount > maxVisiblePageButtons ? (
                 <a
-                  href={getAdminWordsPageHref(Math.min(pageCount, page + 1), initialSearchText)}
+                  href={getAdminWordsPageHref(Math.min(pageCount, page + 1), initialSearchText, initialKanaRow)}
                   aria-disabled={page === pageCount}
                   aria-label="下一頁"
                 >

@@ -39,6 +39,8 @@ type ContentBlock = {
 type NoteRecord = PublicNoteRecord;
 
 const categoryStorageKey = "japannote-admin-note-categories";
+const notesPerPage = 10;
+const maxVisiblePageButtons = 10;
 const fixedColors = ["#7D7D7D", "#C28080", "#D6C09E", "#8CB993"] as const;
 const defaultCategories = ["N5", "N4", "會話", "文法"];
 
@@ -115,6 +117,22 @@ function writeCategories(categories: string[]) {
   window.localStorage.setItem(categoryStorageKey, JSON.stringify(categories));
 }
 
+function getVisiblePageNumbers(currentPage: number, totalPages: number) {
+  if (totalPages <= maxVisiblePageButtons) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const halfWindow = Math.floor(maxVisiblePageButtons / 2);
+  const lastStartPage = totalPages - maxVisiblePageButtons + 1;
+  const startPage = Math.max(1, Math.min(currentPage - halfWindow + 1, lastStartPage));
+
+  return Array.from({ length: maxVisiblePageButtons }, (_, index) => startPage + index);
+}
+
+function getAdminNotesPageHref(page: number) {
+  return page <= 1 ? "/admin/notes" : `/admin/notes?page=${page}`;
+}
+
 function readFileAsDataUrl(event: ChangeEvent<HTMLInputElement>, callback: (url: string) => void) {
   const file = event.target.files?.[0];
   if (!file) {
@@ -137,24 +155,35 @@ async function uploadVideoFile(event: ChangeEvent<HTMLInputElement>, callback: (
   event.target.value = "";
 }
 
-function NotesList() {
+function NotesList({ initialPage }: { initialPage: number }) {
   const router = useRouter();
   const [notes, setNotes] = useState<NoteRecord[]>([]);
+  const [totalNotes, setTotalNotes] = useState(0);
+  const [databaseCategories, setDatabaseCategories] = useState<string[]>([]);
   const [storedCategories, setStoredCategories] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [category, setCategory] = useState("全部分類");
   const [message, setMessage] = useState("可完整測試：新增文章、回列表、勾選編輯、刪除與分頁。");
   const [categoryModal, setCategoryModal] = useState<"add" | "delete" | null>(null);
   const [draftCategory, setDraftCategory] = useState("");
   const [deleteCategoryName, setDeleteCategoryName] = useState("");
-  const perPage = 10;
+
+  useEffect(() => {
+    setPage(initialPage);
+  }, [initialPage]);
 
   useEffect(() => {
     let active = true;
 
     async function loadNotes() {
-      const result = await readNotesWithSource("all");
+      const result = await readNotesWithSource("all", {
+        page,
+        pageSize: notesPerPage,
+        category: category === "全部分類" ? undefined : category,
+        includeCategories: true
+      });
       let nextNotes = result.notes;
 
       if (result.source === "local") {
@@ -163,6 +192,15 @@ function NotesList() {
         try {
           nextNotes = await importStoredNotesToDatabase();
           markStoredNotesImported();
+          const refreshed = await readNotesWithSource("all", {
+            page: 1,
+            pageSize: notesPerPage,
+            category: category === "全部分類" ? undefined : category,
+            includeCategories: true
+          });
+          nextNotes = refreshed.notes;
+          result.total = refreshed.total;
+          result.categories = refreshed.categories;
         } catch (error) {
           setMessage(`資料庫目前是空的，本機資料匯入失敗：${error instanceof Error ? error.message : "請確認 Supabase API 權限。"}`);
         }
@@ -170,8 +208,10 @@ function NotesList() {
 
       if (active) {
         setNotes(nextNotes);
+        setTotalNotes(result.total);
+        setDatabaseCategories(result.categories);
         if (result.source === "database" && nextNotes.length > 0) {
-          setMessage(`已載入 ${nextNotes.length} 篇學習筆記。`);
+          setMessage(`已載入第 ${result.page} 頁，共 ${result.total} 篇學習筆記。`);
         }
       }
     }
@@ -182,16 +222,16 @@ function NotesList() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [category, page, refreshKey]);
 
   const categories = useMemo(
-    () => Array.from(new Set([...storedCategories, ...notes.map((note) => note.category).filter(Boolean)])),
-    [notes, storedCategories]
+    () => Array.from(new Set([...storedCategories, ...databaseCategories, ...notes.map((note) => note.category).filter(Boolean)])),
+    [databaseCategories, notes, storedCategories]
   );
-  const filtered = category === "全部分類" ? notes : notes.filter((note) => note.category === category);
-  const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
-  const visibleNotes = filtered.slice((page - 1) * perPage, page * perPage);
-  const deleteCount = notes.filter((note) => note.category === deleteCategoryName).length;
+  const pageCount = Math.max(1, Math.ceil(totalNotes / notesPerPage));
+  const visiblePages = getVisiblePageNumbers(page, pageCount);
+  const visibleNotes = notes;
+  const deleteCount = category === deleteCategoryName ? totalNotes : notes.filter((note) => note.category === deleteCategoryName).length;
 
   function persist(nextNotes: NoteRecord[], nextMessage: string) {
     setNotes(nextNotes);
@@ -261,14 +301,13 @@ function NotesList() {
     persist(nextNotes, "正在同步分類變更到資料庫。");
 
     try {
-      if (deleteCount > 0) {
-        await moveNotesCategory(deleteCategoryName, "未分類");
-      }
+      await moveNotesCategory(deleteCategoryName, "未分類");
 
       setMessage(deleteCount > 0 ? `已刪除「${deleteCategoryName}」，${deleteCount} 篇文章已移到「未分類」。` : `已刪除「${deleteCategoryName}」。`);
       setSelectedIds([]);
       setCategory("全部分類");
       setPage(1);
+      setRefreshKey((current) => current + 1);
       setCategoryModal(null);
     } catch (error) {
       setNotes(await readNotesWithFallback("all"));
@@ -298,7 +337,9 @@ function NotesList() {
       await deleteNotes(selectedIds);
       setMessage(`已刪除 ${selectedIds.length} 篇文章。`);
       setSelectedIds([]);
+      setTotalNotes((current) => Math.max(0, current - selectedIds.length));
       setPage(1);
+      setRefreshKey((current) => current + 1);
     } catch (error) {
       setNotes(await readNotesWithFallback("all"));
       setMessage(`刪除失敗：${error instanceof Error ? error.message : "請確認 Supabase 設定與資料表。"}`);
@@ -370,21 +411,37 @@ function NotesList() {
         </table>
       </div>
 
-      <nav className={styles.pagination} aria-label="文章頁碼">
-        {Array.from({ length: pageCount }, (_, index) => index + 1).map((item) => (
-          <button
-            key={item}
-            className={item === page ? styles.currentPage : undefined}
-            type="button"
-            onClick={() => {
-              setPage(item);
-              setMessage(`已切換到第 ${item} 頁。`);
-            }}
+      {pageCount > 1 ? (
+        <nav className={styles.pagination} aria-label="文章頁碼">
+          <Link
+            href={getAdminNotesPageHref(Math.max(1, page - 1))}
+            prefetch={false}
+            aria-disabled={page === 1}
+            aria-label="上一頁"
           >
-            {item}
-          </button>
-        ))}
-      </nav>
+            ‹
+          </Link>
+          {visiblePages.map((item) => (
+            <Link
+              key={item}
+              className={item === page ? styles.currentPage : undefined}
+              href={getAdminNotesPageHref(item)}
+              prefetch={false}
+              aria-current={item === page ? "page" : undefined}
+            >
+              {item}
+            </Link>
+          ))}
+          <Link
+            href={getAdminNotesPageHref(Math.min(pageCount, page + 1))}
+            prefetch={false}
+            aria-disabled={page === pageCount}
+            aria-label="下一頁"
+          >
+            ›
+          </Link>
+        </nav>
+      ) : null}
 
       {categoryModal === "add" && (
         <div className={styles.modalBackdrop} role="dialog" aria-modal="true">
@@ -571,16 +628,14 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
 
     async function loadNote() {
       const [result, noteResult] = await Promise.all([
-        readNotesWithSource("all"),
+        readNotesWithSource("all", { page: 1, pageSize: 1, includeCategories: true }),
         mode === "edit" && noteId ? readNoteWithSource(noteId) : Promise.resolve(null)
       ]);
-      const allNotes = result.notes;
-
       if (!active) {
         return;
       }
 
-      setCategories(Array.from(new Set([...readCategories(), ...allNotes.map((item) => item.category).filter(Boolean)])));
+      setCategories(Array.from(new Set([...readCategories(), ...result.categories])));
       if (result.source === "local") {
         setMessage(`資料庫讀取失敗，暫時顯示本機文章：${result.error ?? "請確認 Supabase learning_notes 資料表與環境變數。"}`);
       }
@@ -1013,7 +1068,15 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
   );
 }
 
-export default function AdminNotesClient({ initialMode, noteId }: { initialMode: Mode; noteId?: number }) {
+export default function AdminNotesClient({
+  initialMode,
+  noteId,
+  initialPage = 1
+}: {
+  initialMode: Mode;
+  noteId?: number;
+  initialPage?: number;
+}) {
   if (initialMode === "new") {
     return <NoteEditor mode="new" />;
   }
@@ -1022,5 +1085,5 @@ export default function AdminNotesClient({ initialMode, noteId }: { initialMode:
     return <NoteEditor mode="edit" noteId={noteId} />;
   }
 
-  return <NotesList />;
+  return <NotesList initialPage={initialPage} />;
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ClipboardEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AdminShell } from "../AdminShell";
 import {
@@ -84,13 +86,35 @@ function getVisiblePageNumbers(currentPage: number, totalPages: number) {
   return Array.from({ length: maxVisiblePageButtons }, (_, index) => startPage + index);
 }
 
+function getAdminQuizPageHref({
+  level,
+  category,
+  query,
+  page
+}: {
+  level: QuizLevel;
+  category: string;
+  query: string;
+  page: number;
+}) {
+  const params = new URLSearchParams({ level, category });
+  if (query) params.set("q", query);
+  if (page > 1) params.set("page", String(page));
+  return `/admin/quiz?${params.toString()}`;
+}
+
 export default function AdminQuizClient({
   initialCategory = "文字．語彙",
-  initialLevel = "N5"
+  initialLevel = "N5",
+  initialPage = 1,
+  initialSearchText = ""
 }: {
   initialCategory?: string;
   initialLevel?: QuizLevel;
+  initialPage?: number;
+  initialSearchText?: string;
 }) {
+  const router = useRouter();
   const [questions, setQuestions] = useState<QuizQuestionRecord[]>([]);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [categories, setCategories] = useState<QuizCategoryRecord[]>(seedQuizCategories);
@@ -99,9 +123,9 @@ export default function AdminQuizClient({
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [draft, setDraft] = useState<QuizQuestionRecord>({ ...emptyQuestion, id: Date.now() });
   const [showEditor, setShowEditor] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [page, setPage] = useState(1);
+  const [searchText, setSearchText] = useState(initialSearchText);
+  const [searchQuery, setSearchQuery] = useState(initialSearchText);
+  const [page, setPage] = useState(initialPage);
   const [message, setMessage] = useState("請選擇題目，或新增文字．語彙題型。");
   const editorRefs = useRef<Record<QuizEditableField, HTMLDivElement | null>>({ prompt: null, note: null });
   const activeEditorRef = useRef<QuizEditableField>("prompt");
@@ -110,6 +134,10 @@ export default function AdminQuizClient({
     const timer = window.setTimeout(() => setSearchQuery(searchText.trim()), quizSearchDebounceMs);
     return () => window.clearTimeout(timer);
   }, [searchText]);
+
+  useEffect(() => {
+    setPage(initialPage);
+  }, [initialPage]);
 
   useEffect(() => {
     let active = true;
@@ -333,6 +361,7 @@ export default function AdminQuizClient({
     setDraft((current) => ({ ...current, category }));
     setShowEditor(false);
     setPage(1);
+    router.replace(getAdminQuizPageHref({ level: selectedLevel, category, query: searchQuery, page: 1 }));
     setMessage(`目前分類：${category}`);
   }
 
@@ -344,6 +373,7 @@ export default function AdminQuizClient({
     setDraft((current) => ({ ...current, level, category: firstCategory }));
     setShowEditor(false);
     setPage(1);
+    router.replace(getAdminQuizPageHref({ level, category: firstCategory, query: searchQuery, page: 1 }));
     setMessage(`目前程度：${level}`);
   }
 
@@ -351,18 +381,9 @@ export default function AdminQuizClient({
     event.preventDefault();
     setSelectedId(null);
     setPage(1);
-    setSearchQuery(searchText.trim());
-  }
-
-  function changePage(nextPage: number) {
-    const normalizedPage = Math.max(1, Math.min(pageCount, nextPage));
-
-    if (normalizedPage === page) {
-      return;
-    }
-
-    setSelectedId(null);
-    setPage(normalizedPage);
+    const query = searchText.trim();
+    setSearchQuery(query);
+    router.replace(getAdminQuizPageHref({ level: selectedLevel, category: selectedCategory, query, page: 1 }));
   }
 
   return (
@@ -529,35 +550,50 @@ export default function AdminQuizClient({
           {pageCount > 1 ? (
             <nav className={styles.pagination} aria-label="模擬測驗列表頁碼">
               {pageCount > maxVisiblePageButtons ? (
-                <button
-                  type="button"
-                  onClick={() => changePage(page - 1)}
-                  disabled={page === 1}
+                <Link
+                  href={getAdminQuizPageHref({
+                    level: selectedLevel,
+                    category: selectedCategory,
+                    query: searchQuery,
+                    page: Math.max(1, page - 1)
+                  })}
+                  prefetch={false}
+                  aria-disabled={page === 1}
                   aria-label="上一頁"
                 >
-                  上
-                </button>
+                  ‹
+                </Link>
               ) : null}
               {visiblePages.map((item) => (
-                <button
+                <Link
                   key={item}
-                  type="button"
                   className={item === page ? styles.currentPage : undefined}
-                  onClick={() => changePage(item)}
+                  href={getAdminQuizPageHref({
+                    level: selectedLevel,
+                    category: selectedCategory,
+                    query: searchQuery,
+                    page: item
+                  })}
+                  prefetch={false}
                   aria-current={item === page ? "page" : undefined}
                 >
                   {item}
-                </button>
+                </Link>
               ))}
               {pageCount > maxVisiblePageButtons ? (
-                <button
-                  type="button"
-                  onClick={() => changePage(page + 1)}
-                  disabled={page === pageCount}
+                <Link
+                  href={getAdminQuizPageHref({
+                    level: selectedLevel,
+                    category: selectedCategory,
+                    query: searchQuery,
+                    page: Math.min(pageCount, page + 1)
+                  })}
+                  prefetch={false}
+                  aria-disabled={page === pageCount}
                   aria-label="下一頁"
                 >
-                  下
-                </button>
+                  ›
+                </Link>
               ) : null}
             </nav>
           ) : null}

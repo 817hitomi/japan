@@ -1,4 +1,5 @@
 import AdminWordsClient from "../AdminWordsClient";
+import { normalizeKanaRowKey } from "../../../words/kanaRows";
 
 type AdminWordsPagedRouteProps = {
   params: Promise<{
@@ -6,6 +7,7 @@ type AdminWordsPagedRouteProps = {
   }>;
   searchParams?: Promise<{
     q?: string;
+    kana?: string;
   }>;
 };
 
@@ -16,6 +18,12 @@ function normalizePage(value?: string) {
 
 export default async function AdminWordsPagedRoute({ params, searchParams }: AdminWordsPagedRouteProps) {
   const { page } = await params;
-  const { q } = (await searchParams) ?? {};
-  return <AdminWordsClient initialPage={normalizePage(page)} initialSearchText={q ?? ""} />;
+  const { q, kana } = (await searchParams) ?? {};
+  return (
+    <AdminWordsClient
+      initialPage={normalizePage(page)}
+      initialSearchText={q ?? ""}
+      initialKanaRow={normalizeKanaRowKey(kana)}
+    />
+  );
 }

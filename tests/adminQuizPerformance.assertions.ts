@@ -7,6 +7,7 @@ const quizCategoriesRoute = fs.readFileSync(new URL("../app/api/quiz/categories/
 const quizMapper = fs.readFileSync(new URL("../app/api/quiz/quizMapper.ts", import.meta.url), "utf8");
 const quizStorage = fs.readFileSync(new URL("../app/quiz/quizStorage.ts", import.meta.url), "utf8");
 const adminQuizClient = fs.readFileSync(new URL("../app/admin/quiz/AdminQuizClient.tsx", import.meta.url), "utf8");
+const adminQuizPage = fs.readFileSync(new URL("../app/admin/quiz/page.tsx", import.meta.url), "utf8");
 const applyTextColor = adminQuizClient.slice(
   adminQuizClient.indexOf("function applyTextColor"),
   adminQuizClient.indexOf("function toggleTextBold")
@@ -18,6 +19,8 @@ const toggleTextBold = adminQuizClient.slice(
 
 assert.match(quizMapper, /quizDistractorCandidateSelect = "answer,options"/);
 assert.match(quizRoute, /\.select\(quizDistractorCandidateSelect\)/);
+assert.match(quizRoute, /\.select\(quizQuestionSelect, \{ count: "exact" \}\)/);
+assert.match(quizRoute, /query\.range\(from, to\)/);
 assert.match(quizItemRoute, /\.select\(quizDistractorCandidateSelect\)/);
 assert.doesNotMatch(quizRoute, /\.select\("\*"/);
 assert.doesNotMatch(quizItemRoute, /\.select\("\*"/);
@@ -26,6 +29,10 @@ assert.match(quizStorage, /quizCategoriesRequest \?\?=/);
 assert.match(adminQuizClient, /quizSearchDebounceMs = 250/);
 assert.match(adminQuizClient, /setSearchQuery\(searchText\.trim\(\)\)/);
 assert.match(adminQuizClient, /\[page, searchQuery, selectedCategory, selectedLevel\]/);
+assert.match(adminQuizClient, /href=\{getAdminQuizPageHref\(\{/);
+assert.match(adminQuizClient, /prefetch=\{false\}/);
+assert.doesNotMatch(adminQuizClient, /onClick=\{\(\) => changePage\(/);
+assert.match(adminQuizPage, /initialPage=\{normalizePage\(resolvedSearchParams\?\.page\)\}/);
 assert.match(applyTextColor, /editor\.focus\(\)/);
 assert.match(applyTextColor, /document\.execCommand\("foreColor", false, color\)/);
 assert.doesNotMatch(applyTextColor, /setDraft|setMessage/);
