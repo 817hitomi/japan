@@ -13,11 +13,11 @@ import {
   readNoteWithSource,
   readNotesWithSource,
   readNotesWithFallback,
-  saveNote as saveNoteToDatabase,
-  uploadMediaFile
+  saveNote as saveNoteToDatabase
 } from "../../notes/noteStorage";
 import styles from "./AdminNotes.module.scss";
 import { AdminShell } from "../AdminShell";
+import { ArticleRichEditor, ArticleRichEditorHandle } from "./ArticleRichEditor";
 
 type Mode = "list" | "new" | "edit";
 type BlockType = "text" | "image" | "video" | "note" | "ad";
@@ -41,50 +41,13 @@ type NoteRecord = PublicNoteRecord;
 const categoryStorageKey = "japannote-admin-note-categories";
 const notesPerPage = 10;
 const maxVisiblePageButtons = 10;
-const fixedColors = ["#7D7D7D", "#C28080", "#D6C09E", "#8CB993"] as const;
 const defaultCategories = ["N5", "N4", "會話", "文法"];
-
-const blockOptions: { value: BlockType; label: string }[] = [
-  { value: "text", label: "文字區塊" },
-  { value: "image", label: "圖片" },
-  { value: "video", label: "影片連結" },
-  { value: "note", label: "NOTE" },
-  { value: "ad", label: "廣告版位" }
-];
 
 const initialBlocks: ContentBlock[] = [
   {
     id: "block-text",
     type: "text",
-    title: "文字區塊",
-    html: "",
-    collapsed: false
-  },
-  {
-    id: "block-image",
-    type: "image",
-    title: "圖片",
-    html: "",
-    collapsed: false
-  },
-  {
-    id: "block-video",
-    type: "video",
-    title: "影片連結",
-    html: "",
-    collapsed: false
-  },
-  {
-    id: "block-note",
-    type: "note",
-    title: "NOTE",
-    html: "",
-    collapsed: false
-  },
-  {
-    id: "block-ad",
-    type: "ad",
-    title: "廣告版位",
+    title: "文章內容",
     html: "",
     collapsed: false
   }
@@ -142,17 +105,6 @@ function readFileAsDataUrl(event: ChangeEvent<HTMLInputElement>, callback: (url:
   const reader = new FileReader();
   reader.onload = () => callback(String(reader.result));
   reader.readAsDataURL(file);
-}
-
-async function uploadVideoFile(event: ChangeEvent<HTMLInputElement>, callback: (url: string) => void) {
-  const file = event.target.files?.[0];
-  if (!file) {
-    return;
-  }
-
-  const url = await uploadMediaFile(file, "video");
-  callback(url);
-  event.target.value = "";
 }
 
 function NotesList({ initialPage }: { initialPage: number }) {
@@ -489,125 +441,9 @@ function NotesList({ initialPage }: { initialPage: number }) {
   );
 }
 
-function BlockBody({
-  block,
-  editorRef,
-  onCommit,
-  onPatch
-}: {
-  block: ContentBlock;
-  editorRef: (element: HTMLDivElement | null) => void;
-  onCommit: (html: string) => void;
-  onPatch: (patch: Partial<ContentBlock>) => void;
-}) {
-  if (block.collapsed) {
-    return <p className={styles.collapsedText}>區塊已收合，按「展開」可繼續編輯。</p>;
-  }
-
-  if (block.type === "image") {
-    return (
-      <>
-        <div className={styles.uploadBox}>{block.imageUrl ? <img src={block.imageUrl} alt="" /> : null}</div>
-        <div className={styles.uploadActions}>
-          <label className={styles.uploadButton}>
-            上傳
-            <input type="file" accept="image/*" onChange={(event) => readFileAsDataUrl(event, (url) => onPatch({ imageUrl: url }))} />
-          </label>
-          <button className={styles.ghostButton} type="button" onClick={() => onPatch({ imageUrl: "" })}>
-            移除
-          </button>
-        </div>
-        <label className={styles.inlineField}>
-          <span>加入連結</span>
-          <input value={block.linkUrl ?? ""} onChange={(event) => onPatch({ linkUrl: event.target.value })} />
-        </label>
-      </>
-    );
-  }
-
-  if (block.type === "video") {
-    return (
-      <div className={styles.videoFields}>
-        {block.videoUrl ? (
-          <div className={styles.videoPreview}>
-            <span>目前影片</span>
-            <a href={block.videoUrl} target="_blank" rel="noreferrer">
-              開啟影片
-            </a>
-          </div>
-        ) : null}
-        <div className={styles.uploadActions}>
-          <label className={styles.uploadButton}>
-            上傳影片
-            <input
-              type="file"
-              accept="video/mp4,video/webm,video/ogg,video/quicktime"
-              onChange={(event) => {
-                uploadVideoFile(event, (url) => onPatch({ videoUrl: url })).catch(() => {
-                  onPatch({ caption: block.caption || "影片上傳失敗，請稍後再試。" });
-                });
-              }}
-            />
-          </label>
-          <button className={styles.ghostButton} type="button" onClick={() => onPatch({ videoUrl: "" })}>
-            移除影片
-          </button>
-        </div>
-        <label>
-          <span>影片說明</span>
-          <input
-            value={block.caption ?? ""}
-            placeholder="可放影片標題或補充說明"
-            onChange={(event) => onPatch({ caption: event.target.value })}
-          />
-        </label>
-        <label>
-          <span>影片連結</span>
-          <input
-            value={block.videoUrl ?? ""}
-            placeholder="可放 YouTube、MP4 或其他影片網址"
-            onChange={(event) => onPatch({ videoUrl: event.target.value })}
-          />
-        </label>
-      </div>
-    );
-  }
-
-  if (block.type === "ad") {
-    return (
-      <select className={styles.fullSelect} value={block.adSlot ?? ""} onChange={(event) => onPatch({ adSlot: event.target.value })}>
-        <option value="">下拉選單</option>
-        <option value="文章中段廣告">文章中段廣告</option>
-        <option value="文章結尾廣告">文章結尾廣告</option>
-      </select>
-    );
-  }
-
-  return (
-    <div
-      ref={editorRef}
-      className={styles.editable}
-      contentEditable
-      draggable={false}
-      suppressContentEditableWarning
-      dangerouslySetInnerHTML={{ __html: block.html }}
-      onDragStart={(event) => event.preventDefault()}
-      onBlur={(event) => onCommit(event.currentTarget.innerHTML)}
-      onKeyDown={(event) => {
-        if (event.key !== "Enter") {
-          return;
-        }
-
-        event.preventDefault();
-        document.execCommand("insertLineBreak");
-      }}
-    />
-  );
-}
-
 function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number }) {
   const router = useRouter();
-  const [loaded, setLoaded] = useState(mode === "new");
+  const [loaded, setLoaded] = useState(false);
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [category, setCategory] = useState("");
@@ -616,12 +452,12 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
   const [slug, setSlug] = useState("");
   const [tags, setTags] = useState("");
   const [coverUrl, setCoverUrl] = useState("");
-  const [blocks, setBlocks] = useState<ContentBlock[]>(cloneBlocks(initialBlocks));
+  const [blocks, setBlocks] = useState<ContentBlock[]>(initialBlocks);
   const [categories, setCategories] = useState<string[]>(defaultCategories);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [message, setMessage] = useState("可選取文字後按色票，也可拖曳區塊排序。");
+  const [message, setMessage] = useState("可在同一個文章區域內編輯，並從上方工具列插入小標題、NOTE、圖片與影片。");
   const [previewOpen, setPreviewOpen] = useState(false);
-  const editorRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [previewBlocks, setPreviewBlocks] = useState<ContentBlock[]>([]);
+  const articleEditorRef = useRef<ArticleRichEditorHandle | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -679,140 +515,11 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
     };
   }, [mode, noteId]);
 
-  const blockCount = useMemo(() => blocks.filter((block) => !block.collapsed).length, [blocks]);
-
-  function syncEditableBlocks(sourceBlocks = blocks) {
-    return sourceBlocks.map((block) => {
-      const editor = editorRefs.current[block.id];
-      return editor ? { ...block, html: editor.innerHTML } : block;
-    });
-  }
-
-  function applyColor(blockId: string, color: string) {
-    const editor = editorRefs.current[blockId];
-    if (!editor) {
-      setMessage("這個區塊不是文字區塊，無法套用文字色碼。");
-      return;
-    }
-
-    editor.focus();
-    document.execCommand("foreColor", false, color);
-    setBlocks((current) => syncEditableBlocks(current));
-    setMessage(`已套用文字色碼 ${color}。`);
-  }
-
-  function toggleBold(blockId: string) {
-    const editor = editorRefs.current[blockId];
-    if (!editor) {
-      return;
-    }
-
-    editor.focus();
-    document.execCommand("bold");
-    setBlocks((current) => syncEditableBlocks(current));
-    setMessage("已套用粗體。");
-  }
-
-  function insertDivider(blockId: string) {
-    const editor = editorRefs.current[blockId];
-    if (!editor) {
-      return;
-    }
-
-    editor.focus();
-    document.execCommand("insertHTML", false, "<hr><br>");
-    setBlocks((current) => syncEditableBlocks(current));
-    setMessage("已插入分隔線。");
-  }
-
-  function insertLink(blockId: string) {
-    const editor = editorRefs.current[blockId];
-    if (!editor) {
-      return;
-    }
-
-    const url = window.prompt("請輸入連結網址");
-    if (!url) {
-      return;
-    }
-
-    editor.focus();
-    document.execCommand("createLink", false, url);
-    editor.querySelectorAll(`a[href="${CSS.escape(url)}"]`).forEach((link) => {
-      link.setAttribute("style", "color: #7f6d4f; font-weight: 700;");
-    });
-    setBlocks((current) => syncEditableBlocks(current));
-    setMessage("已套用超連結。");
-  }
-
-  function toggleList(blockId: string) {
-    const editor = editorRefs.current[blockId];
-    if (!editor) {
-      return;
-    }
-
-    editor.focus();
-    document.execCommand("insertUnorderedList");
-    setBlocks((current) => syncEditableBlocks(current));
-    setMessage("已套用清單。");
-  }
-
-  function updateBlock(blockId: string, patch: Partial<ContentBlock>) {
-    setBlocks((current) => current.map((block) => (block.id === blockId ? { ...block, ...patch } : block)));
-  }
-
-  function addBlockAfter(blockId: string, type: BlockType = "text") {
-    const source = blockOptions.find((option) => option.value === type);
-    const nextBlock: ContentBlock = {
-      id: `block-${Date.now()}`,
-      type,
-      title: source?.label ?? "文字區塊",
-      html: "",
-      collapsed: false
-    };
-
-    setBlocks((current) => {
-      const index = current.findIndex((block) => block.id === blockId);
-      const next = [...current];
-      next.splice(index + 1, 0, nextBlock);
-      return next;
-    });
-    setMessage("已向下新增一個區塊。");
-  }
-
-  function removeBlock(blockId: string) {
-    if (blocks.length === 1) {
-      setMessage("至少需要保留一個內容區塊。");
-      return;
-    }
-
-    setBlocks((current) => current.filter((block) => block.id !== blockId));
-    setMessage("已刪除區塊。");
-  }
-
-  function reorder(targetId: string) {
-    if (!draggingId || draggingId === targetId) {
-      return;
-    }
-
-    setBlocks((current) => {
-      const from = current.findIndex((block) => block.id === draggingId);
-      const to = current.findIndex((block) => block.id === targetId);
-      if (from < 0 || to < 0) {
-        return current;
-      }
-      const next = [...current];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return next;
-    });
-  }
-
   async function saveNote(event: FormEvent) {
     event.preventDefault();
 
     const id = mode === "edit" && noteId ? noteId : Date.now();
-    const syncedBlocks = syncEditableBlocks();
+    const syncedBlocks = articleEditorRef.current?.getBlocks() ?? blocks;
     const nextNote: NoteRecord = {
       id,
       title: title.trim() || "未命名文章",
@@ -830,7 +537,7 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
 
     try {
       await saveNoteToDatabase(nextNote, mode === "edit" ? "update" : "create");
-      setMessage(`${mode === "edit" ? "已更新文章" : "已新增文章"}，目前有 ${syncedBlocks.length} 個區塊，其中 ${blockCount} 個展開。`);
+      setMessage(`${mode === "edit" ? "已更新文章" : "已新增文章"}。`);
       router.push("/admin/notes");
     } catch (error) {
       setMessage(`儲存失敗：${error instanceof Error ? error.message : "請確認 Supabase 設定與 learning_notes 資料表。"}`);
@@ -891,122 +598,7 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
 
         <section className={styles.contentSection}>
           <h2>文章內容</h2>
-          <div className={styles.blockStack}>
-            {blocks.map((block) => (
-              <article
-                key={block.id}
-                className={`${styles.editorBlock} ${draggingId === block.id ? styles.dragging : ""}`}
-                onDragOver={(event) => {
-                  if (!draggingId) {
-                    return;
-                  }
-
-                  event.preventDefault();
-                  reorder(block.id);
-                }}
-                onDragEnd={() => {
-                  setDraggingId(null);
-                  setMessage("已更新區塊順序。");
-                }}
-              >
-                <div className={styles.blockHeader}>
-                  <button
-                    className={styles.dragHandle}
-                    type="button"
-                    title="拖曳排序"
-                    aria-label="拖曳排序"
-                    draggable
-                    onDragStart={(event) => {
-                      event.dataTransfer.effectAllowed = "move";
-                      setDraggingId(block.id);
-                    }}
-                    onDragEnd={() => {
-                      setDraggingId(null);
-                      setMessage("已更新區塊順序。");
-                    }}
-                  >
-                    ⋮⋮
-                  </button>
-                  <select
-                    value={block.type}
-                    onChange={(event) => {
-                      const nextType = event.target.value as BlockType;
-                      const nextTitle = blockOptions.find((option) => option.value === nextType)?.label ?? block.title;
-                      updateBlock(block.id, { type: nextType, title: nextTitle });
-                      setMessage(`已切換為「${nextTitle}」。`);
-                    }}
-                    aria-label="區塊類型"
-                  >
-                    {blockOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-
-                  {(block.type === "text" || block.type === "note") && (
-                    <div className={styles.styleToolbar} aria-label="文字樣式設定">
-                      <button type="button" className={styles.boldButton} onMouseDown={(event) => event.preventDefault()} onClick={() => toggleBold(block.id)}>
-                        B
-                      </button>
-                      <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => applyColor(block.id, "#7D7D7D")}>
-                        預設
-                      </button>
-                      <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => insertDivider(block.id)}>
-                        分隔線
-                      </button>
-                      <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => insertLink(block.id)}>
-                        起連結
-                      </button>
-                      <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => toggleList(block.id)}>
-                        清單
-                      </button>
-                      {fixedColors.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          className={styles.colorSwatch}
-                          style={{ backgroundColor: color }}
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => applyColor(block.id, color)}
-                          aria-label={`套用 ${color}`}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  <button type="button" onClick={() => updateBlock(block.id, { collapsed: !block.collapsed })}>
-                    {block.collapsed ? "展開" : "收合"}
-                  </button>
-                  <button type="button" onClick={() => removeBlock(block.id)}>
-                    刪除區塊
-                  </button>
-                </div>
-
-                <label className={styles.blockTitleField}>
-                  <span>小標題</span>
-                  <input
-                    value={block.heading ?? ""}
-                    placeholder="小標題"
-                    onChange={(event) => updateBlock(block.id, { heading: event.target.value })}
-                  />
-                </label>
-
-                <BlockBody
-                  block={block}
-                  editorRef={(element) => {
-                    editorRefs.current[block.id] = element;
-                  }}
-                  onCommit={(html) => updateBlock(block.id, { html })}
-                  onPatch={(patch) => updateBlock(block.id, patch)}
-                />
-
-                <button className={styles.addBlockButton} type="button" onClick={() => addBlockAfter(block.id)}>
-                  向下新增區塊
-                </button>
-              </article>
-            ))}
-          </div>
+          <ArticleRichEditor ref={articleEditorRef} initialBlocks={blocks} onMessage={setMessage} />
         </section>
 
         <div className={styles.bottomGrid}>
@@ -1034,7 +626,7 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
             className={styles.ghostButton}
             type="button"
             onClick={() => {
-              setBlocks((current) => syncEditableBlocks(current));
+              setPreviewBlocks(articleEditorRef.current?.getBlocks() ?? blocks);
               setPreviewOpen(true);
             }}
           >
@@ -1052,11 +644,12 @@ function NoteEditor({ mode, noteId }: { mode: "new" | "edit"; noteId?: number })
             </button>
             <h2>{title || "未命名文章"}</h2>
             <p>{summary || "尚未輸入摘要。"}</p>
-            {blocks.map((block) => (
+            {previewBlocks.map((block) => (
               <div key={block.id} className={styles.previewBlock}>
-                <strong>{block.title}</strong>
+                {block.heading ? <h3>{block.heading}</h3> : null}
                 {block.type === "image" && block.imageUrl ? <img src={block.imageUrl} alt="" /> : null}
-                {(block.type === "text" || block.type === "note") && <div dangerouslySetInnerHTML={{ __html: block.html }} />}
+                {block.type === "text" && <div dangerouslySetInnerHTML={{ __html: block.html }} />}
+                {block.type === "note" && <div className={styles.previewNote} dangerouslySetInnerHTML={{ __html: block.html }} />}
                 {block.type === "video" && <span>{block.videoUrl || "尚未輸入影片連結"}</span>}
                 {block.type === "ad" && <span>{block.adSlot || "尚未選擇廣告版位"}</span>}
               </div>
