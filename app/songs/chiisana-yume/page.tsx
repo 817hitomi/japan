@@ -3,22 +3,36 @@ import SiteFooter from "../../SiteFooter";
 import SiteHeader from "../../SiteHeader";
 import { readLearningOverviewForPublicPage } from "../../publicData";
 import homeStyles from "../../page.module.scss";
+import { readPublishedSongBySlug, readPublishedSongList } from "../songData";
+import { createSongMetadata } from "../songMetadata";
+import { toSongRelatedItem } from "../songTypes";
 import SongPlayerClient from "./SongPlayerClient";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-export const metadata: Metadata = {
-  title: "小さな夢｜同步歌詞試作｜JapanNote",
-  description: "跟著影片逐句閱讀日文歌詞、假名與繁體中文翻譯。"
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const song = await readPublishedSongBySlug("chiisana-yume");
+  return song ? createSongMetadata(song) : {};
+}
 
 export default async function ChiisanaYumePage() {
-  const learningOverview = await readLearningOverviewForPublicPage();
+  const [learningOverview, song, publishedSongs] = await Promise.all([
+    readLearningOverviewForPublicPage(),
+    readPublishedSongBySlug("chiisana-yume"),
+    readPublishedSongList()
+  ]);
+
+  if (!song) return null;
 
   return (
     <main className={homeStyles.page}>
       <SiteHeader />
-      <SongPlayerClient learningDays={learningOverview.learningDays} />
+      <SongPlayerClient
+        learningDays={learningOverview.learningDays}
+        publishedSongs={publishedSongs.some((item) => item.slug === song.slug) ? publishedSongs : [toSongRelatedItem(song), ...publishedSongs]}
+        song={song}
+      />
       <SiteFooter />
     </main>
   );

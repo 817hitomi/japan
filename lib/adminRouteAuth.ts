@@ -3,11 +3,15 @@ import { evaluateAdminAccess } from "./adminAuth";
 import { getRuntimeEnv } from "./runtimeEnv";
 import { createSupabaseAuthServerClient } from "./supabase/authServer";
 
+export async function readAdminAccess() {
+  const supabase = await createSupabaseAuthServerClient();
+  const { data, error } = await supabase.auth.getUser();
+  return evaluateAdminAccess(error ? null : data.user, getRuntimeEnv("ADMIN_EMAIL"));
+}
+
 export async function requireAdminRoute() {
   try {
-    const supabase = await createSupabaseAuthServerClient();
-    const { data, error } = await supabase.auth.getUser();
-    const access = evaluateAdminAccess(error ? null : data.user, getRuntimeEnv("ADMIN_EMAIL"));
+    const access = await readAdminAccess();
 
     if (access.status === 200) {
       return null;
@@ -24,4 +28,3 @@ export async function requireAdminRoute() {
     );
   }
 }
-

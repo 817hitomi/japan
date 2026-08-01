@@ -14,7 +14,7 @@ import {
 } from "./lib/securityFirstRequest";
 
 const protectedApiPrefixes = ["/api/uploads"];
-const adminWriteApiPrefixes = ["/api/ads", "/api/words", "/api/quiz", "/api/quotes", "/api/affiliates"];
+const adminWriteApiPrefixes = ["/api/ads", "/api/words", "/api/quiz", "/api/quotes", "/api/affiliates", "/api/songs"];
 const publicAssetPrefixes = ["/_next/static", "/_next/image", "/brand"];
 const knownStaticFiles = new Set(["/ads.txt", "/robots.txt", "/sitemap.xml"]);
 const blockedPathPatterns = [
@@ -28,7 +28,7 @@ const blockedPathPatterns = [
 const knownApiRoutes = new Set([
   "/api/ads", "/api/affiliates", "/api/admin/site-analytics", "/api/content-reports", "/api/home-stats",
   "/api/notes", "/api/notes/og", "/api/quiz", "/api/quiz/categories", "/api/quotes", "/api/site-page-view",
-  "/api/site-stats", "/api/uploads", "/api/words"
+  "/api/site-stats", "/api/songs", "/api/uploads", "/api/words"
 ]);
 const knownPublicRoutes = new Set([
   "/", "/about", "/affiliates", "/auth/callback", "/cookies", "/disclaimer", "/login", "/notes", "/privacy",
@@ -50,7 +50,7 @@ function isApiPath(pathname: string) {
 }
 
 function isKnownApiPath(pathname: string) {
-  return knownApiRoutes.has(pathname) || /^\/api\/(?:affiliates|notes|quiz|quotes|words)\/[^/]+$/.test(pathname);
+  return knownApiRoutes.has(pathname) || /^\/api\/(?:affiliates|notes|quiz|quotes|songs|words)\/[^/]+$/.test(pathname);
 }
 
 function isKnownAdminPagePath(pathname: string) {
@@ -71,6 +71,7 @@ function quickApi404() {
 
 function isKnownDynamicPagePath(pathname: string) {
   if (pathname.startsWith("/notes/")) return pathname.split("/").filter(Boolean).length === 2;
+  if (pathname.startsWith("/songs/")) return pathname.split("/").filter(Boolean).length === 2;
   if (pathname.startsWith("/words/")) {
     const [, section, page] = pathname.split("/");
     return section === "words" && /^\d+$/.test(page ?? "");
@@ -100,6 +101,8 @@ export function isProtectedRequest(request: NextRequest) {
   if (pathname === "/api/content-reports") return request.method !== "POST";
   if (protectedApiPrefixes.some((prefix) => pathname.startsWith(prefix))) return true;
   if (pathname === "/api/affiliates" && request.method === "GET") return searchParams.get("status") !== "published";
+  if (pathname === "/api/songs" && request.method === "GET") return searchParams.get("status") !== "published";
+  if (pathname.startsWith("/api/songs/")) return true;
   if (adminWriteApiPrefixes.some((prefix) => pathname.startsWith(prefix))) return request.method !== "GET";
   if (pathname === "/api/notes") return request.method !== "GET" || searchParams.get("status") !== "published";
   if (pathname === "/api/notes/og") return request.method !== "GET";

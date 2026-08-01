@@ -75,9 +75,9 @@
 
 .videoShell {
   position: relative;
-  min-height: 360px;
+  min-height: 0;
   overflow: hidden;
-  aspect-ratio: 16 / 7.2;
+  aspect-ratio: 16 / 9;
   background: #15191f;
 }
 
@@ -96,7 +96,10 @@
   justify-items: center;
   gap: 14px;
   border: 0;
-  background: linear-gradient(180deg, rgba(18, 29, 46, 0.08), rgba(10, 15, 25, 0.64)), url("https://i.ytimg.com/vi/PRMMBraH_k4/maxresdefault.jpg") center / cover;
+  background-color: #15191f;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
   color: #fff;
   cursor: pointer;
   font-size: 15px;
@@ -289,11 +292,155 @@
 
 .prototypeNote { margin: 14px 8px 0; color: #9aa3af; font-size: 12px; text-align: right; }
 
+.studyLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  align-items: start;
+  gap: 48px;
+  margin: 82px auto 0;
+}
+
 .studyNotes {
   display: grid;
   gap: 36px;
+  min-width: 0;
   width: 100%;
-  margin: 82px auto 0;
+  margin: 0;
+}
+
+.studySidebar {
+  align-self: stretch;
+  min-width: 0;
+}
+
+.studyToc {
+  position: sticky;
+  top: 88px;
+  display: grid;
+  gap: 12px;
+  padding: 20px 14px;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  background: rgba(245, 245, 245, 0.94);
+  box-shadow: 0 4px 12px rgba(88, 70, 70, 0.04);
+
+  strong,
+  a {
+    color: #777171;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.5;
+  }
+
+  strong {
+    margin-bottom: 2px;
+  }
+
+  a {
+    transition: color 160ms ease;
+
+    &:hover {
+      color: var(--primary);
+    }
+  }
+}
+
+.mobileStudyToc {
+  display: none;
+}
+
+.songEndSections {
+  display: grid;
+  gap: 38px;
+  margin-top: 72px;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 45px;
+    margin: 0;
+    padding: 0 14px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 14px;
+    line-height: 3;
+  }
+}
+
+.songLinkList {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+
+  a {
+    display: grid;
+    gap: 5px;
+    padding: 10px 12px;
+    border: 1px solid #e8dddd;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--text);
+    transition:
+      border-color 160ms ease,
+      transform 160ms ease;
+
+    &:hover {
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+  }
+
+  strong {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.35;
+  }
+
+  span {
+    color: #b9aaaa;
+    font-size: 14px;
+    line-height: 2;
+  }
+}
+
+.songTagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.songTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid #e8dddd;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+
+  b {
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  strong {
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 900;
+  }
+}
+
+.emptySongSection {
+  margin: 12px 0 0;
+  color: #b9aaaa;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .studyTitleRow {
@@ -356,6 +503,28 @@
     font-weight: 900;
     line-height: 1;
   }
+}
+
+.studyMedia {
+  overflow: hidden;
+  border-radius: 14px;
+
+  img,
+  video,
+  iframe {
+    display: block;
+    width: 100%;
+    max-height: 620px;
+    border: 0;
+    object-fit: contain;
+  }
+
+  iframe { aspect-ratio: 16 / 9; }
+}
+
+.studyNote {
+  border-left: 5px solid #c28080;
+  background: #fff7f7;
 }
 
 .studyBody {
@@ -487,23 +656,27 @@
   text-align: center;
 }
 
-.focusMode {
-  .hero, .lyricsHeading > p, .prototypeNote { display: none; }
-  .lyricsCard { margin-top: 18px; }
-  .lyricsViewport { height: 620px; }
-}
-
 @media (max-width: 1050px) {
   .controls { grid-template-columns: 46px 1fr repeat(5, auto); }
   .volumeControl { display: none; }
   .progressGroup { grid-column: span 6; grid-row: 2; }
 }
 
+@media (max-width: 820px) {
+  .studyLayout { display: block; }
+  .studySidebar { display: none; }
+  .mobileStudyToc {
+    position: static;
+    display: grid;
+    margin-top: -12px;
+  }
+}
+
 @media (max-width: 720px) {
   .page { width: min(100% - 24px, 1260px); padding-top: 34px; }
   .hero, .lyricsHeading { align-items: flex-start; flex-direction: column; }
   .tags { justify-content: flex-start; }
-  .videoShell { min-height: 260px; aspect-ratio: 16 / 10; }
+  .videoShell { min-height: 0; aspect-ratio: 16 / 9; }
   .videoCaption { bottom: 58px; }
   .controls { display: flex; flex-wrap: wrap; }
   .controls button { flex: 1 1 auto; }
@@ -513,7 +686,9 @@
   .lyricsViewport { height: 560px; padding-inline: 0; }
   .lyricLine { grid-template-columns: 44px minmax(0, 1fr); gap: 10px; padding: 15px 12px; }
   .translation { grid-column: 2; }
-  .studyNotes { gap: 30px; margin-top: 62px; }
+  .studyLayout { display: block; margin-top: 62px; }
+  .studyNotes { gap: 30px; }
   .studyBody { padding: 22px 18px; }
   .vocabularyGrid { grid-template-columns: 1fr; }
+  .songEndSections { margin-top: 58px; }
 }

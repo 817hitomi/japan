@@ -13,6 +13,7 @@ const navItems = [
   { label: "單字卡", href: "/admin/words" },
   { label: "模擬測驗", href: "/admin/quiz?level=N5" },
   { label: "學習筆記", href: "/admin/notes" },
+  { label: "歌曲頁面", href: "/admin/songs" },
   { label: "勘誤回報", href: "/admin/reports" },
   { label: "通路管理", href: "/admin/settings" },
   { label: "聯盟管理", href: "/admin/affiliates" },

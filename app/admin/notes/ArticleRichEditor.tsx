@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, ClipboardEvent, forwardRef, MouseEvent, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, ClipboardEvent, forwardRef, KeyboardEvent, MouseEvent, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { NoteContentBlock, uploadMediaFile } from "../../notes/noteStorage";
 import styles from "./AdminNotes.module.scss";
 
@@ -187,6 +187,65 @@ export const ArticleRichEditor = forwardRef<ArticleRichEditorHandle, ArticleRich
   function keepSelection(event: MouseEvent<HTMLElement>) {
     event.preventDefault();
     rememberSelection();
+  }
+
+  function moveCaretToStart(element: HTMLElement) {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(true);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    selectionRangeRef.current = range.cloneRange();
+    editorRef.current?.focus();
+  }
+
+  function exitNoteAtEnd(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey || event.nativeEvent.isComposing) return;
+
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection?.rangeCount || !selection.isCollapsed) return;
+
+    const range = selection.getRangeAt(0);
+    const anchor = range.startContainer;
+    const anchorElement = anchor instanceof Element ? anchor : anchor.parentElement;
+    const noteBlock = anchorElement?.closest<HTMLElement>('[data-block-type="note"]');
+    const noteContent = noteBlock?.querySelector<HTMLElement>('[data-note-content="true"]');
+    if (!noteBlock || !noteContent || !editor.contains(noteBlock) || !noteContent.contains(anchor)) return;
+
+    const remainderRange = document.createRange();
+    remainderRange.selectNodeContents(noteContent);
+    remainderRange.setStart(range.startContainer, range.startOffset);
+    const remainder = document.createElement("div");
+    remainder.append(remainderRange.cloneContents());
+    if (remainder.textContent?.trim() || remainder.querySelector("img, video, iframe, hr")) return;
+
+    event.preventDefault();
+
+    const nextBlock = noteBlock.nextElementSibling;
+    let target = nextBlock?.matches('[data-note-editor-block="true"][data-block-type="text"]')
+      ? nextBlock.querySelector<HTMLElement>('[data-note-content="true"]')
+      : null;
+
+    if (!target) {
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = blockToEditorHtml({
+        id: createBlockId("text"),
+        type: "text",
+        title: "文章內容",
+        html: "",
+        collapsed: false
+      });
+      const textBlock = wrapper.firstElementChild;
+      target = textBlock?.querySelector<HTMLElement>('[data-note-content="true"]') ?? null;
+      if (textBlock) noteBlock.after(textBlock);
+    }
+
+    if (target) {
+      moveCaretToStart(target);
+      target.scrollIntoView({ block: "nearest" });
+    }
   }
 
   function pastePlainText(event: ClipboardEvent<HTMLDivElement>) {
@@ -448,6 +507,7 @@ export const ArticleRichEditor = forwardRef<ArticleRichEditorHandle, ArticleRich
         suppressContentEditableWarning
         data-placeholder="從這裡開始撰寫完整文章……"
         onInput={rememberSelection}
+        onKeyDown={exitNoteAtEnd}
         onKeyUp={rememberSelection}
         onMouseUp={rememberSelection}
         onFocus={rememberSelection}
