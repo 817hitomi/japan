@@ -27,6 +27,7 @@ const navItems = [
   { label: "單字卡", href: "/words" },
   { label: "模擬測驗", href: "/quiz", children: [{ label: "文字．語彙", href: "/quiz/vocabulary" }] },
   { label: "學習筆記", href: "/notes" },
+  { label: "留音室", href: "/songs" },
   { label: "登入", href: "/admin" }
 ];
 
@@ -199,9 +200,9 @@ function HeroBoardCard({ item }: { item: QuoteRecord }) {
   );
 }
 
-function selectInitialBoardItem(items: QuoteRecord[], dailySelectionKey: string) {
+function pickRandomBoardItem(items: QuoteRecord[]) {
   const candidates = items.length > 0 ? items : defaultQuotes;
-  return selectDailyItems(candidates, 1, dailySelectionKey, "hero-board")[0] ?? defaultQuotes[0];
+  return candidates[Math.floor(Math.random() * candidates.length)] ?? defaultQuotes[0];
 }
 
 function ParallaxBackground() {
@@ -267,7 +268,7 @@ export default function NotesFrontClient({
   const [words, setWords] = useState<WordCardRecord[]>(safeInitialWords);
   const [boardItems, setBoardItems] = useState<QuoteRecord[]>(safeInitialBoardItems);
   const [randomBoardItem, setRandomBoardItem] = useState<QuoteRecord>(() =>
-    selectInitialBoardItem(safeInitialBoardItems, initialDailySelectionKey)
+    pickRandomBoardItem(safeInitialBoardItems)
   );
 
   useEffect(() => {
@@ -304,7 +305,9 @@ export default function NotesFrontClient({
       setNotes(resolvedNotes.length > 0 || safeInitialNotes.length === 0 ? resolvedNotes : safeInitialNotes);
       setWords(resolvedWords.length > 0 || safeInitialWords.length === 0 ? resolvedWords : safeInitialWords);
       setBoardItems(resolvedBoardItems);
-      setRandomBoardItem(selectInitialBoardItem(resolvedBoardItems, dailySelectionKey));
+      setRandomBoardItem((current) =>
+        resolvedBoardItems.some((item) => item.id === current.id) ? current : pickRandomBoardItem(resolvedBoardItems)
+      );
     }
 
     loadHomeData();

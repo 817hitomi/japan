@@ -299,7 +299,7 @@ export default function SongPlayerClient({
             <h1>歌曲學習</h1>
             <p className={homeStyles.heroLead}>跟著旋律讀歌詞，把日文自然地唱進記憶裡</p>
             <div className={homeStyles.stats} aria-label="歌曲學習資訊">
-              <div><strong>1</strong><span>首歌曲</span></div>
+              <div><strong>{publishedSongs.length.toLocaleString("en-US")}</strong><span>首歌曲</span></div>
               <div><strong>{learningDays.toLocaleString("en-US")}</strong><span>已學習天數</span></div>
               <div><strong>{song.level}</strong><span>目前程度</span></div>
             </div>
@@ -378,7 +378,7 @@ export default function SongPlayerClient({
             );
           })}
         </div>
-        <p className={styles.prototypeNote}>目前使用約略時間碼驗證前台互動；正式上線前可在後台逐句微調。</p>
+        <p className={styles.prototypeNote}>點擊任一句即可跳到對應位置</p>
       </section>
 
       <div className={styles.studyLayout}>

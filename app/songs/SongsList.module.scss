@@ -1,0 +1,41 @@
+.playButton {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  padding-left: 4px;
+  border: 3px solid rgba(255, 255, 255, 0.92);
+  border-radius: 50%;
+  background: rgba(194, 128, 128, 0.9);
+  color: #ffffff;
+  font-size: 22px;
+  box-shadow: 0 8px 24px rgba(66, 45, 45, 0.28);
+  transform: translate(-50%, -50%);
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+a:hover .playButton {
+  background: #c28080;
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.duration {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  background: rgba(75, 54, 54, 0.82);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.coverFallback {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 82px;
+}

@@ -27,7 +27,7 @@ export default async function ChiisanaYumePage() {
 
   return (
     <main className={homeStyles.page}>
-      <SiteHeader />
+      <SiteHeader activeLabel="留音室" />
       <SongPlayerClient
         learningDays={learningOverview.learningDays}
         publishedSongs={publishedSongs.some((item) => item.slug === song.slug) ? publishedSongs : [toSongRelatedItem(song), ...publishedSongs]}

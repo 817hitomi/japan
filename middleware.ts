@@ -32,7 +32,7 @@ const knownApiRoutes = new Set([
 ]);
 const knownPublicRoutes = new Set([
   "/", "/about", "/affiliates", "/auth/callback", "/cookies", "/disclaimer", "/login", "/notes", "/privacy",
-  "/quiz", "/quiz/random-10", "/quiz/random-20", "/quiz/vocabulary", "/songs/chiisana-yume", "/terms", "/words"
+  "/quiz", "/quiz/random-10", "/quiz/random-20", "/quiz/vocabulary", "/songs", "/songs/chiisana-yume", "/terms", "/words"
 ]);
 const blockedProbeRoutes = new Set(["/app", "/console", "/dashboard", "/settings"]);
 const staticAssetPattern = /\.(?:avif|css|gif|ico|jpg|jpeg|js|json|map|mp3|mp4|ogg|otf|png|svg|ttf|txt|webm|webp|woff|woff2|xml)$/i;

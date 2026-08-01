@@ -71,7 +71,10 @@ export type SongRecord = {
 
 export type SongListItem = Pick<SongRecord, "id" | "title" | "slug" | "artist" | "status" | "publishedDate">;
 
-export type SongRelatedItem = Pick<SongRecord, "id" | "title" | "slug" | "artist" | "tags" | "level" | "publishedDate">;
+export type SongRelatedItem = Pick<
+  SongRecord,
+  "id" | "title" | "slug" | "artist" | "description" | "tags" | "coverUrl" | "level" | "videoId" | "durationSeconds" | "publishedDate"
+>;
 
 export function parseSongTags(tags: string) {
   return Array.from(
@@ -90,8 +93,12 @@ export function toSongRelatedItem(song: SongRecord): SongRelatedItem {
     title: song.title,
     slug: song.slug,
     artist: song.artist,
+    description: song.description,
     tags: song.tags,
+    coverUrl: song.coverUrl,
     level: song.level,
+    videoId: song.videoId,
+    durationSeconds: song.durationSeconds,
     publishedDate: song.publishedDate
   };
 }

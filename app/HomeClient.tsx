@@ -12,6 +12,7 @@ import { fetchWordCards } from "./words/wordStorage";
 import { WordCardRecord } from "./words/wordTypes";
 import { getOrCreateVisitorId } from "../lib/siteVisitor";
 import { defaultQuotes, QuoteRecord } from "./quotes/quoteTypes";
+import { getElapsedLearningDays } from "../lib/learningDays";
 import styles from "./page.module.scss";
 
 export type HomeLearningStats = {
@@ -24,6 +25,7 @@ const navItems = [
   { label: "單字卡", href: "/words" },
   { label: "模擬測驗", href: "/quiz", children: [{ label: "文字．語彙", href: "/quiz/vocabulary" }] },
   { label: "學習筆記", href: "/notes" },
+  { label: "留音室", href: "/songs" },
   { label: "登入", href: "/admin" }
 ];
 
@@ -81,30 +83,10 @@ function getCurrentWordLevel(words: WordCardRecord[]) {
   return "-";
 }
 
-function getCalendarDayStart(dateText: string) {
-  const [year, month, day] = dateText.slice(0, 10).split("-").map(Number);
-
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
-    return null;
-  }
-
-  return Date.UTC(year, month - 1, day);
-}
-
 function getLearningDays(notes: PublicNoteRecord[], currentDate?: string) {
   const dates = (Array.isArray(notes) ? notes : []).map((note) => note?.date).filter(Boolean).sort();
-  const start = dates[0] ? getCalendarDayStart(dates[0]) : null;
 
-  if (start === null) {
-    return 0;
-  }
-
-  const currentDayStart = currentDate ? getCalendarDayStart(currentDate) : null;
-  const now = new Date();
-  const today = currentDayStart ?? Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const elapsedDays = Math.floor((today - start) / 86_400_000) + 1;
-
-  return Math.max(elapsedDays, 1);
+  return getElapsedLearningDays(dates[0], currentDate);
 }
 
 function getFallbackLearningStats(

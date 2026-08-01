@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { getRuntimeEnv } from "../lib/runtimeEnv";
+import { getElapsedLearningDays } from "../lib/learningDays";
 import { createRequestTimer } from "../lib/requestDiagnostics";
 import { createSupabaseReadClient } from "../lib/supabase/server";
 import { rowToNote } from "./api/notes/noteMapper";
@@ -207,7 +208,7 @@ export type PublicLearningOverview = {
 function buildLearningOverview(notes: PublicNoteRecord[]): PublicLearningOverview {
   const categoryCounts = new Map<string, number>();
   const firstDate = notes.map((note) => note.date).filter(Boolean).sort()[0];
-  let learningDays = 0;
+  const learningDays = getElapsedLearningDays(firstDate);
 
   notes.forEach((note) => {
     const category = note.category?.trim();
@@ -216,17 +217,6 @@ function buildLearningOverview(notes: PublicNoteRecord[]): PublicLearningOvervie
       categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
     }
   });
-
-  if (firstDate) {
-    const [year, month, day] = firstDate.slice(0, 10).split("-").map(Number);
-
-    if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
-      const start = Date.UTC(year, month - 1, day);
-      const now = new Date();
-      const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-      learningDays = Math.max(Math.floor((today - start) / 86_400_000) + 1, 1);
-    }
-  }
 
   const currentLevel =
     notes

@@ -2,7 +2,7 @@ import { createSupabaseAdminClient, createSupabaseReadClient } from "../../lib/s
 import { rowToSong } from "../api/songs/songMapper";
 import { seedSong, SongRecord, SongRelatedItem, toSongRelatedItem } from "./songTypes";
 
-const publicSongListSelect = "id,title,slug,artist,tags,status,level,published_date";
+const publicSongListSelect = "id,title,slug,artist,description,tags,cover_url,status,level,video_id,duration_seconds,published_date";
 
 export async function readPublishedSongList(): Promise<SongRelatedItem[]> {
   try {

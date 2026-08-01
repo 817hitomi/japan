@@ -2,6 +2,7 @@
 
 import { ChangeEvent, ClipboardEvent, forwardRef, KeyboardEvent, MouseEvent, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { NoteContentBlock, uploadMediaFile } from "../../notes/noteStorage";
+import { hasMeaningfulArticleHtml, trimBoundaryEmptyBlocks } from "../../../lib/articleHtml";
 import styles from "./AdminNotes.module.scss";
 
 const fixedColors = ["#7D7D7D", "#C28080", "#D6C09E", "#8CB993"] as const;
@@ -88,7 +89,7 @@ function elementToBlock(element: HTMLElement, index: number): NoteContentBlock {
     type,
     title: element.dataset.blockTitle || (type === "note" ? "NOTE" : "文章內容"),
     heading: headingElement?.textContent?.trim() ?? "",
-    html: content instanceof HTMLElement ? content.innerHTML : "",
+    html: content instanceof HTMLElement ? trimBoundaryEmptyBlocks(content.innerHTML) : "",
     collapsed: false,
     imageUrl: element.dataset.imageUrl ?? "",
     linkUrl: element.dataset.linkUrl ?? "",
@@ -129,8 +130,26 @@ function editorToBlocks(editor: HTMLDivElement | null): NoteContentBlock[] {
   });
   flushLooseNodes();
 
-  return blocks.length > 0
-    ? blocks
+  const normalizedBlocks = blocks.reduce<NoteContentBlock[]>((result, block) => {
+    const previous = result.at(-1);
+    if (
+      previous?.type === "text"
+      && previous.heading?.trim()
+      && !hasMeaningfulArticleHtml(previous.html)
+      && block.type === "text"
+      && !block.heading?.trim()
+      && hasMeaningfulArticleHtml(block.html)
+    ) {
+      previous.html = trimBoundaryEmptyBlocks(block.html);
+      return result;
+    }
+
+    result.push(block);
+    return result;
+  }, []);
+
+  return normalizedBlocks.length > 0
+    ? normalizedBlocks
     : [{ id: createBlockId("text"), type: "text", title: "文章內容", html: "", collapsed: false }];
 }
 

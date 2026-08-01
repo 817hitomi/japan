@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getApiErrorMessage } from "../../../lib/apiErrors";
+import { getElapsedLearningDays } from "../../../lib/learningDays";
 import { createSupabaseReadClient } from "../../../lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -19,34 +20,6 @@ type LearningNoteStatsRow = {
 type WordCardStatsRow = {
   category: string | null;
 };
-
-function getCalendarDayStart(dateText: string) {
-  const [year, month, day] = dateText.slice(0, 10).split("-").map(Number);
-
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
-    return null;
-  }
-
-  return Date.UTC(year, month - 1, day);
-}
-
-function getLearningDays(firstPublishedDate?: string | null) {
-  if (!firstPublishedDate) {
-    return 0;
-  }
-
-  const start = getCalendarDayStart(firstPublishedDate);
-
-  if (start === null) {
-    return 0;
-  }
-
-  const now = new Date();
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const elapsedDays = Math.floor((today - start) / 86_400_000) + 1;
-
-  return Math.max(elapsedDays, 1);
-}
 
 function findLevel(values: string[]) {
   for (const value of values) {
@@ -103,7 +76,7 @@ export async function GET() {
 
     return NextResponse.json({
       currentLevel: getCurrentLevel(notes, words),
-      learningDays: getLearningDays(notes[0]?.published_date),
+      learningDays: getElapsedLearningDays(notes[0]?.published_date),
       wordCount: wordsResult.count ?? words.length
     });
   } catch (error) {

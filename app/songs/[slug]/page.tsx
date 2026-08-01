@@ -31,5 +31,5 @@ export default async function SongPage({ params }: SongPageProps) {
   const songList = publishedSongs.some((item) => item.slug === song.slug)
     ? publishedSongs
     : [toSongRelatedItem(song), ...publishedSongs];
-  return <main className={homeStyles.page}><SiteHeader /><SongPlayerClient song={song} publishedSongs={songList} learningDays={learningOverview.learningDays} /><SiteFooter /></main>;
+  return <main className={homeStyles.page}><SiteHeader activeLabel="留音室" /><SongPlayerClient song={song} publishedSongs={songList} learningDays={learningOverview.learningDays} /><SiteFooter /></main>;
 }

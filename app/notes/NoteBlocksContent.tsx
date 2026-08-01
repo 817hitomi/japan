@@ -1,6 +1,7 @@
 "use client";
 
 import { renderInlineRuby } from "../../lib/japaneseText";
+import { hasMeaningfulArticleHtml, trimBoundaryEmptyBlocks } from "../../lib/articleHtml";
 import AdSlot from "../ads/AdSlot";
 import { getAdSlotFromLabel } from "../ads/adTypes";
 import styles from "../page.module.scss";
@@ -62,8 +63,26 @@ export default function NoteBlocksContent({ blocks, emptyFallback = false, idPre
     return emptyFallback ? <section className={styles.contentBlock}><h3>小標題</h3><div className={styles.poemCard}>文章內容</div></section> : null;
   }
 
-  return <>{blocks.map((block, index) => {
-    const sectionId = `${idPrefix}-${index}`;
+  const displayBlocks = blocks.reduce<Array<{ block: NoteContentBlock; sourceIndex: number }>>((result, block, sourceIndex) => {
+    const previous = result.at(-1);
+    if (
+      previous?.block.type === "text"
+      && previous.block.heading?.trim()
+      && !hasMeaningfulArticleHtml(previous.block.html)
+      && block.type === "text"
+      && !block.heading?.trim()
+      && hasMeaningfulArticleHtml(block.html)
+    ) {
+      previous.block = { ...previous.block, html: block.html };
+      return result;
+    }
+
+    result.push({ block, sourceIndex });
+    return result;
+  }, []);
+
+  return <>{displayBlocks.map(({ block, sourceIndex }) => {
+    const sectionId = `${idPrefix}-${sourceIndex}`;
     if (block.type === "image") return <section className={styles.contentBlock} id={sectionId} key={block.id}>{block.heading?.trim() ? <h3>{block.heading.trim()}</h3> : null}<div className={styles.imagePlaceholder}>{block.imageUrl ? <img src={block.imageUrl} alt="" /> : null}</div></section>;
     if (block.type === "video") {
       const videoUrl = block.videoUrl?.trim() ?? "";
@@ -71,6 +90,7 @@ export default function NoteBlocksContent({ blocks, emptyFallback = false, idPre
       return <section className={styles.contentBlock} id={sectionId} key={block.id}>{block.heading?.trim() ? <h3>{block.heading.trim()}</h3> : null}<div className={styles.videoBox}>{embedUrl ? <iframe src={embedUrl} title={block.caption || block.heading || "影片"} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : isDirectVideoUrl(videoUrl) ? <video controls src={videoUrl}>你的瀏覽器不支援影片播放。</video> : videoUrl ? <a href={videoUrl} target="_blank" rel="noreferrer">開啟影片連結</a> : block.caption || "影片連結"}</div>{block.caption ? <p className={styles.videoCaption}>{block.caption}</p> : null}</section>;
     }
     if (block.type === "ad") return <AdSlot slot={getAdSlotFromLabel(block.adSlot)} className={styles.adWideSmall} fallbackLabel={block.adSlot || "AD 廣告"} key={block.id} />;
-    return <section className={styles.contentBlock} id={sectionId} key={block.id}>{block.heading?.trim() ? <h3>{block.heading.trim()}</h3> : null}{block.type === "note" ? <NoteContent html={block.html} /> : <div className={styles.poemCard} dangerouslySetInnerHTML={{ __html: renderInlineRuby(block.html) }} />}</section>;
+    const visibleHtml = trimBoundaryEmptyBlocks(block.html);
+    return <section className={styles.contentBlock} id={sectionId} key={block.id}>{block.heading?.trim() ? <h3>{block.heading.trim()}</h3> : null}{block.type === "note" ? <NoteContent html={visibleHtml} /> : <div className={styles.poemCard} dangerouslySetInnerHTML={{ __html: renderInlineRuby(visibleHtml) }} />}</section>;
   })}</>;
 }
