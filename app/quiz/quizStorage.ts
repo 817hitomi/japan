@@ -5,6 +5,7 @@ import {
   normalizeQuizQuestions,
   QuizCategoryRecord,
   QuizLevel,
+  QuizQuestionType,
   QuizQuestionRecord,
   seedQuizCategories,
   seedQuizQuestions
@@ -24,6 +25,7 @@ export type QuizQuestionsReadResult = {
 export type QuizQuestionsReadOptions = {
   level?: QuizLevel;
   category?: string;
+  questionType?: QuizQuestionType;
   query?: string;
   page?: number;
   pageSize?: number;
@@ -42,6 +44,7 @@ async function parseQuizResponse(response: Response) {
         })()
       : {}
   ) as {
+    category?: QuizCategoryRecord;
     categories?: QuizCategoryRecord[];
     question?: QuizQuestionRecord;
     questions?: QuizQuestionRecord[];
@@ -69,6 +72,10 @@ function getQuizApiUrl(options: QuizQuestionsReadOptions = {}) {
 
   if (options.category?.trim()) {
     params.set("category", options.category.trim());
+  }
+
+  if (options.questionType) {
+    params.set("type", options.questionType);
   }
 
   if (options.query?.trim()) {
@@ -156,6 +163,7 @@ export async function readQuizQuestionsWithSource(options: QuizQuestionsReadOpti
       (question) =>
         (!options.level || question.level === options.level) &&
         (!options.category?.trim() || question.category === options.category.trim()) &&
+        (!options.questionType || question.questionType === options.questionType) &&
         (!options.query?.trim() ||
           [question.category, question.theme, question.prompt, question.note]
             .join(" ")
@@ -166,6 +174,7 @@ export async function readQuizQuestionsWithSource(options: QuizQuestionsReadOpti
       (question) =>
         (!options.level || question.level === options.level) &&
         (!options.category?.trim() || question.category === options.category.trim()) &&
+        (!options.questionType || question.questionType === options.questionType) &&
         (!options.query?.trim() ||
           [question.category, question.theme, question.prompt, question.note]
             .join(" ")
@@ -206,6 +215,28 @@ export async function readQuizCategoriesWithFallback() {
   })();
 
   return quizCategoriesRequest;
+}
+
+export async function refreshQuizCategories() {
+  quizCategoriesRequest = null;
+  return readQuizCategoriesWithFallback();
+}
+
+export async function createQuizCategory(level: QuizLevel, name: string) {
+  const response = await fetch("/api/quiz/categories", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ level, name })
+  });
+  const payload = await parseQuizResponse(response);
+  const category = normalizeQuizCategories(payload.category ? [payload.category] : [], true)[0];
+
+  if (!category) {
+    throw new Error("Create quiz category response missing category");
+  }
+
+  quizCategoriesRequest = null;
+  return category;
 }
 
 export async function saveQuizQuestion(question: QuizQuestionRecord, mode: "create" | "update") {

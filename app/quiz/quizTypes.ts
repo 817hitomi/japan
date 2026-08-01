@@ -1,5 +1,8 @@
 export type QuizLevel = "N5" | "N4" | "N3" | "N2" | "N1";
 
+export const quizQuestionTypes = ["漢字讀法", "漢字書寫", "前後關係", "近義替換"] as const;
+export type QuizQuestionType = (typeof quizQuestionTypes)[number];
+
 export type QuizCategoryRecord = {
   id: string;
   level: QuizLevel;
@@ -10,6 +13,7 @@ export type QuizQuestionRecord = {
   id: number;
   level: QuizLevel;
   category: string;
+  questionType: QuizQuestionType;
   theme: string;
   prompt: string;
   note: string;
@@ -28,6 +32,7 @@ export const seedQuizQuestions: QuizQuestionRecord[] = [
     id: 1,
     level: "N5",
     category: "文字．語彙",
+    questionType: "漢字讀法",
     theme: "あしたは雨ですか",
     prompt: "あしたは雨ですか",
     note: "あしたは雨(あめ)ですか\n明天下雨嗎",
@@ -55,6 +60,9 @@ export function normalizeQuizQuestions(questions: unknown, allowEmpty = false): 
         id: Number(source.id) || Date.now() + index,
         level: quizLevels.includes(source.level as QuizLevel) ? (source.level as QuizLevel) : "N5",
         category: String(source.category || "文字．語彙").trim() || "文字．語彙",
+        questionType: quizQuestionTypes.includes(source.questionType as QuizQuestionType)
+          ? (source.questionType as QuizQuestionType)
+          : "漢字讀法",
         theme: String(source.theme || source.prompt || "").trim(),
         prompt: String(source.prompt || source.theme || "").trim(),
         note: String(source.note || "").trim(),

@@ -4,6 +4,7 @@ import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../li
 import { requireAdminRoute } from "../../../lib/adminRouteAuth";
 import { generateQuizDistractors } from "../../quiz/quizDistractors";
 import { QuizQuestionRecord } from "../../quiz/quizTypes";
+import { quizQuestionTypes } from "../../quiz/quizTypes";
 import {
   quizDistractorCandidateSelect,
   quizQuestionSelect,
@@ -29,6 +30,8 @@ export async function GET(request: NextRequest) {
   try {
     const level = request.nextUrl.searchParams.get("level")?.trim();
     const category = request.nextUrl.searchParams.get("category")?.trim();
+    const requestedQuestionType = request.nextUrl.searchParams.get("type")?.trim();
+    const questionType = quizQuestionTypes.find((type) => type === requestedQuestionType);
     const searchText = request.nextUrl.searchParams.get("q")?.trim() ?? "";
     const page = getPositiveInteger(request.nextUrl.searchParams.get("page"), 1);
     const pageSize = Math.min(getPositiveInteger(request.nextUrl.searchParams.get("pageSize"), 200), 500);
@@ -48,6 +51,10 @@ export async function GET(request: NextRequest) {
 
     if (category) {
       query = query.eq("category", category);
+    }
+
+    if (questionType) {
+      query = query.eq("question_type", questionType);
     }
 
     if (searchText) {

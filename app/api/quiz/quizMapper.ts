@@ -1,6 +1,6 @@
 import { normalizeQuizCategories, normalizeQuizQuestions, QuizCategoryRecord, QuizQuestionRecord } from "../../quiz/quizTypes";
 
-export const quizQuestionSelect = "id,level,category,theme,prompt,note,answer,options";
+export const quizQuestionSelect = "id,level,category,question_type,theme,prompt,note,answer,options";
 export const quizDistractorCandidateSelect = "answer,options";
 export const quizCategorySelect = "id,level,name";
 
@@ -8,6 +8,7 @@ export type QuizQuestionRow = {
   id: number;
   level: string | null;
   category: string | null;
+  question_type: string | null;
   theme: string | null;
   prompt: string | null;
   note: string | null;
@@ -30,6 +31,7 @@ export function rowToQuizQuestion(row: QuizQuestionRow): QuizQuestionRecord {
         id: Number(row.id),
         level: row.level ?? "N5",
         category: row.category ?? "",
+        questionType: row.question_type ?? "漢字讀法",
         theme: row.theme ?? "",
         prompt: row.prompt ?? "",
         note: row.note ?? "",
@@ -47,6 +49,7 @@ export function quizQuestionToPayload(question: QuizQuestionRecord) {
   return {
     level: normalized.level,
     category: normalized.category.trim(),
+    question_type: normalized.questionType,
     theme: normalized.theme.trim(),
     prompt: normalized.prompt.trim(),
     note: normalized.note.trim(),

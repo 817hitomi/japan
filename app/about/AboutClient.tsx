@@ -177,6 +177,11 @@ export default function AboutClient() {
         </ul>
       </section>
 
+      <p className={styles.browserNote}>
+        單字卡語音建議使用 Google Chrome 瀏覽器播放。不同瀏覽器支援的語音引擎可能不同，使用 Google Chrome
+        較能依照本站設定的日文語音與語速播放。
+      </p>
+
       <SiteFooter />
     </main>
   );

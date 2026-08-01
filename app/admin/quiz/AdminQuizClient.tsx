@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ClipboardEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AdminShell } from "../AdminShell";
 import {
+  createQuizCategory,
   deleteQuizQuestions,
   readQuizCategoriesWithFallback,
   readQuizQuestionsWithSource,
@@ -13,13 +14,22 @@ import {
 } from "../../quiz/quizStorage";
 import { generateQuizDistractors } from "../../quiz/quizDistractors";
 import { normalizeQuizEditorHtml } from "../../quiz/quizEditorHtml";
-import { QuizCategoryRecord, QuizLevel, QuizQuestionRecord, quizLevels, seedQuizCategories } from "../../quiz/quizTypes";
+import {
+  QuizCategoryRecord,
+  QuizLevel,
+  QuizQuestionRecord,
+  QuizQuestionType,
+  quizLevels,
+  quizQuestionTypes,
+  seedQuizCategories
+} from "../../quiz/quizTypes";
 import styles from "../notes/AdminNotes.module.scss";
 
 const emptyQuestion: QuizQuestionRecord = {
   id: 0,
   level: "N5",
   category: "文字．語彙",
+  questionType: "漢字讀法",
   theme: "",
   prompt: "",
   note: "",
@@ -64,12 +74,13 @@ function getDraftForEditor(question: QuizQuestionRecord, relatedQuestions: QuizQ
   };
 }
 
-function getNewQuestionDraft(level: QuizLevel, category: string) {
+function getNewQuestionDraft(level: QuizLevel, category: string, questionType?: QuizQuestionType) {
   return {
     ...emptyQuestion,
     id: Date.now(),
     level,
     category,
+    questionType: questionType ?? emptyQuestion.questionType,
     options: getEditorOptions(emptyQuestion.options, emptyQuestion.answer)
   };
 }
@@ -89,29 +100,35 @@ function getVisiblePageNumbers(currentPage: number, totalPages: number) {
 function getAdminQuizPageHref({
   level,
   category,
+  questionType,
   query,
   page
 }: {
   level: QuizLevel;
   category: string;
+  questionType?: QuizQuestionType;
   query: string;
   page: number;
 }) {
-  const params = new URLSearchParams({ level, category });
+  const params = new URLSearchParams({ level });
+  if (category.trim()) params.set("category", category.trim());
+  if (questionType) params.set("type", questionType);
   if (query) params.set("q", query);
   if (page > 1) params.set("page", String(page));
   return `/admin/quiz?${params.toString()}`;
 }
 
 export default function AdminQuizClient({
-  initialCategory = "文字．語彙",
+  initialCategory = "",
   initialLevel = "N5",
   initialPage = 1,
+  initialQuestionType,
   initialSearchText = ""
 }: {
   initialCategory?: string;
   initialLevel?: QuizLevel;
   initialPage?: number;
+  initialQuestionType?: QuizQuestionType;
   initialSearchText?: string;
 }) {
   const router = useRouter();
@@ -120,6 +137,7 @@ export default function AdminQuizClient({
   const [categories, setCategories] = useState<QuizCategoryRecord[]>(seedQuizCategories);
   const [selectedLevel, setSelectedLevel] = useState<QuizLevel>(initialLevel);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [selectedQuestionType, setSelectedQuestionType] = useState<QuizQuestionType | undefined>(initialQuestionType);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [draft, setDraft] = useState<QuizQuestionRecord>({ ...emptyQuestion, id: Date.now() });
   const [showEditor, setShowEditor] = useState(false);
@@ -127,6 +145,9 @@ export default function AdminQuizClient({
   const [searchQuery, setSearchQuery] = useState(initialSearchText);
   const [page, setPage] = useState(initialPage);
   const [message, setMessage] = useState("請選擇題目，或新增文字．語彙題型。");
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
   const editorRefs = useRef<Record<QuizEditableField, HTMLDivElement | null>>({ prompt: null, note: null });
   const activeEditorRef = useRef<QuizEditableField>("prompt");
 
@@ -147,6 +168,7 @@ export default function AdminQuizClient({
         readQuizQuestionsWithSource({
           level: selectedLevel,
           category: selectedCategory,
+          questionType: selectedQuestionType,
           query: searchQuery,
           page,
           pageSize: quizQuestionsPerPage
@@ -161,10 +183,12 @@ export default function AdminQuizClient({
       setQuestions(questionsResult.questions);
       setTotalQuestions(questionsResult.total);
       setCategories(storedCategories);
-      if (!storedCategories.some((category) => category.level === selectedLevel && category.name === selectedCategory)) {
-        const firstCategory = storedCategories.find((category) => category.level === selectedLevel) ?? storedCategories[0];
-        setSelectedLevel(firstCategory?.level ?? "N5");
-        setSelectedCategory(firstCategory?.name ?? "文字．語彙");
+      if (
+        selectedCategory &&
+        !storedCategories.some((category) => category.level === selectedLevel && category.name === selectedCategory)
+      ) {
+        const firstCategory = storedCategories.find((category) => category.level === selectedLevel);
+        setSelectedCategory(firstCategory?.name ?? "");
       }
       setMessage(
         questionsResult.source === "database"
@@ -178,7 +202,7 @@ export default function AdminQuizClient({
     return () => {
       active = false;
     };
-  }, [page, searchQuery, selectedCategory, selectedLevel]);
+  }, [page, searchQuery, selectedCategory, selectedLevel, selectedQuestionType]);
 
   const visibleQuestions = questions;
   const pageCount = Math.max(1, Math.ceil(totalQuestions / quizQuestionsPerPage));
@@ -196,8 +220,13 @@ export default function AdminQuizClient({
   }
 
   function resetDraft() {
+    if (!selectedCategory) {
+      setMessage(`請先替 ${selectedLevel} 新增分類。`);
+      setShowCategoryForm(true);
+      return;
+    }
     setSelectedId(null);
-    setDraft(getNewQuestionDraft(selectedLevel, selectedCategory));
+    setDraft(getNewQuestionDraft(selectedLevel, selectedCategory, selectedQuestionType));
     setShowEditor(true);
     setMessage(`正在新增${selectedCategory}題型。`);
   }
@@ -357,6 +386,7 @@ export default function AdminQuizClient({
 
   function changeCategory(category: string) {
     setSelectedCategory(category);
+    setSelectedQuestionType(undefined);
     setSelectedId(null);
     setDraft((current) => ({ ...current, category }));
     setShowEditor(false);
@@ -366,15 +396,63 @@ export default function AdminQuizClient({
   }
 
   function changeLevel(level: QuizLevel) {
-    const firstCategory = categories.find((category) => category.level === level)?.name ?? "文字．語彙";
     setSelectedLevel(level);
-    setSelectedCategory(firstCategory);
+    setSelectedCategory("");
+    setSelectedQuestionType(undefined);
     setSelectedId(null);
-    setDraft((current) => ({ ...current, level, category: firstCategory }));
+    setDraft((current) => ({ ...current, level, category: "" }));
     setShowEditor(false);
     setPage(1);
-    router.replace(getAdminQuizPageHref({ level, category: firstCategory, query: searchQuery, page: 1 }));
+    router.replace(getAdminQuizPageHref({ level, category: "", query: searchQuery, page: 1 }));
     setMessage(`目前程度：${level}`);
+  }
+
+  async function addCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = newCategoryName.trim();
+    if (!name) {
+      setMessage("請輸入分類名稱。");
+      return;
+    }
+
+    setIsSavingCategory(true);
+    setMessage(`正在新增 ${selectedLevel} 分類。`);
+    try {
+      const category = await createQuizCategory(selectedLevel, name);
+      setCategories((current) =>
+        [...current.filter((item) => item.id !== category.id), category].sort(
+          (left, right) => quizLevels.indexOf(left.level) - quizLevels.indexOf(right.level) || left.name.localeCompare(right.name)
+        )
+      );
+      setSelectedCategory(category.name);
+      setNewCategoryName("");
+      setShowCategoryForm(false);
+      setPage(1);
+      router.replace(getAdminQuizPageHref({ level: selectedLevel, category: category.name, query: "", page: 1 }));
+      window.dispatchEvent(new Event("quiz-categories-updated"));
+      setMessage(`已新增 ${selectedLevel}／${category.name} 分類。`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "新增分類失敗。");
+    } finally {
+      setIsSavingCategory(false);
+    }
+  }
+
+  function changeQuestionType(questionType?: QuizQuestionType) {
+    setSelectedQuestionType(questionType);
+    setSelectedId(null);
+    setShowEditor(false);
+    setPage(1);
+    router.replace(
+      getAdminQuizPageHref({
+        level: selectedLevel,
+        category: selectedCategory,
+        questionType,
+        query: searchQuery,
+        page: 1
+      })
+    );
+    setMessage(questionType ? `目前題型：${questionType}` : "目前顯示全部題型。");
   }
 
   function searchQuestions(event: FormEvent) {
@@ -383,7 +461,15 @@ export default function AdminQuizClient({
     setPage(1);
     const query = searchText.trim();
     setSearchQuery(query);
-    router.replace(getAdminQuizPageHref({ level: selectedLevel, category: selectedCategory, query, page: 1 }));
+    router.replace(
+      getAdminQuizPageHref({
+        level: selectedLevel,
+        category: selectedCategory,
+        questionType: selectedQuestionType,
+        query,
+        page: 1
+      })
+    );
   }
 
   return (
@@ -394,10 +480,11 @@ export default function AdminQuizClient({
             <option key={level}>{level}</option>
           ))}
         </select>
-        <button className={styles.ghostButton} type="button">
+        <button className={styles.ghostButton} type="button" onClick={() => setShowCategoryForm((current) => !current)}>
           新增分類
         </button>
-        <select value={selectedCategory} onChange={(event) => changeCategory(event.target.value)}>
+        <select value={selectedCategory} onChange={(event) => changeCategory(event.target.value)} disabled={currentLevelCategories.length === 0}>
+          <option value="">全部分類</option>
           {currentLevelCategories.map((category) => (
             <option key={category.id}>{category.name}</option>
           ))}
@@ -411,11 +498,52 @@ export default function AdminQuizClient({
         </a>
       </div>
 
+      {showCategoryForm ? (
+        <form className={styles.categoryCreateBar} onSubmit={addCategory}>
+          <div>
+            <strong>新增 {selectedLevel} 分類</strong>
+            <span>建立後會立即出現在左側分類選單。</span>
+          </div>
+          <input
+            value={newCategoryName}
+            onChange={(event) => setNewCategoryName(event.target.value)}
+            placeholder="例如：文法、讀解"
+            maxLength={80}
+            autoFocus
+          />
+          <button type="submit" disabled={isSavingCategory}>
+            {isSavingCategory ? "儲存中" : "儲存分類"}
+          </button>
+          <button
+            className={styles.ghostButton}
+            type="button"
+            onClick={() => {
+              setShowCategoryForm(false);
+              setNewCategoryName("");
+            }}
+          >
+            取消
+          </button>
+        </form>
+      ) : null}
+
       <p className={`${styles.statusMessage} ${styles.quizStatusMessage}`}>{message}</p>
 
       {showEditor ? (
         <form className={`${styles.editorForm} ${styles.quizEditorForm}`} onSubmit={saveQuestion}>
           <section className={styles.quizPanel}>
+            <span className={styles.quizFieldLabel}>題型</span>
+            <select
+              className={styles.quizTypeSelect}
+              value={draft.questionType}
+              onChange={(event) =>
+                setDraft((current) => ({ ...current, questionType: event.target.value as QuizQuestionType }))
+              }
+            >
+              {quizQuestionTypes.map((questionType) => (
+                <option key={questionType}>{questionType}</option>
+              ))}
+            </select>
             <div className={styles.quizColorTools} aria-label="文字色彩">
               <button className={styles.quizBoldButton} type="button" onMouseDown={(event) => event.preventDefault()} onClick={toggleTextBold}>
                 B
@@ -512,6 +640,27 @@ export default function AdminQuizClient({
               />
             </label>
           </form>
+          {selectedCategory === "文字．語彙" ? (
+            <nav className={styles.quizTypeTabs} aria-label="文字．語彙題型">
+              <button
+                className={!selectedQuestionType ? styles.activeQuizType : undefined}
+                type="button"
+                onClick={() => changeQuestionType()}
+              >
+                全部
+              </button>
+              {quizQuestionTypes.map((questionType) => (
+                <button
+                  key={questionType}
+                  className={selectedQuestionType === questionType ? styles.activeQuizType : undefined}
+                  type="button"
+                  onClick={() => changeQuestionType(questionType)}
+                >
+                  {questionType}
+                </button>
+              ))}
+            </nav>
+          ) : null}
           <div className={styles.tableWrap}>
             <table className={styles.noteTable}>
               <thead>
@@ -527,7 +676,7 @@ export default function AdminQuizClient({
                     <td>
                       <input checked={selectedId === question.id} readOnly type="checkbox" aria-label={`選取 ${question.theme || question.prompt}`} />
                     </td>
-                    <td>{question.category}</td>
+                    <td>{question.questionType}</td>
                     <td>{question.theme || question.prompt}</td>
                   </tr>
                 ))}
@@ -554,6 +703,7 @@ export default function AdminQuizClient({
                   href={getAdminQuizPageHref({
                     level: selectedLevel,
                     category: selectedCategory,
+                    questionType: selectedQuestionType,
                     query: searchQuery,
                     page: Math.max(1, page - 1)
                   })}
@@ -571,6 +721,7 @@ export default function AdminQuizClient({
                   href={getAdminQuizPageHref({
                     level: selectedLevel,
                     category: selectedCategory,
+                    questionType: selectedQuestionType,
                     query: searchQuery,
                     page: item
                   })}
@@ -585,6 +736,7 @@ export default function AdminQuizClient({
                   href={getAdminQuizPageHref({
                     level: selectedLevel,
                     category: selectedCategory,
+                    questionType: selectedQuestionType,
                     query: searchQuery,
                     page: Math.min(pageCount, page + 1)
                   })}
