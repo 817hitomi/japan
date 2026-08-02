@@ -153,6 +153,8 @@ export default function SongPlayerClient({
   }, [publishedSongs]);
   const pendingSeekRef = useRef<number | null>(null);
   const shouldAutoplayRef = useRef(false);
+  const playerCardRef = useRef<HTMLElement | null>(null);
+  const fullscreenControlsTimerRef = useRef<number | null>(null);
   const lyricsViewportRef = useRef<HTMLDivElement | null>(null);
   const lineRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [loaded, setLoaded] = useState(false);
@@ -164,6 +166,8 @@ export default function SongPlayerClient({
   const [playbackRate, setPlaybackRate] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
   const [captionsVisible, setCaptionsVisible] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenControlsVisible, setFullscreenControlsVisible] = useState(true);
 
   const speakVocabulary = (text: string) => {
     if (!("speechSynthesis" in window)) return;
@@ -253,6 +257,15 @@ export default function SongPlayerClient({
     viewport.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
   }, [activeIndex]);
 
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === playerCardRef.current);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
   const activeLine = lyricLines[activeIndex];
 
   const startPlayback = () => {
@@ -290,6 +303,38 @@ export default function SongPlayerClient({
     playerRef.current?.setPlaybackRate(nextRate);
   };
 
+  const toggleFullscreen = async () => {
+    const playerCard = playerCardRef.current;
+    if (!playerCard || !document.fullscreenEnabled) return;
+
+    try {
+      if (document.fullscreenElement === playerCard) await document.exitFullscreen();
+      else await playerCard.requestFullscreen();
+    } catch {
+      setIsFullscreen(false);
+    }
+  };
+
+  const revealFullscreenControls = () => {
+    setFullscreenControlsVisible(true);
+    if (fullscreenControlsTimerRef.current !== null) window.clearTimeout(fullscreenControlsTimerRef.current);
+    if (isFullscreen && playing) {
+      fullscreenControlsTimerRef.current = window.setTimeout(() => setFullscreenControlsVisible(false), 2500);
+    }
+  };
+
+  useEffect(() => {
+    setFullscreenControlsVisible(true);
+    if (fullscreenControlsTimerRef.current !== null) window.clearTimeout(fullscreenControlsTimerRef.current);
+    if (isFullscreen && playing) {
+      fullscreenControlsTimerRef.current = window.setTimeout(() => setFullscreenControlsVisible(false), 2500);
+    }
+
+    return () => {
+      if (fullscreenControlsTimerRef.current !== null) window.clearTimeout(fullscreenControlsTimerRef.current);
+    };
+  }, [isFullscreen, playing]);
+
   return (
     <>
       <SongPageBackground />
@@ -322,7 +367,7 @@ export default function SongPlayerClient({
         <div className={styles.tags} aria-label="歌曲資訊"><span>{formatTime(song.durationSeconds)}</span></div>
       </section>
 
-      <section className={styles.playerCard} aria-label="同步影片播放器">
+      <section ref={playerCardRef} className={styles.playerCard} aria-label="同步影片播放器" onPointerMove={revealFullscreenControls} onPointerDown={revealFullscreenControls}>
         <div className={styles.videoShell}>
           {loaded ? <div key={song.videoId} id={playerElementId} className={styles.youtubePlayer} /> : (
             <button
@@ -343,7 +388,7 @@ export default function SongPlayerClient({
           ) : null}
         </div>
 
-        <div className={styles.controls}>
+        <div className={`${styles.controls} ${isFullscreen && !fullscreenControlsVisible ? styles.controlsHidden : ""}`} onFocusCapture={revealFullscreenControls}>
           <button className={styles.primaryControl} type="button" onClick={togglePlayback} aria-label={playing ? "暫停" : "播放"}>{playing ? "Ⅱ" : "▶"}</button>
           <label className={styles.volumeControl}><span aria-hidden="true">♪</span><input type="range" min="0" max="100" value={volume} aria-label="音量" onChange={(event) => { const value = Number(event.target.value); setVolume(value); playerRef.current?.setVolume(value); }} /></label>
           <div className={styles.progressGroup}>
@@ -354,6 +399,13 @@ export default function SongPlayerClient({
           <button type="button" onClick={() => changeLine(1)} disabled={activeIndex === lyricLines.length - 1} aria-label="下一句">›</button>
           <button type="button" onClick={changeSpeed}>{playbackRate}x</button>
           <button className={captionsVisible ? styles.activeControl : ""} type="button" onClick={() => setCaptionsVisible((value) => !value)} aria-pressed={captionsVisible}>{captionsVisible ? "關閉字幕" : "開啟字幕"}</button>
+          <button className={styles.fullscreenControl} type="button" onClick={toggleFullscreen} aria-label={isFullscreen ? "退出全螢幕" : "全螢幕"} aria-pressed={isFullscreen} title={isFullscreen ? "退出全螢幕" : "全螢幕"}>
+            {isFullscreen ? (
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" /></svg>
+            )}
+          </button>
         </div>
       </section>
 
