@@ -400,6 +400,27 @@ export const ArticleRichEditor = forwardRef<ArticleRichEditorHandle, ArticleRich
     onMessage("已在游標位置插入 NOTE 預設樣式，例句與說明可直接改寫。");
   }
 
+  function removeNoteStyle() {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    restoreSelection();
+    const selection = window.getSelection();
+    const anchor = selection?.rangeCount ? selection.getRangeAt(0).startContainer : null;
+    const anchorElement = anchor instanceof Element ? anchor : anchor?.parentElement;
+    const noteBlock = anchorElement?.closest<HTMLElement>('[data-note-editor-block="true"][data-block-type="note"]');
+
+    if (!noteBlock || !editor.contains(noteBlock)) {
+      onMessage("請先把游標放在要取消的 NOTE 區塊內。");
+      return;
+    }
+
+    noteBlock.dataset.blockType = "text";
+    noteBlock.dataset.blockTitle = "文章內容";
+    rememberSelection();
+    onMessage("已取消 NOTE 樣式，原有內容已保留。");
+  }
+
   function insertVideoUrl() {
     const videoUrl = window.prompt("請輸入 YouTube、MP4 或其他影片網址");
     if (!videoUrl?.trim()) return;
@@ -485,6 +506,9 @@ export const ArticleRichEditor = forwardRef<ArticleRichEditorHandle, ArticleRich
         </button>
         <button type="button" className={styles.notePresetButton} onMouseDown={keepSelection} onClick={insertNoteStyle}>
           NOTE 樣式
+        </button>
+        <button type="button" onMouseDown={keepSelection} onClick={removeNoteStyle}>
+          取消 NOTE
         </button>
         <button
           type="button"
