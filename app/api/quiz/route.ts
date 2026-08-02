@@ -3,8 +3,7 @@ import { getApiErrorMessage } from "../../../lib/apiErrors";
 import { createSupabaseAdminClient, createSupabaseReadClient } from "../../../lib/supabase/server";
 import { requireAdminRoute } from "../../../lib/adminRouteAuth";
 import { generateQuizDistractors } from "../../quiz/quizDistractors";
-import { QuizQuestionRecord } from "../../quiz/quizTypes";
-import { quizQuestionTypes } from "../../quiz/quizTypes";
+import { isWordOrderQuestionType, QuizQuestionRecord, quizQuestionTypes } from "../../quiz/quizTypes";
 import {
   quizDistractorCandidateSelect,
   quizQuestionSelect,
@@ -32,6 +31,8 @@ export async function GET(request: NextRequest) {
     const category = request.nextUrl.searchParams.get("category")?.trim();
     const requestedQuestionType = request.nextUrl.searchParams.get("type")?.trim();
     const questionType = quizQuestionTypes.find((type) => type === requestedQuestionType);
+    const requestedExcludedQuestionType = request.nextUrl.searchParams.get("excludeType")?.trim();
+    const excludedQuestionType = quizQuestionTypes.find((type) => type === requestedExcludedQuestionType);
     const searchText = request.nextUrl.searchParams.get("q")?.trim() ?? "";
     const page = getPositiveInteger(request.nextUrl.searchParams.get("page"), 1);
     const pageSize = Math.min(getPositiveInteger(request.nextUrl.searchParams.get("pageSize"), 200), 500);
@@ -55,6 +56,10 @@ export async function GET(request: NextRequest) {
 
     if (questionType) {
       query = query.eq("question_type", questionType);
+    }
+
+    if (excludedQuestionType) {
+      query = query.neq("question_type", excludedQuestionType);
     }
 
     if (searchText) {
@@ -87,19 +92,25 @@ export async function POST(request: NextRequest) {
     const question = (await request.json()) as QuizQuestionRecord;
     const payload = quizQuestionToPayload(question);
 
-    if (!payload.prompt || !payload.answer) {
+    const isWordOrderQuestion = isWordOrderQuestionType(payload.question_type);
+
+    if (!payload.answer || (!isWordOrderQuestion && !payload.prompt) || (isWordOrderQuestion && payload.options.length < 2)) {
       return NextResponse.json({ error: "Missing quiz question payload" }, { status: 400 });
     }
 
     const supabase = createSupabaseAdminClient();
-    const { data: relatedRows } = await supabase
-      .from("quiz_questions")
-      .select(quizDistractorCandidateSelect)
-      .eq("level", payload.level)
-      .eq("category", payload.category)
-      .limit(500);
-    const relatedQuestions = ((relatedRows ?? []) as QuizDistractorCandidateRow[]).map(rowToQuizDistractorCandidate);
-    const options = generateQuizDistractors(payload.answer, relatedQuestions, payload.options);
+    let options = payload.options;
+
+    if (!isWordOrderQuestion) {
+      const { data: relatedRows } = await supabase
+        .from("quiz_questions")
+        .select(quizDistractorCandidateSelect)
+        .eq("level", payload.level)
+        .eq("category", payload.category)
+        .limit(500);
+      const relatedQuestions = ((relatedRows ?? []) as QuizDistractorCandidateRow[]).map(rowToQuizDistractorCandidate);
+      options = generateQuizDistractors(payload.answer, relatedQuestions, payload.options);
+    }
     const { data, error } = await supabase
       .from("quiz_questions")
       .insert({ ...payload, options })

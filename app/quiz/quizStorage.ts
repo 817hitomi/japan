@@ -26,6 +26,7 @@ export type QuizQuestionsReadOptions = {
   level?: QuizLevel;
   category?: string;
   questionType?: QuizQuestionType;
+  excludeQuestionType?: QuizQuestionType;
   query?: string;
   page?: number;
   pageSize?: number;
@@ -76,6 +77,10 @@ function getQuizApiUrl(options: QuizQuestionsReadOptions = {}) {
 
   if (options.questionType) {
     params.set("type", options.questionType);
+  }
+
+  if (options.excludeQuestionType) {
+    params.set("excludeType", options.excludeQuestionType);
   }
 
   if (options.query?.trim()) {
@@ -164,6 +169,7 @@ export async function readQuizQuestionsWithSource(options: QuizQuestionsReadOpti
         (!options.level || question.level === options.level) &&
         (!options.category?.trim() || question.category === options.category.trim()) &&
         (!options.questionType || question.questionType === options.questionType) &&
+        (!options.excludeQuestionType || question.questionType !== options.excludeQuestionType) &&
         (!options.query?.trim() ||
           [question.category, question.theme, question.prompt, question.note]
             .join(" ")
@@ -175,6 +181,7 @@ export async function readQuizQuestionsWithSource(options: QuizQuestionsReadOpti
         (!options.level || question.level === options.level) &&
         (!options.category?.trim() || question.category === options.category.trim()) &&
         (!options.questionType || question.questionType === options.questionType) &&
+        (!options.excludeQuestionType || question.questionType !== options.excludeQuestionType) &&
         (!options.query?.trim() ||
           [question.category, question.theme, question.prompt, question.note]
             .join(" ")

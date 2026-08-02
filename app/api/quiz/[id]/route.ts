@@ -3,7 +3,7 @@ import { getApiErrorMessage } from "../../../../lib/apiErrors";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/server";
 import { requireAdminRoute } from "../../../../lib/adminRouteAuth";
 import { generateQuizDistractors } from "../../../quiz/quizDistractors";
-import { QuizQuestionRecord } from "../../../quiz/quizTypes";
+import { isWordOrderQuestionType, QuizQuestionRecord } from "../../../quiz/quizTypes";
 import {
   quizDistractorCandidateSelect,
   quizQuestionSelect,
@@ -28,20 +28,26 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const question = (await request.json()) as QuizQuestionRecord;
     const payload = quizQuestionToPayload({ ...question, id: Number(id) });
 
-    if (!payload.prompt || !payload.answer) {
+    const isWordOrderQuestion = isWordOrderQuestionType(payload.question_type);
+
+    if (!payload.answer || (!isWordOrderQuestion && !payload.prompt) || (isWordOrderQuestion && payload.options.length < 2)) {
       return NextResponse.json({ error: "Missing quiz question payload" }, { status: 400 });
     }
 
     const supabase = createSupabaseAdminClient();
-    const { data: relatedRows } = await supabase
-      .from("quiz_questions")
-      .select(quizDistractorCandidateSelect)
-      .eq("level", payload.level)
-      .eq("category", payload.category)
-      .neq("id", Number(id))
-      .limit(500);
-    const relatedQuestions = ((relatedRows ?? []) as QuizDistractorCandidateRow[]).map(rowToQuizDistractorCandidate);
-    const options = generateQuizDistractors(payload.answer, relatedQuestions, payload.options);
+    let options = payload.options;
+
+    if (!isWordOrderQuestion) {
+      const { data: relatedRows } = await supabase
+        .from("quiz_questions")
+        .select(quizDistractorCandidateSelect)
+        .eq("level", payload.level)
+        .eq("category", payload.category)
+        .neq("id", Number(id))
+        .limit(500);
+      const relatedQuestions = ((relatedRows ?? []) as QuizDistractorCandidateRow[]).map(rowToQuizDistractorCandidate);
+      options = generateQuizDistractors(payload.answer, relatedQuestions, payload.options);
+    }
     const { data, error } = await supabase
       .from("quiz_questions")
       .update({ ...payload, options })

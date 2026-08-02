@@ -31,7 +31,7 @@ const navItems = [
   { label: "登入", href: "/admin" }
 ];
 
-const japaneseSpeechRate = 0.8;
+const japaneseSpeechRate = 0.9;
 const preferredJapaneseVoiceName = "Google 日本語";
 
 const parallaxBalls = [

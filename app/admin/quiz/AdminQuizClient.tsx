@@ -19,9 +19,12 @@ import {
   QuizLevel,
   QuizQuestionRecord,
   QuizQuestionType,
+  isWordOrderQuestionType,
+  parseWordOrderSegments,
   quizLevels,
   quizQuestionTypes,
-  seedQuizCategories
+  seedQuizCategories,
+  wordOrderQuestionType
 } from "../../quiz/quizTypes";
 import styles from "../notes/AdminNotes.module.scss";
 
@@ -65,6 +68,14 @@ function getEditorOptions(options: string[], answer: string) {
 }
 
 function getDraftForEditor(question: QuizQuestionRecord, relatedQuestions: QuizQuestionRecord[] = []) {
+  if (isWordOrderQuestionType(question.questionType)) {
+    return {
+      ...question,
+      note: normalizeQuizEditorHtml(question.note),
+      options: question.options
+    };
+  }
+
   const generatedOptions = generateQuizDistractors(question.answer, relatedQuestions, question.options);
 
   return {
@@ -75,13 +86,15 @@ function getDraftForEditor(question: QuizQuestionRecord, relatedQuestions: QuizQ
 }
 
 function getNewQuestionDraft(level: QuizLevel, category: string, questionType?: QuizQuestionType) {
+  const nextQuestionType = questionType ?? emptyQuestion.questionType;
+
   return {
     ...emptyQuestion,
     id: Date.now(),
     level,
     category,
-    questionType: questionType ?? emptyQuestion.questionType,
-    options: getEditorOptions(emptyQuestion.options, emptyQuestion.answer)
+    questionType: nextQuestionType,
+    options: isWordOrderQuestionType(nextQuestionType) ? [] : getEditorOptions(emptyQuestion.options, emptyQuestion.answer)
   };
 }
 
@@ -140,6 +153,7 @@ export default function AdminQuizClient({
   const [selectedQuestionType, setSelectedQuestionType] = useState<QuizQuestionType | undefined>(initialQuestionType);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [draft, setDraft] = useState<QuizQuestionRecord>({ ...emptyQuestion, id: Date.now() });
+  const [wordOrderInput, setWordOrderInput] = useState("");
   const [showEditor, setShowEditor] = useState(false);
   const [searchText, setSearchText] = useState(initialSearchText);
   const [searchQuery, setSearchQuery] = useState(initialSearchText);
@@ -226,7 +240,9 @@ export default function AdminQuizClient({
       return;
     }
     setSelectedId(null);
-    setDraft(getNewQuestionDraft(selectedLevel, selectedCategory, selectedQuestionType));
+    const nextDraft = getNewQuestionDraft(selectedLevel, selectedCategory, selectedQuestionType);
+    setDraft(nextDraft);
+    setWordOrderInput(nextDraft.options.join("｜"));
     setShowEditor(true);
     setMessage(`正在新增${selectedCategory}題型。`);
   }
@@ -240,7 +256,9 @@ export default function AdminQuizClient({
     );
 
     setSelectedId(question.id);
-    setDraft(getDraftForEditor(question, relatedQuestions));
+    const nextDraft = getDraftForEditor(question, relatedQuestions);
+    setDraft(nextDraft);
+    setWordOrderInput(isWordOrderQuestionType(nextDraft.questionType) ? nextDraft.options.join("｜") : "");
     setMessage(`已選擇「${question.theme || stripHtml(question.prompt)}」。`);
   }
 
@@ -261,22 +279,32 @@ export default function AdminQuizClient({
     const noteHtml = normalizeQuizEditorHtml(editorRefs.current.note?.innerHTML ?? draft.note);
     const promptText = stripHtml(promptHtml);
     const answer = draft.answer.trim();
-    const manualOptions = normalizeOptions(draft.options, answer);
-    const options = generateQuizDistractors(answer, questions, manualOptions);
+    const isWordOrderQuestion = isWordOrderQuestionType(draft.questionType);
+    const manualOptions = isWordOrderQuestion
+      ? parseWordOrderSegments(wordOrderInput)
+      : normalizeOptions(draft.options, answer);
+    const options = isWordOrderQuestion
+      ? manualOptions
+      : generateQuizDistractors(answer, questions, manualOptions);
     const nextQuestion: QuizQuestionRecord = {
       ...draft,
       id: (selectedId ?? draft.id) || Date.now(),
       level: selectedLevel,
       category: selectedCategory,
-      theme: draft.theme.trim() || promptText,
+      theme: draft.theme.trim() || promptText || answer,
       prompt: promptHtml.trim(),
       note: noteHtml.trim(),
       answer,
       options
     };
 
-    if (!promptText || !nextQuestion.answer) {
-      setMessage("請填入主題與正確解答。");
+    if (!nextQuestion.answer || (!isWordOrderQuestion && !promptText)) {
+      setMessage(isWordOrderQuestion ? "請填入正確解答。" : "請填入主題與正確解答。");
+      return;
+    }
+
+    if (isWordOrderQuestion && nextQuestion.options.length < 2) {
+      setMessage("語序排列至少需要兩個語塊，請使用 ｜、| 或換行分隔。");
       return;
     }
 
@@ -294,6 +322,7 @@ export default function AdminQuizClient({
       }
       setSelectedId(savedQuestion.id);
       setDraft(getDraftForEditor(savedQuestion));
+      setWordOrderInput(isWordOrderQuestionType(savedQuestion.questionType) ? savedQuestion.options.join("｜") : "");
       setShowEditor(false);
     } catch (error) {
       setMessage(`資料庫儲存失敗：${error instanceof Error ? error.message : "請確認 Supabase quiz_questions 資料表。"}`);
@@ -314,6 +343,7 @@ export default function AdminQuizClient({
       setTotalQuestions((current) => Math.max(0, current - 1));
       setSelectedId(null);
       setDraft({ ...emptyQuestion, id: Date.now() });
+      setWordOrderInput("");
       setShowEditor(false);
     } catch (error) {
       setMessage(`資料庫刪除失敗：${error instanceof Error ? error.message : "請確認 Supabase quiz_questions 資料表。"}`);
@@ -325,6 +355,20 @@ export default function AdminQuizClient({
       ...current,
       options: current.options.map((option, optionIndex) => (optionIndex === index ? value : option))
     }));
+  }
+
+  function changeDraftQuestionType(questionType: QuizQuestionType) {
+    setDraft((current) => ({
+      ...current,
+      questionType,
+      options: isWordOrderQuestionType(questionType)
+        ? parseWordOrderSegments(wordOrderInput || current.options.join("｜"))
+        : getEditorOptions(current.options, current.answer)
+    }));
+
+    if (isWordOrderQuestionType(questionType) && !wordOrderInput) {
+      setWordOrderInput(draft.options.join("｜"));
+    }
   }
 
   function commitEditableField(field: QuizEditableField, html: string) {
@@ -493,8 +537,17 @@ export default function AdminQuizClient({
           新增題型
         </button>
         <div className={styles.toolSpacer} />
-        <a className={styles.primaryLink} href={`/quiz?level=${selectedLevel}&category=${encodeURIComponent(selectedCategory)}`} target="_blank" rel="noreferrer">
-          新增測驗
+        <a
+          className={styles.primaryLink}
+          href={
+            selectedQuestionType === wordOrderQuestionType
+              ? `/quiz/grammar-practice?level=${selectedLevel}`
+              : `/quiz?level=${selectedLevel}&category=${encodeURIComponent(selectedCategory)}`
+          }
+          target="_blank"
+          rel="noreferrer"
+        >
+          前台預覽
         </a>
       </div>
 
@@ -536,9 +589,7 @@ export default function AdminQuizClient({
             <select
               className={styles.quizTypeSelect}
               value={draft.questionType}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, questionType: event.target.value as QuizQuestionType }))
-              }
+              onChange={(event) => changeDraftQuestionType(event.target.value as QuizQuestionType)}
             >
               {quizQuestionTypes.map((questionType) => (
                 <option key={questionType}>{questionType}</option>
@@ -564,8 +615,8 @@ export default function AdminQuizClient({
               ))}
             </div>
             <span className={styles.quizFieldLabel}>
-              主題
-              <small>前台顯示</small>
+              {isWordOrderQuestionType(draft.questionType) ? "題目提示" : "主題"}
+              <small>{isWordOrderQuestionType(draft.questionType) ? "可選，不會顯示正確答案" : "前台顯示"}</small>
             </span>
             <div
               ref={(element) => {
@@ -574,7 +625,7 @@ export default function AdminQuizClient({
               className={`${styles.quizEditableField} ${styles.quizPromptField}`}
               contentEditable
               suppressContentEditableWarning
-              data-placeholder="あしたは雨ですか"
+              data-placeholder={isWordOrderQuestionType(draft.questionType) ? "例如：請排成正確的日文句子" : "あしたは雨ですか"}
               dangerouslySetInnerHTML={{ __html: draft.prompt }}
               onFocus={() => {
                 activeEditorRef.current = "prompt";
@@ -583,8 +634,8 @@ export default function AdminQuizClient({
               onKeyDown={handleEditableKeyDown}
             />
             <span className={styles.quizFieldLabel}>
-              備註
-              <small>僅做後台個人備註</small>
+              {isWordOrderQuestionType(draft.questionType) ? "答題詳解" : "備註"}
+              <small>{isWordOrderQuestionType(draft.questionType) ? "答題後前台顯示" : "僅做後台個人備註"}</small>
             </span>
             <div
               ref={(element) => {
@@ -608,15 +659,29 @@ export default function AdminQuizClient({
               value={draft.answer}
               onChange={(event) => setDraft((current) => ({ ...current, answer: event.target.value }))}
             />
-            <span className={styles.quizFieldLabel}>干擾選項</span>
-            <div className={styles.quizOptionGroup}>
-              <div className={styles.quizOptionRow}>
-                {draft.options.map((option, index) => (
-                  <input key={index} value={option} onChange={(event) => updateOption(index, event.target.value)} />
-                ))}
+            <span className={styles.quizFieldLabel}>
+              {isWordOrderQuestionType(draft.questionType) ? "排列語塊" : "干擾選項"}
+            </span>
+            {isWordOrderQuestionType(draft.questionType) ? (
+              <div className={styles.quizOptionGroup}>
+                <textarea
+                  className={styles.quizSegmentField}
+                  value={wordOrderInput}
+                  onChange={(event) => setWordOrderInput(event.target.value)}
+                  placeholder="海賊王に｜俺は｜なる｜海賊王は｜俺が"
+                />
+                <small>請使用全形 ｜、半形 | 或換行分隔；可加入不需要使用的干擾語塊。</small>
               </div>
-              <small>可手動填入；空白時儲存會自動補齊讀音型干擾選項。</small>
-            </div>
+            ) : (
+              <div className={styles.quizOptionGroup}>
+                <div className={styles.quizOptionRow}>
+                  {draft.options.map((option, index) => (
+                    <input key={index} value={option} onChange={(event) => updateOption(index, event.target.value)} />
+                  ))}
+                </div>
+                <small>可手動填入；空白時儲存會自動補齊讀音型干擾選項。</small>
+              </div>
+            )}
             <div className={styles.quizPanelActions}>
               <button className={styles.ghostButton} type="button" onClick={() => setShowEditor(false)}>
                 取消
@@ -640,8 +705,8 @@ export default function AdminQuizClient({
               />
             </label>
           </form>
-          {selectedCategory === "文字．語彙" ? (
-            <nav className={styles.quizTypeTabs} aria-label="文字．語彙題型">
+          {selectedCategory ? (
+            <nav className={styles.quizTypeTabs} aria-label={`${selectedCategory}題型`}>
               <button
                 className={!selectedQuestionType ? styles.activeQuizType : undefined}
                 type="button"
@@ -649,7 +714,10 @@ export default function AdminQuizClient({
               >
                 全部
               </button>
-              {quizQuestionTypes.map((questionType) => (
+              {(selectedCategory === "文字．語彙"
+                ? quizQuestionTypes.filter((questionType) => questionType !== wordOrderQuestionType)
+                : [wordOrderQuestionType]
+              ).map((questionType) => (
                 <button
                   key={questionType}
                   className={selectedQuestionType === questionType ? styles.activeQuizType : undefined}

@@ -11,7 +11,14 @@ import { readWordCardsWithFallback } from "../words/wordStorage";
 import { WordCardRecord } from "../words/wordTypes";
 import { generateQuizDistractors } from "./quizDistractors";
 import { readQuizCategoriesWithFallback, readQuizQuestionsWithSource } from "./quizStorage";
-import { normalizeQuizQuestions, QuizCategoryRecord, QuizLevel, QuizQuestionRecord, seedQuizCategories } from "./quizTypes";
+import {
+  normalizeQuizQuestions,
+  QuizCategoryRecord,
+  QuizLevel,
+  QuizQuestionRecord,
+  seedQuizCategories,
+  wordOrderQuestionType
+} from "./quizTypes";
 import styles from "./RandomQuiz.module.scss";
 
 const parallaxBalls = [
@@ -134,7 +141,12 @@ export default function RandomQuizClient({
     async function loadData() {
       const [nextWords, questionsResult, storedCategories] = await Promise.all([
         readWordCardsWithFallback(),
-        readQuizQuestionsWithSource({ level: selectedLevel, category: selectedCategory, pageSize: 500 }),
+        readQuizQuestionsWithSource({
+          level: selectedLevel,
+          category: selectedCategory,
+          excludeQuestionType: wordOrderQuestionType,
+          pageSize: 500
+        }),
         readQuizCategoriesWithFallback()
       ]);
 

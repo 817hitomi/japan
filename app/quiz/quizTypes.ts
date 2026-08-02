@@ -1,6 +1,7 @@
 export type QuizLevel = "N5" | "N4" | "N3" | "N2" | "N1";
 
-export const quizQuestionTypes = ["漢字讀法", "漢字書寫", "前後關係", "近義替換"] as const;
+export const wordOrderQuestionType = "語序排列" as const;
+export const quizQuestionTypes = ["漢字讀法", "漢字書寫", "前後關係", "近義替換", wordOrderQuestionType] as const;
 export type QuizQuestionType = (typeof quizQuestionTypes)[number];
 
 export type QuizCategoryRecord = {
@@ -22,6 +23,24 @@ export type QuizQuestionRecord = {
 };
 
 export const quizLevels: QuizLevel[] = ["N5", "N4", "N3", "N2", "N1"];
+
+export function isWordOrderQuestionType(questionType: string): questionType is typeof wordOrderQuestionType {
+  return questionType === wordOrderQuestionType;
+}
+
+export function parseWordOrderSegments(value: string) {
+  return value
+    .split(/[｜|\r\n]+/)
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+}
+
+export function normalizeWordOrderAnswer(value: string) {
+  return value
+    .replace(/([一-龯々〆ヵヶ]+)[(（]([ぁ-ゖァ-ヺー]+)[)）]/g, "$1")
+    .replace(/\s+/g, "")
+    .replace(/[。．.!！?？]+$/g, "");
+}
 
 export const seedQuizCategories: QuizCategoryRecord[] = [
   { id: "n5-vocabulary", level: "N5", name: "文字．語彙" }
@@ -49,28 +68,30 @@ export function normalizeQuizQuestions(questions: unknown, allowEmpty = false): 
   const normalized = questions
     .map((question, index) => {
       const source = question as Partial<QuizQuestionRecord>;
+      const questionType = quizQuestionTypes.includes(source.questionType as QuizQuestionType)
+        ? (source.questionType as QuizQuestionType)
+        : "漢字讀法";
       const rawOptions = Array.isArray(source.options)
         ? source.options.map((option) => String(option).trim()).filter(Boolean)
         : [];
       const answer = String(source.answer ?? rawOptions[0] ?? "").trim();
-      const options = rawOptions.filter((option) => option !== answer).slice(0, 3);
-      const nextOptions = Array.from(new Set(options)).filter(Boolean);
+      const options = isWordOrderQuestionType(questionType)
+        ? rawOptions
+        : Array.from(new Set(rawOptions.filter((option) => option !== answer).slice(0, 3))).filter(Boolean);
 
       return {
         id: Number(source.id) || Date.now() + index,
         level: quizLevels.includes(source.level as QuizLevel) ? (source.level as QuizLevel) : "N5",
         category: String(source.category || "文字．語彙").trim() || "文字．語彙",
-        questionType: quizQuestionTypes.includes(source.questionType as QuizQuestionType)
-          ? (source.questionType as QuizQuestionType)
-          : "漢字讀法",
+        questionType,
         theme: String(source.theme || source.prompt || "").trim(),
         prompt: String(source.prompt || source.theme || "").trim(),
         note: String(source.note || "").trim(),
         answer,
-        options: nextOptions
+        options
       };
     })
-    .filter((question) => question.prompt && question.answer);
+    .filter((question) => question.answer && (isWordOrderQuestionType(question.questionType) || question.prompt));
 
   if (normalized.length > 0) {
     return normalized;

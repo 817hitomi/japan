@@ -8,7 +8,7 @@ import { parseSongTags, SongLyricLine, SongRecord, SongRelatedItem } from "../so
 import NoteBlocksContent from "../../notes/NoteBlocksContent";
 import styles from "./SongPlayer.module.scss";
 
-const JAPANESE_SPEECH_RATE = 0.8;
+const JAPANESE_SPEECH_RATE = 0.9;
 const PREFERRED_JAPANESE_VOICE_NAME = "Google 日本語";
 
 const parallaxBalls = [

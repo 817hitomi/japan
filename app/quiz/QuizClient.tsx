@@ -11,7 +11,14 @@ import { renderInlineRuby } from "../../lib/japaneseText";
 import homeStyles from "../page.module.scss";
 import { generateQuizDistractors } from "./quizDistractors";
 import { readQuizCategoriesWithFallback, readQuizQuestionsWithSource } from "./quizStorage";
-import { normalizeQuizQuestions, QuizCategoryRecord, QuizLevel, QuizQuestionRecord, seedQuizCategories } from "./quizTypes";
+import {
+  normalizeQuizQuestions,
+  QuizCategoryRecord,
+  QuizLevel,
+  QuizQuestionRecord,
+  seedQuizCategories,
+  wordOrderQuestionType
+} from "./quizTypes";
 import styles from "./Quiz.module.scss";
 
 const parallaxBalls = [
@@ -139,7 +146,12 @@ export default function QuizClient({
     async function loadData() {
       const [nextWords, questionsResult, storedCategories] = await Promise.all([
         readWordCardsWithFallback(),
-        readQuizQuestionsWithSource({ level: selectedLevel, category: selectedCategory, pageSize: 500 }),
+        readQuizQuestionsWithSource({
+          level: selectedLevel,
+          category: selectedCategory,
+          excludeQuestionType: wordOrderQuestionType,
+          pageSize: 500
+        }),
         readQuizCategoriesWithFallback()
       ]);
 
@@ -303,7 +315,7 @@ export default function QuizClient({
           <button type="button" onClick={() => randomizeQuestions(displayedQuestionCount)}>
             完整測驗
           </button>
-          <button type="button" onClick={() => switchCategory("文法")}>
+          <button type="button" onClick={() => { window.location.href = `/quiz/grammar-practice?level=${selectedLevel}`; }}>
             文法練習
           </button>
         </div>

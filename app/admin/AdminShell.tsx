@@ -3,9 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { readQuizCategoriesWithFallback, refreshQuizCategories } from "../quiz/quizStorage";
-import { QuizCategoryRecord, QuizLevel, quizLevels } from "../quiz/quizTypes";
+import { QuizLevel, quizLevels } from "../quiz/quizTypes";
 import styles from "./notes/AdminNotes.module.scss";
 
 const navItems = [
@@ -28,40 +26,9 @@ function Sidebar() {
   const searchParams = useSearchParams();
   const isQuizActive = pathname.startsWith("/admin/quiz");
   const requestedQuizLevel = searchParams.get("level");
-  const activeQuizCategory = searchParams.get("category")?.trim() ?? "";
   const activeQuizLevel: QuizLevel = quizLevels.includes(requestedQuizLevel as QuizLevel)
     ? (requestedQuizLevel as QuizLevel)
     : "N5";
-  const [quizCategories, setQuizCategories] = useState<QuizCategoryRecord[]>([]);
-  const [expandedQuizLevels, setExpandedQuizLevels] = useState<QuizLevel[]>([]);
-  const quizCategoryGroups = useMemo(
-    () =>
-      sidebarQuizLevels.map((level) => ({
-        level,
-        categories: quizCategories.filter((category) => category.level === level)
-      })),
-    [quizCategories]
-  );
-
-  useEffect(() => {
-    if (!isQuizActive) return;
-
-    let active = true;
-    const loadCategories = (forceRefresh = false) => {
-      const request = forceRefresh ? refreshQuizCategories() : readQuizCategoriesWithFallback();
-      void request.then((categories) => {
-        if (active) setQuizCategories(categories);
-      });
-    };
-    const handleCategoriesUpdated = () => loadCategories(true);
-
-    loadCategories();
-    window.addEventListener("quiz-categories-updated", handleCategoriesUpdated);
-    return () => {
-      active = false;
-      window.removeEventListener("quiz-categories-updated", handleCategoriesUpdated);
-    };
-  }, [isQuizActive]);
 
   const activeIndex = navItems.findIndex(
     (item) => {
@@ -91,59 +58,18 @@ function Sidebar() {
             </Link>
             {item.label === "模擬測驗" && isQuizActive ? (
               <div className={styles.quizLevelTree} aria-label="測驗級別">
-                {quizCategoryGroups.map(({ level, categories }) => (
-                  <section className={styles.quizLevelGroup} key={level}>
-                    <div className={styles.quizLevelRow}>
-                      <Link
-                        className={`${styles.quizLevelLink} ${
-                          level === activeQuizLevel ? styles.quizLevelLinkActive : ""
-                        }`}
-                        href={`/admin/quiz?level=${level}`}
-                        prefetch={false}
-                        aria-current={level === activeQuizLevel ? "page" : undefined}
-                      >
-                        {level}
-                      </Link>
-                      <button
-                        className={styles.quizLevelToggle}
-                        type="button"
-                        aria-label={`${expandedQuizLevels.includes(level) ? "收合" : "展開"} ${level} 分類`}
-                        aria-expanded={expandedQuizLevels.includes(level)}
-                        onClick={() =>
-                          setExpandedQuizLevels((current) =>
-                            current.includes(level) ? current.filter((item) => item !== level) : [...current, level]
-                          )
-                        }
-                      >
-                        <span aria-hidden="true">›</span>
-                      </button>
-                    </div>
-                    {expandedQuizLevels.includes(level) ? (
-                      <div className={styles.quizCategoryList}>
-                        {categories.length > 0 ? (
-                          categories.map((category) => (
-                            <Link
-                              className={
-                                level === activeQuizLevel && category.name === activeQuizCategory
-                                  ? styles.quizCategoryActive
-                                  : undefined
-                              }
-                              href={`/admin/quiz?level=${level}&category=${encodeURIComponent(category.name)}`}
-                              prefetch={false}
-                              key={category.id}
-                              aria-current={
-                                level === activeQuizLevel && category.name === activeQuizCategory ? "page" : undefined
-                              }
-                            >
-                              {category.name}
-                            </Link>
-                          ))
-                        ) : (
-                          <span className={styles.quizCategoryEmpty}>未來建立的題庫分類</span>
-                        )}
-                      </div>
-                    ) : null}
-                  </section>
+                {sidebarQuizLevels.map((level) => (
+                  <Link
+                    className={`${styles.quizLevelLink} ${
+                      level === activeQuizLevel ? styles.quizLevelLinkActive : ""
+                    }`}
+                    href={`/admin/quiz?level=${level}`}
+                    prefetch={false}
+                    key={level}
+                    aria-current={level === activeQuizLevel ? "page" : undefined}
+                  >
+                    {level}
+                  </Link>
                 ))}
               </div>
             ) : null}
