@@ -17,6 +17,9 @@ import {
 import { defaultQuotes, QuoteRecord } from "../quotes/quoteTypes";
 import { readQuotesWithFallback } from "../quotes/quoteStorage";
 import HomeRuntimeErrorBoundary from "../HomeRuntimeErrorBoundary";
+import HomeQuizCard from "./HomeQuizCard";
+import { QuizQuestionRecord } from "../quiz/quizTypes";
+import { parseSongTags, SongRelatedItem } from "../songs/songTypes";
 import { readingsToSpeechText, renderWordRuby, shouldShowStandaloneKana, stripInlineReadings } from "../../lib/japaneseText";
 import homeStyles from "../page.module.scss";
 import styles from "./NotesFront.module.scss";
@@ -25,7 +28,7 @@ const publishedStatus = "已發布";
 
 const navItems = [
   { label: "單字卡", href: "/words" },
-  { label: "模擬測驗", href: "/quiz", children: [{ label: "文字．語彙", href: "/quiz/vocabulary" }] },
+  { label: "實力挑戰", href: "/quiz", children: [{ label: "文字．語彙", href: "/quiz/vocabulary" }, { label: "文法", href: "/quiz?category=文法" }] },
   { label: "學習筆記", href: "/notes" },
   { label: "留音室", href: "/songs" },
   { label: "登入", href: "/admin" }
@@ -105,6 +108,36 @@ function NoteCard({ note }: { note: PublicNoteRecord }) {
           {tags.map((tag) => (
             <strong key={tag}>#{tag}</strong>
           ))}
+        </div>
+      </div>
+    </a>
+  );
+}
+
+function formatSongDuration(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+}
+
+function SongCard({ song }: { song: SongRelatedItem }) {
+  const cover = song.coverUrl || (song.videoId ? `https://i.ytimg.com/vi/${encodeURIComponent(song.videoId)}/hqdefault.jpg` : "");
+  const tags = parseSongTags(song.tags).slice(0, 3);
+
+  return (
+    <a className={styles.card} href={`/songs/${encodeURIComponent(song.slug)}`}>
+      <div className={styles.cover}>
+        {cover ? <img className={styles.coverImage} src={cover} alt="" /> : <div className={`${styles.coverFallback} ${styles.songCoverFallback}`}>♪</div>}
+        <span className={styles.categoryPill}>{song.level || "日文歌曲"}</span>
+        <span className={styles.songPlayButton} aria-hidden="true">▶</span>
+        {song.durationSeconds > 0 ? <span className={styles.songDuration}>{formatSongDuration(song.durationSeconds)}</span> : null}
+      </div>
+      <div className={styles.cardBody}>
+        <h3>{song.title}</h3>
+        <p>{song.description || song.artist || "跟著同步歌詞，一句一句聽懂日文。"}</p>
+        <div className={styles.cardMeta}>
+          <span>{song.publishedDate}{song.artist ? `　${song.artist}` : ""}</span>
+          {tags.map((tag) => <strong key={tag}>#{tag}</strong>)}
         </div>
       </div>
     </a>
@@ -247,12 +280,16 @@ export default function NotesFrontClient({
   initialBoardItems = defaultQuotes,
   initialDailySelectionKey = getTaipeiDailySelectionKey(),
   initialNotes = [],
+  initialQuizQuestions = [],
+  initialSongs = [],
   initialWords = [],
   siteCount
 }: {
   initialBoardItems?: QuoteRecord[];
   initialDailySelectionKey?: string;
   initialNotes?: PublicNoteRecord[];
+  initialQuizQuestions?: QuizQuestionRecord[];
+  initialSongs?: SongRelatedItem[];
   initialWords?: WordCardRecord[];
   siteCount: number;
 }) {
@@ -437,6 +474,28 @@ export default function NotesFrontClient({
             </div>
           ) : (
             <p className={styles.empty}>還沒有推薦筆記。</p>
+          )}
+        </section>
+
+        <section className={styles.homeSection}>
+          <SectionTitle title="小試身手" />
+          <HomeRuntimeErrorBoundary fallback={<p className={styles.empty}>測驗卡片暫時無法顯示。</p>}>
+            <HomeQuizCard initialQuestions={initialQuizQuestions} />
+          </HomeRuntimeErrorBoundary>
+        </section>
+
+        <section className={styles.homeSection}>
+          <SectionTitle title="最新留音室" />
+          {initialSongs.length > 0 ? (
+            <div className={styles.grid}>
+              {initialSongs.slice(0, 2).map((song) => (
+                <HomeRuntimeErrorBoundary fallback={<p className={styles.empty}>留音室卡片暫時無法顯示。</p>} key={song.id}>
+                  <SongCard song={song} />
+                </HomeRuntimeErrorBoundary>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.empty}>還沒有已發布的留音室文章。</p>
           )}
         </section>
 

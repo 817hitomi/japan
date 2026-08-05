@@ -18,7 +18,7 @@ export default async function SongsPage() {
 
   return (
     <SongsListClient
-      currentLevel={learningOverview.currentLevel}
+      currentLevel="N3"
       learningDays={learningOverview.learningDays}
       songs={songs}
     />

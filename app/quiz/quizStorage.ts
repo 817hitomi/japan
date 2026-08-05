@@ -25,6 +25,7 @@ export type QuizQuestionsReadResult = {
 export type QuizQuestionsReadOptions = {
   level?: QuizLevel;
   category?: string;
+  categories?: string[];
   questionType?: QuizQuestionType;
   excludeQuestionType?: QuizQuestionType;
   query?: string;
@@ -74,6 +75,11 @@ function getQuizApiUrl(options: QuizQuestionsReadOptions = {}) {
   if (options.category?.trim()) {
     params.set("category", options.category.trim());
   }
+
+  options.categories
+    ?.map((category) => category.trim())
+    .filter(Boolean)
+    .forEach((category) => params.append("category", category));
 
   if (options.questionType) {
     params.set("type", options.questionType);
@@ -168,6 +174,7 @@ export async function readQuizQuestionsWithSource(options: QuizQuestionsReadOpti
       (question) =>
         (!options.level || question.level === options.level) &&
         (!options.category?.trim() || question.category === options.category.trim()) &&
+        (!options.categories?.length || options.categories.includes(question.category)) &&
         (!options.questionType || question.questionType === options.questionType) &&
         (!options.excludeQuestionType || question.questionType !== options.excludeQuestionType) &&
         (!options.query?.trim() ||
@@ -180,6 +187,7 @@ export async function readQuizQuestionsWithSource(options: QuizQuestionsReadOpti
       (question) =>
         (!options.level || question.level === options.level) &&
         (!options.category?.trim() || question.category === options.category.trim()) &&
+        (!options.categories?.length || options.categories.includes(question.category)) &&
         (!options.questionType || question.questionType === options.questionType) &&
         (!options.excludeQuestionType || question.questionType !== options.excludeQuestionType) &&
         (!options.query?.trim() ||

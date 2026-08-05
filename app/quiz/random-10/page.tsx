@@ -10,7 +10,6 @@ export default async function RandomTenQuizPage() {
   return (
     <RandomQuizClient
       questionCount={10}
-      initialCategory="文字．語彙"
       initialLevel="N5"
       initialQuestions={seedQuizQuestions}
       initialWordTotal={wordsResult.total}

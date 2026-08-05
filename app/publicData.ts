@@ -4,10 +4,17 @@ import { getElapsedLearningDays } from "../lib/learningDays";
 import { createRequestTimer } from "../lib/requestDiagnostics";
 import { createSupabaseReadClient } from "../lib/supabase/server";
 import { rowToNote } from "./api/notes/noteMapper";
+import { quizQuestionSelect, QuizQuestionRow, rowToQuizQuestion } from "./api/quiz/quizMapper";
 import { rowToWord } from "./api/words/wordMapper";
 import { getDailySelectionIndex } from "./dailySelection";
 import { preparePublicNoteCards, PublicNoteRecord } from "./notes/noteTypes";
 import { defaultQuotes, normalizeQuotes, QuoteRecord } from "./quotes/quoteTypes";
+import {
+  grammarQuizCategory,
+  QuizQuestionRecord,
+  vocabularyQuizCategory,
+  wordOrderQuestionType
+} from "./quiz/quizTypes";
 import { kanaRows, KanaRowKey, normalizeKanaRowKey } from "./words/kanaRows";
 import { normalizeWordCards, WordCardRecord } from "./words/wordTypes";
 
@@ -21,6 +28,7 @@ const publicArticleSidebarLimit = 12;
 export const publicNotesPageSize = 10;
 export const publicWordsPageSize = 12;
 const publicQuotesLimit = 10;
+const publicHomeQuizQuestionsPerCategory = 50;
 const noteSummarySelect = "id,category,title,status,published_date,slug,tags";
 const noteListSelect = `${noteSummarySelect},summary`;
 const notePreviewSelect = `${noteListSelect},cover_url`;
@@ -729,6 +737,30 @@ export async function readWordsForHomePage(dailyKey: string): Promise<PublicWord
   const dailyPage = getDailySelectionIndex(pageCount, dailyKey, "word-pool") + 1;
 
   return readWordsForPublicPage(dailyPage, dailyPoolSize, true);
+}
+
+export async function readQuizQuestionsForHomePage(): Promise<QuizQuestionRecord[]> {
+  try {
+    const categoryRows = await Promise.all(
+      [vocabularyQuizCategory, grammarQuizCategory].map((category) =>
+        fetchSupabaseRows<QuizQuestionRow>(
+          "quiz_questions",
+          {
+            select: quizQuestionSelect,
+            category: `eq.${category}`,
+            question_type: `neq.${wordOrderQuestionType}`,
+            order: "id.desc",
+            limit: String(publicHomeQuizQuestionsPerCategory)
+          },
+          { useNextCache: true }
+        )
+      )
+    );
+
+    return categoryRows.flatMap((rows) => rows.map(rowToQuizQuestion)).filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 export async function readQuotesForPublicPage(useNextCache = false): Promise<QuoteRecord[]> {

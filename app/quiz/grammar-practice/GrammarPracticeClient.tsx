@@ -250,7 +250,7 @@ export default function GrammarPracticeClient({ level }: { level: QuizLevel }) {
   return (
     <main className={homeStyles.page}>
       <ParallaxBackground />
-      <SiteHeader activeLabel="模擬測驗" />
+      <SiteHeader activeLabel="實力挑戰" />
       <section className={homeStyles.hero}>
         <div className={homeStyles.heroInner}>
           <div className={homeStyles.heroCopy}>

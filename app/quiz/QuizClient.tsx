@@ -125,6 +125,7 @@ export default function QuizClient({
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [modeCount, setModeCount] = useState(10);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -142,6 +143,7 @@ export default function QuizClient({
 
   useEffect(() => {
     let active = true;
+    setIsLoading(true);
 
     async function loadData() {
       const [nextWords, questionsResult, storedCategories] = await Promise.all([
@@ -162,6 +164,7 @@ export default function QuizClient({
       setWords(nextWords.length > 0 || initialWords.length === 0 ? nextWords : initialWords);
       setQuestions(questionsResult.questions.length > 0 ? questionsResult.questions : normalizeQuizQuestions(initialQuestions));
       setCategories(storedCategories);
+      setIsLoading(false);
     }
 
     loadData();
@@ -219,7 +222,7 @@ export default function QuizClient({
     <main className={homeStyles.page}>
       <ParallaxBackground />
 
-      <SiteHeader activeLabel="模擬測驗" />
+      <SiteHeader activeLabel="實力挑戰" />
 
       <section className={homeStyles.hero}>
         <div className={homeStyles.heroInner}>
@@ -267,7 +270,13 @@ export default function QuizClient({
           <span>{selectedLevel}</span>
         </div>
 
-        {activeQuestion ? (
+        {isLoading ? (
+          <div className={styles.loadingState} role="status" aria-label="正在載入測驗">
+            <span />
+            <span />
+            <span />
+          </div>
+        ) : activeQuestion ? (
           <div className={styles.practiceRow}>
             <button className={styles.arrowButton} type="button" onClick={nextQuestion} aria-label="上一題">
               ◀

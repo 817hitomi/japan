@@ -10,16 +10,20 @@ import homeStyles from "../page.module.scss";
 import { readWordCardsWithFallback } from "../words/wordStorage";
 import { WordCardRecord } from "../words/wordTypes";
 import { generateQuizDistractors } from "./quizDistractors";
-import { readQuizCategoriesWithFallback, readQuizQuestionsWithSource } from "./quizStorage";
+import { readQuizQuestionsWithSource } from "./quizStorage";
 import {
+  balancedQuizCategories,
+  grammarQuizCategory,
   normalizeQuizQuestions,
-  QuizCategoryRecord,
   QuizLevel,
   QuizQuestionRecord,
-  seedQuizCategories,
+  selectBalancedQuizQuestions,
+  vocabularyQuizCategory,
   wordOrderQuestionType
 } from "./quizTypes";
 import styles from "./RandomQuiz.module.scss";
+
+const allQuizCategory = "全部";
 
 const parallaxBalls = [
   { className: homeStyles.ballTopLeft, y: -0.1, x: 0.035 },
@@ -112,14 +116,12 @@ function getQuestionResult(question: QuizQuestionRecord, selectedAnswer: string 
 
 export default function RandomQuizClient({
   questionCount,
-  initialCategory = "文字．語彙",
   initialLevel = "N5",
   initialQuestions = [],
   initialWordTotal = 0,
   initialWords = []
 }: {
   questionCount: 10 | 20;
-  initialCategory?: string;
   initialLevel?: QuizLevel;
   initialQuestions?: QuizQuestionRecord[];
   initialWordTotal?: number;
@@ -127,27 +129,26 @@ export default function RandomQuizClient({
 }) {
   const [words, setWords] = useState(initialWords);
   const [questions, setQuestions] = useState(() => normalizeQuizQuestions(initialQuestions));
-  const [categories, setCategories] = useState<QuizCategoryRecord[]>(seedQuizCategories);
   const [selectedLevel] = useState<QuizLevel>(initialLevel);
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [selectedCategory, setSelectedCategory] = useState<string>(allQuizCategory);
   const [examQuestions, setExamQuestions] = useState<QuizQuestionRecord[]>([]);
   const [optionMap, setOptionMap] = useState<Record<number, string[]>>({});
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
 
     async function loadData() {
-      const [nextWords, questionsResult, storedCategories] = await Promise.all([
+      const [nextWords, questionsResult] = await Promise.all([
         readWordCardsWithFallback(),
         readQuizQuestionsWithSource({
           level: selectedLevel,
-          category: selectedCategory,
+          categories: [...balancedQuizCategories],
           excludeQuestionType: wordOrderQuestionType,
           pageSize: 500
-        }),
-        readQuizCategoriesWithFallback()
+        })
       ]);
 
       if (!active) {
@@ -156,7 +157,7 @@ export default function RandomQuizClient({
 
       setWords(nextWords.length > 0 || initialWords.length === 0 ? nextWords : initialWords);
       setQuestions(questionsResult.questions.length > 0 ? questionsResult.questions : normalizeQuizQuestions(initialQuestions));
-      setCategories(storedCategories);
+      setIsLoading(false);
     }
 
     loadData();
@@ -164,29 +165,45 @@ export default function RandomQuizClient({
     return () => {
       active = false;
     };
-  }, [initialQuestions, initialWords, selectedCategory, selectedLevel]);
+  }, [initialQuestions, initialWords, selectedLevel]);
 
   const displayedWordCount = Math.max(words.length, initialWordTotal);
   const displayedQuestionCount = questions.filter(
-    (question) => question.level === selectedLevel && question.category === selectedCategory
+    (question) =>
+      question.level === selectedLevel &&
+      (selectedCategory === allQuizCategory || question.category === selectedCategory)
   ).length;
   const currentLevel = selectedLevel || getCurrentLevel(words, questions);
-  const currentLevelCategories = categories.filter((category) => category.level === selectedLevel);
 
   const filteredQuestions = useMemo(
-    () => questions.filter((question) => question.level === selectedLevel && question.category === selectedCategory),
+    () =>
+      questions.filter(
+        (question) =>
+          question.level === selectedLevel &&
+          (selectedCategory === allQuizCategory || question.category === selectedCategory)
+      ),
     [questions, selectedCategory, selectedLevel]
   );
 
+  function createExamQuestions() {
+    if (selectedCategory === allQuizCategory) {
+      return selectBalancedQuizQuestions(filteredQuestions, questionCount);
+    }
+
+    return shuffle(filteredQuestions).slice(0, questionCount);
+  }
+
   useEffect(() => {
-    const nextQuestions = shuffle(filteredQuestions).slice(0, questionCount);
+    const nextQuestions = selectedCategory === allQuizCategory
+      ? selectBalancedQuizQuestions(filteredQuestions, questionCount)
+      : shuffle(filteredQuestions).slice(0, questionCount);
     setExamQuestions(nextQuestions);
     setOptionMap(
       Object.fromEntries(nextQuestions.map((question) => [question.id, getDisplayOptions(question, filteredQuestions)]))
     );
     setAnswers({});
     setIsSubmitted(false);
-  }, [filteredQuestions, questionCount]);
+  }, [filteredQuestions, questionCount, selectedCategory]);
 
   const answeredCount = examQuestions.filter((question) => answers[question.id]).length;
   const missingCount = Math.max(examQuestions.length - answeredCount, 0);
@@ -203,12 +220,8 @@ export default function RandomQuizClient({
     }));
   }
 
-  function switchCategory(category: string) {
-    setSelectedCategory(category);
-  }
-
   function restartQuiz() {
-    const nextQuestions = shuffle(filteredQuestions).slice(0, questionCount);
+    const nextQuestions = createExamQuestions();
     setExamQuestions(nextQuestions);
     setOptionMap(
       Object.fromEntries(nextQuestions.map((question) => [question.id, getDisplayOptions(question, filteredQuestions)]))
@@ -229,7 +242,7 @@ export default function RandomQuizClient({
     <main className={homeStyles.page}>
       <ParallaxBackground />
 
-      <SiteHeader activeLabel="模擬測驗" />
+      <SiteHeader activeLabel="實力挑戰" />
 
       <section className={homeStyles.hero}>
         <div className={homeStyles.heroInner}>
@@ -263,21 +276,27 @@ export default function RandomQuizClient({
 
       <section className={styles.quizSection} aria-label={`隨機 ${questionCount} 題測驗`}>
         <div className={styles.filterPills}>
-          <span>全部</span>
-          {currentLevelCategories.map((category) => (
+          {[allQuizCategory, vocabularyQuizCategory, grammarQuizCategory].map((category) => (
             <button
-              key={category.id}
-              className={selectedCategory === category.name ? styles.activeCategoryPill : ""}
+              key={category}
+              className={selectedCategory === category ? styles.activeCategoryPill : ""}
               type="button"
-              onClick={() => switchCategory(category.name)}
+              aria-pressed={selectedCategory === category}
+              onClick={() => setSelectedCategory(category)}
             >
-              {category.name}
+              {category}
             </button>
           ))}
           <span>{selectedLevel}</span>
         </div>
 
-        {examQuestions.length > 0 ? (
+        {isLoading ? (
+          <div className={styles.loadingState} role="status" aria-label="正在載入測驗">
+            <span />
+            <span />
+            <span />
+          </div>
+        ) : examQuestions.length > 0 ? (
           <div className={styles.examPanel}>
             <div className={styles.examHeader}>
               <strong>隨機 {questionCount} 題</strong>
@@ -365,7 +384,11 @@ export default function RandomQuizClient({
             </div>
           </div>
         ) : (
-          <p className={styles.emptyText}>目前沒有{selectedCategory}題目。</p>
+          <p className={styles.emptyText}>
+            {selectedCategory === allQuizCategory
+              ? `目前需要文字．語彙與文法選擇題各至少 ${questionCount / 2} 題。`
+              : `目前沒有足夠的${selectedCategory}題目。`}
+          </p>
         )}
       </section>
 

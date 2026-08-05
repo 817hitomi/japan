@@ -19,10 +19,12 @@ import {
   QuizLevel,
   QuizQuestionRecord,
   QuizQuestionType,
+  getQuestionTypesForCategory,
+  grammarChoiceQuestionType,
+  grammarQuizCategory,
   isWordOrderQuestionType,
   parseWordOrderSegments,
   quizLevels,
-  quizQuestionTypes,
   seedQuizCategories,
   wordOrderQuestionType
 } from "../../quiz/quizTypes";
@@ -86,7 +88,7 @@ function getDraftForEditor(question: QuizQuestionRecord, relatedQuestions: QuizQ
 }
 
 function getNewQuestionDraft(level: QuizLevel, category: string, questionType?: QuizQuestionType) {
-  const nextQuestionType = questionType ?? emptyQuestion.questionType;
+  const nextQuestionType = questionType ?? (category === grammarQuizCategory ? grammarChoiceQuestionType : emptyQuestion.questionType);
 
   return {
     ...emptyQuestion,
@@ -591,7 +593,7 @@ export default function AdminQuizClient({
               value={draft.questionType}
               onChange={(event) => changeDraftQuestionType(event.target.value as QuizQuestionType)}
             >
-              {quizQuestionTypes.map((questionType) => (
+              {getQuestionTypesForCategory(draft.category).map((questionType) => (
                 <option key={questionType}>{questionType}</option>
               ))}
             </select>
@@ -714,10 +716,7 @@ export default function AdminQuizClient({
               >
                 全部
               </button>
-              {(selectedCategory === "文字．語彙"
-                ? quizQuestionTypes.filter((questionType) => questionType !== wordOrderQuestionType)
-                : [wordOrderQuestionType]
-              ).map((questionType) => (
+              {getQuestionTypesForCategory(selectedCategory).map((questionType) => (
                 <button
                   key={questionType}
                   className={selectedQuestionType === questionType ? styles.activeQuizType : undefined}

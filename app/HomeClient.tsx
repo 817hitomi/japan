@@ -12,6 +12,8 @@ import { fetchWordCards } from "./words/wordStorage";
 import { WordCardRecord } from "./words/wordTypes";
 import { getOrCreateVisitorId } from "../lib/siteVisitor";
 import { defaultQuotes, QuoteRecord } from "./quotes/quoteTypes";
+import { QuizQuestionRecord } from "./quiz/quizTypes";
+import { SongRelatedItem } from "./songs/songTypes";
 import { getElapsedLearningDays } from "../lib/learningDays";
 import styles from "./page.module.scss";
 
@@ -23,7 +25,7 @@ export type HomeLearningStats = {
 
 const navItems = [
   { label: "單字卡", href: "/words" },
-  { label: "模擬測驗", href: "/quiz", children: [{ label: "文字．語彙", href: "/quiz/vocabulary" }] },
+  { label: "實力挑戰", href: "/quiz", children: [{ label: "文字．語彙", href: "/quiz/vocabulary" }, { label: "文法", href: "/quiz?category=文法" }] },
   { label: "學習筆記", href: "/notes" },
   { label: "留音室", href: "/songs" },
   { label: "登入", href: "/admin" }
@@ -277,7 +279,9 @@ export default function Home({
   initialNotes = [],
   initialNextNote,
   initialPreviousNote,
+  initialQuizQuestions = [],
   initialQuotes = defaultQuotes,
+  initialSongs = [],
   initialSelectedNoteId,
   initialSelectedNoteSlug,
   initialWordTotal,
@@ -293,7 +297,9 @@ export default function Home({
   initialNextNote?: PublicNoteRecord | null;
   initialNotes?: PublicNoteRecord[];
   initialPreviousNote?: PublicNoteRecord | null;
+  initialQuizQuestions?: QuizQuestionRecord[];
   initialQuotes?: QuoteRecord[];
+  initialSongs?: SongRelatedItem[];
   initialSelectedNoteId?: string;
   initialSelectedNoteSlug?: string;
   initialWordTotal?: number;
@@ -590,6 +596,8 @@ export default function Home({
         initialBoardItems={safeInitialQuotes}
         initialDailySelectionKey={initialDailySelectionKey}
         initialNotes={safeInitialNotes}
+        initialQuizQuestions={initialQuizQuestions}
+        initialSongs={initialSongs}
         initialWords={safeInitialWords}
         siteCount={siteCount}
       />

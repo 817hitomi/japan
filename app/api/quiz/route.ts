@@ -28,7 +28,9 @@ function escapeLikePattern(value: string) {
 export async function GET(request: NextRequest) {
   try {
     const level = request.nextUrl.searchParams.get("level")?.trim();
-    const category = request.nextUrl.searchParams.get("category")?.trim();
+    const categories = Array.from(
+      new Set(request.nextUrl.searchParams.getAll("category").map((category) => category.trim()).filter(Boolean))
+    );
     const requestedQuestionType = request.nextUrl.searchParams.get("type")?.trim();
     const questionType = quizQuestionTypes.find((type) => type === requestedQuestionType);
     const requestedExcludedQuestionType = request.nextUrl.searchParams.get("excludeType")?.trim();
@@ -50,8 +52,10 @@ export async function GET(request: NextRequest) {
       query = query.eq("level", level);
     }
 
-    if (category) {
-      query = query.eq("category", category);
+    if (categories.length === 1) {
+      query = query.eq("category", categories[0]);
+    } else if (categories.length > 1) {
+      query = query.in("category", categories);
     }
 
     if (questionType) {

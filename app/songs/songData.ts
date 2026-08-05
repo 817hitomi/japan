@@ -4,7 +4,9 @@ import { seedSong, SongRecord, SongRelatedItem, toSongRelatedItem } from "./song
 
 const publicSongListSelect = "id,title,slug,artist,description,tags,cover_url,status,level,video_id,duration_seconds,published_date";
 
-export async function readPublishedSongList(): Promise<SongRelatedItem[]> {
+export async function readPublishedSongList(limit = 20): Promise<SongRelatedItem[]> {
+  const safeLimit = Math.min(20, Math.max(1, Math.trunc(limit) || 20));
+
   try {
     const { data, error } = await createSupabaseReadClient()
       .from("songs")
@@ -12,7 +14,7 @@ export async function readPublishedSongList(): Promise<SongRelatedItem[]> {
       .eq("status", "published")
       .order("published_date", { ascending: false })
       .order("id", { ascending: false })
-      .limit(20);
+      .limit(safeLimit);
     if (error) throw error;
     return (data ?? []).map((row) => toSongRelatedItem(rowToSong(row)));
   } catch {

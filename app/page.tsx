@@ -3,7 +3,13 @@ import { createRequestTimer } from "../lib/requestDiagnostics";
 import HomeClient from "./HomeClient";
 import HomeRuntimeErrorBoundary from "./HomeRuntimeErrorBoundary";
 import { getTaipeiDailySelectionKey } from "./dailySelection";
-import { readPublishedNoteCardsForHomePage, readQuotesForPublicPage, readWordsForHomePage } from "./publicData";
+import {
+  readPublishedNoteCardsForHomePage,
+  readQuizQuestionsForHomePage,
+  readQuotesForPublicPage,
+  readWordsForHomePage
+} from "./publicData";
+import { readPublishedSongList } from "./songs/songData";
 
 export const revalidate = 300;
 const publicSiteUrl = "https://www.japan-note.com";
@@ -31,13 +37,21 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const timer = createRequestTimer("page render", { route: "/" });
   const dailySelectionKey = getTaipeiDailySelectionKey();
-  timer.mark("database query start", { groups: "notes,words,quotes" });
-  const [notes, wordsResult, quotes] = await Promise.all([
+  timer.mark("database query start", { groups: "notes,words,quotes,quiz,songs" });
+  const [notes, wordsResult, quotes, quizQuestions, songs] = await Promise.all([
     readPublishedNoteCardsForHomePage(),
     readWordsForHomePage(dailySelectionKey),
-    readQuotesForPublicPage(true)
+    readQuotesForPublicPage(true),
+    readQuizQuestionsForHomePage(),
+    readPublishedSongList(2)
   ]);
-  timer.mark("database query end", { notes: notes.length, words: wordsResult.words.length, quotes: quotes.length });
+  timer.mark("database query end", {
+    notes: notes.length,
+    words: wordsResult.words.length,
+    quotes: quotes.length,
+    quizQuestions: quizQuestions.length,
+    songs: songs.length
+  });
   timer.end({ status: 200 });
 
   return (
@@ -45,7 +59,9 @@ export default async function HomePage() {
       <HomeClient
         disableNotesAndWordsRefresh
         initialNotes={notes}
+        initialQuizQuestions={quizQuestions}
         initialQuotes={quotes}
+        initialSongs={songs}
         initialDailySelectionKey={dailySelectionKey}
         initialWordTotal={wordsResult.total}
         initialWords={wordsResult.words}

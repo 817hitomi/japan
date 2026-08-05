@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { getGlobalHeadAdHtml } from "./ads/serverAdSettings";
 import { FrontendInteractionGuard } from "./FrontendInteractionGuard";
 import { SiteAnalyticsTracker } from "./SiteAnalyticsTracker";
+import BackToTop from "./BackToTop";
 import { createRequestTimer } from "../lib/requestDiagnostics";
 import "./globals.scss";
 
@@ -36,6 +37,7 @@ export default async function RootLayout({
         <FrontendInteractionGuard />
         <SiteAnalyticsTracker />
         {children}
+        <BackToTop />
       </body>
     </html>
   );

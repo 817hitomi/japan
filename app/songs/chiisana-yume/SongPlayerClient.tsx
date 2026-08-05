@@ -34,6 +34,7 @@ type YouTubePlayer = {
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
   setPlaybackRate: (rate: number) => void;
   setVolume: (volume: number) => void;
+  unloadModule?: (module: "captions") => void;
 };
 
 type YouTubePlayerEvent = { target: YouTubePlayer; data: number };
@@ -189,10 +190,16 @@ export default function SongPlayerClient({
       if (disposed || playerRef.current || !window.YT || !document.getElementById(playerElementId)) return;
       playerRef.current = new window.YT.Player(playerElementId, {
         videoId: song.videoId,
-        playerVars: { playsinline: 1, rel: 0, origin: window.location.origin },
+        playerVars: {
+          playsinline: 1,
+          rel: 0,
+          cc_load_policy: 0,
+          origin: window.location.origin
+        },
         events: {
           onReady: (event) => {
             playerRef.current = event.target;
+            event.target.unloadModule?.("captions");
             event.target.setVolume(volume);
             setDuration(event.target.getDuration() || song.durationSeconds || 1);
             setReady(true);

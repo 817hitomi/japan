@@ -1,8 +1,14 @@
 export type QuizLevel = "N5" | "N4" | "N3" | "N2" | "N1";
 
 export const wordOrderQuestionType = "語序排列" as const;
-export const quizQuestionTypes = ["漢字讀法", "漢字書寫", "前後關係", "近義替換", wordOrderQuestionType] as const;
+export const grammarChoiceQuestionType = "文法選擇" as const;
+export const vocabularyQuizQuestionTypes = ["漢字讀法", "漢字書寫", "前後關係", "近義替換"] as const;
+export const quizQuestionTypes = [...vocabularyQuizQuestionTypes, grammarChoiceQuestionType, wordOrderQuestionType] as const;
 export type QuizQuestionType = (typeof quizQuestionTypes)[number];
+
+export const vocabularyQuizCategory = "文字．語彙" as const;
+export const grammarQuizCategory = "文法" as const;
+export const balancedQuizCategories = [vocabularyQuizCategory, grammarQuizCategory] as const;
 
 export type QuizCategoryRecord = {
   id: string;
@@ -28,6 +34,18 @@ export function isWordOrderQuestionType(questionType: string): questionType is t
   return questionType === wordOrderQuestionType;
 }
 
+export function getQuestionTypesForCategory(category: string): readonly QuizQuestionType[] {
+  if (category === grammarQuizCategory) {
+    return [grammarChoiceQuestionType, wordOrderQuestionType];
+  }
+
+  if (category === vocabularyQuizCategory) {
+    return vocabularyQuizQuestionTypes;
+  }
+
+  return [wordOrderQuestionType];
+}
+
 export function parseWordOrderSegments(value: string) {
   return value
     .split(/[｜|\r\n]+/)
@@ -43,14 +61,15 @@ export function normalizeWordOrderAnswer(value: string) {
 }
 
 export const seedQuizCategories: QuizCategoryRecord[] = [
-  { id: "n5-vocabulary", level: "N5", name: "文字．語彙" }
+  { id: "n5-vocabulary", level: "N5", name: vocabularyQuizCategory },
+  { id: "n5-grammar", level: "N5", name: grammarQuizCategory }
 ];
 
 export const seedQuizQuestions: QuizQuestionRecord[] = [
   {
     id: 1,
     level: "N5",
-    category: "文字．語彙",
+    category: vocabularyQuizCategory,
     questionType: "漢字讀法",
     theme: "あしたは雨ですか",
     prompt: "あしたは雨ですか",
@@ -82,7 +101,7 @@ export function normalizeQuizQuestions(questions: unknown, allowEmpty = false): 
       return {
         id: Number(source.id) || Date.now() + index,
         level: quizLevels.includes(source.level as QuizLevel) ? (source.level as QuizLevel) : "N5",
-        category: String(source.category || "文字．語彙").trim() || "文字．語彙",
+        category: String(source.category || vocabularyQuizCategory).trim() || vocabularyQuizCategory,
         questionType,
         theme: String(source.theme || source.prompt || "").trim(),
         prompt: String(source.prompt || source.theme || "").trim(),
@@ -98,6 +117,38 @@ export function normalizeQuizQuestions(questions: unknown, allowEmpty = false): 
   }
 
   return allowEmpty ? [] : seedQuizQuestions;
+}
+
+function shuffleWithRandom<T>(items: T[], random: () => number) {
+  const shuffled = [...items];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+
+  return shuffled;
+}
+
+export function selectBalancedQuizQuestions(
+  questions: QuizQuestionRecord[],
+  questionCount: number,
+  random: () => number = Math.random
+) {
+  const questionsPerCategory = Math.floor(questionCount / balancedQuizCategories.length);
+  const categoryPools = balancedQuizCategories.map((category) =>
+    questions.filter((question) => question.category === category && !isWordOrderQuestionType(question.questionType))
+  );
+
+  if (categoryPools.some((pool) => pool.length < questionsPerCategory)) {
+    return [];
+  }
+
+  const selectedQuestions = categoryPools.flatMap((pool) =>
+    shuffleWithRandom(pool, random).slice(0, questionsPerCategory)
+  );
+
+  return selectedQuestions;
 }
 
 export function normalizeQuizCategories(categories: unknown, allowEmpty = false): QuizCategoryRecord[] {
@@ -119,8 +170,16 @@ export function normalizeQuizCategories(categories: unknown, allowEmpty = false)
     })
     .filter((category) => category.name);
 
-  if (normalized.length > 0) {
-    return normalized;
+  const missingSeedCategories = seedQuizCategories.filter(
+    (seedCategory) =>
+      !normalized.some(
+        (category) => category.level === seedCategory.level && category.name === seedCategory.name
+      )
+  );
+  const categoriesWithRequiredEntries = [...normalized, ...missingSeedCategories];
+
+  if (categoriesWithRequiredEntries.length > 0) {
+    return categoriesWithRequiredEntries;
   }
 
   return allowEmpty ? [] : seedQuizCategories;

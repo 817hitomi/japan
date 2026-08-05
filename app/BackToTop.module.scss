@@ -1,0 +1,99 @@
+.backToTop {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 80;
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-content: center;
+  gap: 0;
+  padding: 5px 0 7px;
+  border: 1px solid rgb(255 255 255 / 72%);
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 7px 20px rgb(126 78 78 / 24%);
+  color: var(--white);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(16px) scale(0.9);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+
+  &::after {
+    position: absolute;
+    inset: -5px;
+    border: 1px solid rgb(194 128 128 / 32%);
+    border-radius: inherit;
+    content: "";
+  }
+
+  svg {
+    width: 20px;
+    height: 17px;
+    margin: 0 auto -1px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+  }
+
+  span {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1;
+  }
+
+  &:hover {
+    background: var(--heading);
+    box-shadow: 0 9px 24px rgb(126 78 78 / 32%);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--summary);
+    outline-offset: 3px;
+  }
+}
+
+.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  animation: gentleFloat 2.8s ease-in-out 300ms infinite;
+}
+
+@keyframes gentleFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@media (max-width: 640px) {
+  .backToTop {
+    right: 14px;
+    bottom: 16px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backToTop {
+    transition: opacity 120ms linear;
+  }
+
+  .visible {
+    animation: none;
+  }
+}
