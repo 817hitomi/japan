@@ -21,6 +21,8 @@ import {
 } from "./quizTypes";
 import styles from "./Quiz.module.scss";
 
+const allQuizCategory = "全部";
+
 const parallaxBalls = [
   { className: homeStyles.ballTopLeft, y: -0.1, x: 0.035 },
   { className: homeStyles.ballHeroRight, y: 0.08, x: -0.03 },
@@ -81,6 +83,15 @@ function getCurrentLevel(words: WordCardRecord[], questions: QuizQuestionRecord[
 
 function shuffle<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
+}
+
+function getNextRandomIndex(length: number, currentIndex: number) {
+  if (length <= 1) {
+    return 0;
+  }
+
+  const offset = Math.floor(Math.random() * (length - 1)) + 1;
+  return (currentIndex + offset) % length;
 }
 
 function uniqueOptions(options: string[]) {
@@ -150,7 +161,7 @@ export default function QuizClient({
         readWordCardsWithFallback(),
         readQuizQuestionsWithSource({
           level: selectedLevel,
-          category: selectedCategory,
+          category: selectedCategory === allQuizCategory ? undefined : selectedCategory,
           excludeQuestionType: wordOrderQuestionType,
           pageSize: 500
         }),
@@ -162,8 +173,16 @@ export default function QuizClient({
       }
 
       setWords(nextWords.length > 0 || initialWords.length === 0 ? nextWords : initialWords);
-      setQuestions(questionsResult.questions.length > 0 ? questionsResult.questions : normalizeQuizQuestions(initialQuestions));
+      setQuestions(
+        shuffle(
+          questionsResult.questions.length > 0
+            ? questionsResult.questions
+            : normalizeQuizQuestions(initialQuestions)
+        )
+      );
       setCategories(storedCategories);
+      setActiveIndex(0);
+      setSelectedAnswer("");
       setIsLoading(false);
     }
 
@@ -177,14 +196,20 @@ export default function QuizClient({
   const visibleQuestions = useMemo(
     () =>
       questions
-        .filter((question) => question.level === selectedLevel && question.category === selectedCategory)
+        .filter(
+          (question) =>
+            question.level === selectedLevel &&
+            (selectedCategory === allQuizCategory || question.category === selectedCategory)
+        )
         .slice(0, modeCount),
     [modeCount, questions, selectedCategory, selectedLevel]
   );
   const activeQuestion = visibleQuestions[activeIndex] ?? visibleQuestions[0];
   const displayedWordCount = Math.max(words.length, initialWordTotal);
   const displayedQuestionCount = questions.filter(
-    (question) => question.level === selectedLevel && question.category === selectedCategory
+    (question) =>
+      question.level === selectedLevel &&
+      (selectedCategory === allQuizCategory || question.category === selectedCategory)
   ).length;
   const currentLevel = selectedLevel || getCurrentLevel(words, questions);
   const isCorrect = selectedAnswer && activeQuestion ? selectedAnswer === activeQuestion.answer : false;
@@ -193,12 +218,12 @@ export default function QuizClient({
     [activeQuestion, questions]
   );
 
-  function nextQuestion() {
+  function drawRandomQuestion() {
     if (visibleQuestions.length === 0) {
       return;
     }
 
-    setActiveIndex((current) => (current + 1) % visibleQuestions.length);
+    setActiveIndex((current) => getNextRandomIndex(visibleQuestions.length, current));
     setSelectedAnswer("");
   }
 
@@ -210,6 +235,7 @@ export default function QuizClient({
   }
 
   function switchCategory(category: string) {
+    setIsLoading(true);
     setSelectedCategory(category);
     setModeCount(10);
     setActiveIndex(0);
@@ -256,7 +282,13 @@ export default function QuizClient({
 
       <section className={styles.quizSection} aria-label={`${selectedCategory}練習`}>
         <div className={styles.filterPills}>
-          <span>全部</span>
+          <button
+            className={selectedCategory === allQuizCategory ? styles.activeCategoryPill : ""}
+            type="button"
+            onClick={() => switchCategory(allQuizCategory)}
+          >
+            {allQuizCategory}
+          </button>
           {currentLevelCategories.map((category) => (
             <button
               key={category.id}
@@ -278,7 +310,7 @@ export default function QuizClient({
           </div>
         ) : activeQuestion ? (
           <div className={styles.practiceRow}>
-            <button className={styles.arrowButton} type="button" onClick={nextQuestion} aria-label="上一題">
+            <button className={styles.arrowButton} type="button" onClick={drawRandomQuestion} aria-label="隨機抽一題">
               ◀
             </button>
             <article className={styles.questionCard}>
@@ -301,12 +333,12 @@ export default function QuizClient({
                 </div>
               ) : null}
             </article>
-            <button className={styles.arrowButton} type="button" onClick={nextQuestion} aria-label="下一題">
+            <button className={styles.arrowButton} type="button" onClick={drawRandomQuestion} aria-label="隨機抽一題">
               ▶
             </button>
           </div>
         ) : (
-          <p className={styles.emptyText}>目前沒有{selectedCategory}題目。</p>
+          <p className={styles.emptyText}>目前沒有符合條件的題目。</p>
         )}
 
       </section>
