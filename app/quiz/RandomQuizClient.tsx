@@ -84,8 +84,7 @@ function shuffle<T>(items: T[]) {
 function splitAnswerNote(note: string) {
   return note
     .replace(/<br\b[^>]*>/gi, "\n")
-    .replace(/<\/(?:div|p|li|section|article|h[1-6])\s*>/gi, "\n")
-    .replace(/<(?:div|p|li|section|article|h[1-6])\b[^>]*>/gi, "")
+    .replace(/<\/?(?:div|p|li|section|article|h[1-6])\b[^>]*>/gi, "\n")
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
