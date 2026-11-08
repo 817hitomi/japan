@@ -1,11 +1,33 @@
 "use client";
 
-import { renderInlineRuby } from "../../lib/japaneseText";
+import { readingsToSpeechText, renderInlineRuby } from "../../lib/japaneseText";
 import { hasMeaningfulArticleHtml, trimBoundaryEmptyBlocks } from "../../lib/articleHtml";
 import AdSlot from "../ads/AdSlot";
 import { getAdSlotFromLabel } from "../ads/adTypes";
 import styles from "../page.module.scss";
 import type { NoteContentBlock } from "./noteTypes";
+
+const japaneseSpeechRate = 0.9;
+const preferredJapaneseVoiceName = "Google 日本語";
+
+function getJapaneseVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  return voices.find((voice) => voice.name === preferredJapaneseVoiceName)
+    ?? voices.find((voice) => voice.lang.startsWith("ja"))
+    ?? null;
+}
+
+function speakExample(text: string) {
+  if (!("speechSynthesis" in window)) return;
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(readingsToSpeechText(text));
+  const voice = getJapaneseVoice();
+  utterance.lang = "ja-JP";
+  utterance.rate = japaneseSpeechRate;
+  if (voice) utterance.voice = voice;
+  window.speechSynthesis.speak(utterance);
+}
 
 function getPlainLines(html: string) {
   return html
@@ -26,7 +48,37 @@ function NoteContent({ html }: { html: string }) {
   const items: string[][] = [];
   for (let index = 0; index < lines.length; index += 2) items.push(lines.slice(index, index + 2));
 
-  return <div className={styles.exampleBox}>{items.map((item, index) => <div className={styles.noteItem} key={`${item.join("-")}-${index}`}>{item.map((line) => <p className={/[ぁ-ゖァ-ヺ]/.test(line) ? styles.noteJapaneseLine : styles.noteChineseLine} dangerouslySetInnerHTML={{ __html: renderInlineRuby(line) }} key={line} />)}</div>)}</div>;
+  return (
+    <div className={styles.exampleBox}>
+      {items.map((item, index) => {
+        const japaneseLine = item[0];
+
+        return (
+          <div className={styles.noteItem} key={`${item.join("-")}-${index}`}>
+            <div className={styles.noteItemText}>
+              {item.map((line, lineIndex) => (
+                <p
+                  className={lineIndex === 0 ? styles.noteJapaneseLine : styles.noteChineseLine}
+                  dangerouslySetInnerHTML={{ __html: renderInlineRuby(line) }}
+                  key={line}
+                />
+              ))}
+            </div>
+            {japaneseLine ? (
+              <button
+                className={styles.noteSpeakerButton}
+                type="button"
+                onClick={() => speakExample(japaneseLine)}
+                aria-label={`播放例句：${readingsToSpeechText(japaneseLine)}`}
+              >
+                <img src="/brand/muc.png" alt="" />
+              </button>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function getYouTubeEmbedUrl(url: string) {
